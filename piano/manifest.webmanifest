@@ -1,0 +1,1 @@
+{"name": "Grace 练琴", "short_name": "Grace 练琴", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#F6F3EC", "theme_color": "#7A2E3A", "lang": "zh-CN", "icons": [{"src": "icon.png", "sizes": "180x180", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}]}
