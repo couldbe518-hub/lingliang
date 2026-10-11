@@ -10,14 +10,18 @@ for (const s of songs) {
   const errs = [];
   if (ids.has(s.id)) errs.push("id 重复"); ids.add(s.id);
   if (!M.KEYS[s.key]) errs.push("不支持的调：" + s.key);
-  const rh = M.parseHand(s.rh, s.meter), lh = M.parseHand(s.lh, s.meter);
-  rh.errors.forEach(e => errs.push("右手 " + e));
-  lh.errors.forEach(e => errs.push("左手 " + e));
-  if (rh.events.length && lh.events.length) {
-    if (rh.bars.length !== lh.bars.length) errs.push(`两手小节数不同：右手 ${rh.bars.length}，左手 ${lh.bars.length}`);
-    else rh.bars.forEach((b, i) => { if (Math.abs(b.len - lh.bars[i].len) > 1e-6) errs.push(`第${i + 1}小节两手拍数不同：${b.len} / ${lh.bars[i].len}`); });
+  const NAME = { rh: "右手", rh2: "右手第二声部", lh: "左手", lh2: "左手第二声部" };
+  const P = {};
+  for (const k of Object.keys(NAME)) { P[k] = M.parseHand(s[k] || "", s.meter); P[k].errors.forEach(e => errs.push(NAME[k] + " " + e)); }
+  const used = Object.keys(P).filter(k => P[k].events.length);
+  const ref = P[used[0]];
+  for (const k of used.slice(1)) {
+    const o = P[k];
+    if (o.bars.length !== ref.bars.length) errs.push(`${NAME[k]}小节数 ${o.bars.length}，与${NAME[used[0]]} ${ref.bars.length} 不同`);
+    else ref.bars.forEach((b, i) => { if (Math.abs(b.len - o.bars[i].len) > 1e-6) errs.push(`第${i + 1}小节拍数不同：${NAME[used[0]]} ${b.len} / ${NAME[k]} ${o.bars[i].len}`); });
   }
-  const all = rh.events.concat(lh.events).flatMap(e => e.pitches.map(p => p.midi));
+  const rh = P.rh, lh = P.lh;
+  const all = used.flatMap(k => P[k].events).flatMap(e => e.pitches.map(p => p.midi));
   const lo = Math.min(...all), hi = Math.max(...all);
   console.log(`${errs.length ? "✗" : "✓"} ${s.id.padEnd(18)} ${s.title}  音域 ${M.midiToName(lo)}–${M.midiToName(hi)}  小节 ${Math.max(rh.bars.length, lh.bars.length)}`);
   errs.forEach(e => console.log("    " + e));

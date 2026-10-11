@@ -10,7 +10,7 @@
   var $ = function (sel, el) { return (el || document).querySelector(sel); };
   var $$ = function (sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); };
   var CAT_NAME = { hymn: "赞美诗", classic: "世界名曲", warm: "手指热身" };
-  var LEVEL_NAME = { 1: "入门", 2: "初级", 3: "中级" };
+  var LEVEL_NAME = { 1: "入门", 2: "初级", 3: "中级", 4: "进阶" };
   var HAND_NAME = { rh: "右手", lh: "左手", both: "双手" };
   var MODE_NAME = { wait: "跟谱练", tempo: "跟拍练" };
 
@@ -160,11 +160,13 @@
       var clickEvery = /\/8$/.test(o.song.meter) ? 1.5 : 1;
       var countBeats = o.countIn ? barBeats : 0;
       var t0 = ctx.currentTime + 0.15 + countBeats * spb;
-      var total = Math.max(o.parsed.rh.total || 0, o.parsed.lh.total || 0);
-      var pickup = (o.parsed.rh.bars[0] || o.parsed.lh.bars[0] || { len: barBeats }).len;
+      var keys = Object.keys(o.parsed);
+      var total = Math.max.apply(null, keys.map(function (k) { return o.parsed[k].total || 0; }));
+      var firstBar = keys.map(function (k) { return o.parsed[k].bars[0]; }).filter(Boolean)[0];
+      var pickup = (firstBar || { len: barBeats }).len;
       var offset = pickup < barBeats - 1e-6 ? barBeats - pickup : 0; // 弱起：让小节线对齐
       o.hands.forEach(function (h) {
-        var vel = h === "lh" ? 0.2 : 0.26;
+        var vel = h.charAt(0) === "l" ? 0.2 : h === "rh2" ? 0.17 : 0.26;
         if (o.quietHand === h) vel *= 0.55;
         soundNotes(o.parsed[h]).forEach(function (n) {
           if (n.start + 1e-6 < from) return;
@@ -479,15 +481,17 @@
     var q = {}; (parts[1] || "").split("&").forEach(function (kv) { var p = kv.split("="); if (p[0]) q[p[0]] = p[1]; });
     var hand = q.h && hasHand(s, q.h) ? q.h : hasHand(s, "rh") ? "rh" : "lh";
     var mode = q.m || "demo";
-    var parsed = { rh: M.parseHand(s.rh, s.meter), lh: M.parseHand(s.lh, s.meter) };
-    var els = { rh: [], lh: [] };
+    var PARTS = ["rh", "rh2", "lh", "lh2"];
+    var parsed = {};
+    PARTS.forEach(function (k) { parsed[k] = M.parseHand(s[k] || "", s.meter); });
+    var els = { rh: [], rh2: [], lh: [], lh2: [] };
     var from = 0; // 从第几拍开始
     var practice = null;
 
     main.innerHTML =
       '<header class="pagehead songhead"><a class="back" href="#/library">‹ 曲库</a><h1>' + esc(s.title) + '</h1><p class="en">' + esc(s.en) + '</p>' +
       '<p class="chips"><span class="lv lv' + s.level + '">' + LEVEL_NAME[s.level] + "</span><span>" + CAT_NAME[s.cat] + "</span><span>" + esc(keyLabel(s.key)) + "</span><span>" + s.meter + "</span><span>♩=" + s.tempo + "</span></p></header>" +
-      '<p class="tip">' + esc(s.tip) + "</p>" +
+      '<p class="tip">' + esc(s.tip) + (s.source ? '<span class="src">' + esc(s.source) + "</span>" : "") + "</p>" +
       '<div class="ctl">' +
       '<div class="seg small" id="hands">' + ["rh", "lh", "both"].map(function (h) { return '<button data-h="' + h + '" aria-selected="' + (h === hand) + '"' + (hasHand(s, h) ? "" : " disabled") + ">" + HAND_NAME[h] + "</button>"; }).join("") + "</div>" +
       '<div class="seg small" id="modes">' + [["demo", "听示范"], ["wait", "跟谱练"], ["tempo", "跟拍练"]].map(function (m) { return '<button data-m="' + m[0] + '" aria-selected="' + (m[0] === mode) + '">' + m[1] + "</button>"; }).join("") + "</div>" +
@@ -506,14 +510,17 @@
     function drawScore() {
       var b = M.buildAbc(s, hand, { labels: state.settings.labels });
       renderScore($("#score"), b.abc);
-      els = { rh: [], lh: [] };
-      b.voices.forEach(function (v, i) { els[v] = voiceElements($("#score"), i); });
-      ["rh", "lh"].forEach(function (h) {
-        if (els[h].length && els[h].length !== parsed[h].events.length) { console.warn("音符对应失败", s.id, h, els[h].length, parsed[h].events.length); els[h] = []; }
+      els = { rh: [], rh2: [], lh: [], lh2: [] };
+      b.voices.forEach(function (v, i) {
+        var found = voiceElements($("#score"), i), evs = parsed[v].events;
+        var vis = []; evs.forEach(function (ev, j) { if (!ev.invisible) vis.push(j); });
+        if (found.length !== vis.length) { console.warn("音符对应失败", s.id, v, found.length, vis.length); return; }
+        var arr = new Array(evs.length); vis.forEach(function (j, n) { arr[j] = found[n]; }); els[v] = arr;
       });
       kbMark(kb, [], "tgt"); markFrom();
     }
-    function shownHands() { return hand === "both" ? ["rh", "lh"] : [hand]; }
+    function partsOf(h) { return (h === "both" ? PARTS : [h, h + "2"]).filter(function (k) { return parsed[k].events.length; }); }
+    function shownHands() { return partsOf(hand); }
     function clearCls(c) { $$("#score ." + c).forEach(function (e) { e.classList.remove(c); }); }
     function markFrom() {
       clearCls("from");
@@ -550,7 +557,7 @@
       var n = e.target.closest && e.target.closest(".abcjs-note, .abcjs-rest");
       if (!n || Player.playing || (practice && practice.running)) return;
       var hit = null;
-      ["rh", "lh"].forEach(function (h) { var i = els[h].indexOf(n); if (i >= 0) hit = parsed[h].events[i].start; });
+      PARTS.forEach(function (h) { var i = els[h].indexOf(n); if (i >= 0) hit = parsed[h].events[i].start; });
       if (hit === null) return;
       from = from === hit ? 0 : hit; markFrom();
       toast(from ? "从这里开始（再点一次取消）" : "已改回从头开始");
@@ -713,7 +720,7 @@
         practice = { running: true, stop: stop };
         live('<span class="muted">准备……听一小节节拍器，然后开始</span>');
         Player.play({
-          song: s, parsed: parsed, hands: acc ? [hand === "rh" ? "lh" : "rh"] : [], bpm: bpm(), from: from, metro: state.settings.metro, countIn: true,
+          song: s, parsed: parsed, hands: acc ? partsOf(hand === "rh" ? "lh" : "rh") : [], bpm: bpm(), from: from, metro: state.settings.metro, countIn: true,
           onBeat: function (beat) {
             if (beat < from) { live('<span class="muted">预备：' + Math.ceil(from - beat) + "</span>"); return; }
             cursor(beat);

@@ -17,3 +17,14 @@
 3. GitHub Pages 约 1 分钟后发布；Grace 那边自动刷新。
 
 曲目均为公有领域旋律的简易改编。
+
+## 进阶曲目的来源（2026-10-12 加入）
+进阶级（level 4）的 10 首不是凭记忆写的，而是用 `tools/import_score.py` 从权威数字乐谱转换：
+- 赞美诗 5 首（耶稣恩友、有福的确据、齐来崇拜、求主同住、芬兰颂）：Echoes of Grace 诗本四部和声，
+  LilyPond 源码 github.com/kulp/eog（维护者声明放弃版权）。编译时需给 `inc/common/*.ily`、`override/*.ily` 放空文件，
+  并定义 `mon`、`moff`、`eogbreak` 为空。
+- 名曲 5 首：月光奏鸣曲、K.545、肖邦前奏曲 No.4 / No.7 来自 KernScores（Craig Stuart Sapp 编码，CC BY-NC-SA 4.0，仅非商业使用）；
+  巴赫 BWV 846 来自 music21 语料库。
+- 同一来源也核对了已有的三一颂、普世欢腾、平安夜、耶稣爱我的旋律，音高一致；耶稣爱我据此补上了副歌。
+
+记谱扩展：`rh2` / `lh2` = 同一只手的第二声部；`x` = 不显示的休止；最短时值 0.125 拍（三十二分音符）。

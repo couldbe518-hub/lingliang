@@ -10,9 +10,11 @@
     A: { acc: { F: "#", C: "#", G: "#" }, tonic: 9 },
     F: { acc: { B: "b" }, tonic: 5 }, Dm: { acc: { B: "b" }, tonic: 5 },
     Bb: { acc: { B: "b", E: "b" }, tonic: 10 }, Gm: { acc: { B: "b", E: "b" }, tonic: 10 },
-    Eb: { acc: { B: "b", E: "b", A: "b" }, tonic: 3 }
+    Eb: { acc: { B: "b", E: "b", A: "b" }, tonic: 3 }, Cm: { acc: { B: "b", E: "b", A: "b" }, tonic: 3 },
+    "F#m": { acc: { F: "#", C: "#", G: "#" }, tonic: 9 },
+    E: { acc: { F: "#", C: "#", G: "#", D: "#" }, tonic: 4 }, "C#m": { acc: { F: "#", C: "#", G: "#", D: "#" }, tonic: 4 }
   };
-  var VALID_UNITS = { 1: 1, 2: 1, 3: 1, 4: 1, 6: 1, 8: 1, 12: 1, 16: 1 }; // L:1/16 下可单符表示的长度
+  var VALID_UNITS = { 1: 1, 2: 1, 3: 1, 4: 1, 6: 1, 8: 1, 12: 1, 16: 1, 24: 1, 32: 1 }; // L:1/32 下可单符表示的长度
   var JIANPU = ["1", "#1", "2", "b3", "3", "4", "#4", "5", "#5", "6", "b7", "7"];
   var NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   var SOLFEGE = { C: "do", D: "re", E: "mi", F: "fa", G: "sol", A: "la", B: "si" };
@@ -46,10 +48,11 @@
         var m = /^([^:@~]+)(?::([\d.]+))?(~)?(?:@(\d))?$/.exec(tok);
         if (!m) { res.errors.push("第" + (bi + 1) + "小节无法识别：" + tok); return; }
         var dur = m[2] ? parseFloat(m[2]) : 1;
-        var units = Math.round(dur * 4);
-        if (Math.abs(units - dur * 4) > 1e-6 || !VALID_UNITS[units]) res.errors.push("第" + (bi + 1) + "小节时值不能单独表示：" + tok);
+        var units = Math.round(dur * 8);
+        if (Math.abs(units - dur * 8) > 1e-6 || !VALID_UNITS[units]) res.errors.push("第" + (bi + 1) + "小节时值不能单独表示：" + tok);
         var ev = { start: t, dur: dur, units: units, pitches: [], rest: false, tie: !!m[3], finger: m[4] ? +m[4] : null, bar: bi };
         if (m[1] === "r") ev.rest = true;
+        else if (m[1] === "x") { ev.rest = true; ev.invisible = true; }
         else {
           m[1].split("+").forEach(function (ps) {
             var p = parsePitch(ps);
@@ -121,7 +124,7 @@
       }
       if (ev.finger && opts.fingers !== false) tok += "!" + ev.finger + "!";
       var notes;
-      if (ev.rest) notes = "z";
+      if (ev.rest) notes = ev.invisible ? "x" : "z";
       else {
         notes = ev.pitches.map(function (p) {
           var want = p.acc, k = p.letter + p.oct;
@@ -146,31 +149,34 @@
     return out.join("");
   }
 
-  /* hands: "both" | "rh" | "lh"；返回 { abc, voices: ["rh","lh"] } */
+  /* hands: "both" | "rh" | "lh"；每只手可有第二声部 rh2 / lh2（同一行谱上符干朝下）。
+     返回 { abc, voices: ["rh","rh2","lh",...]（与 abcjs 的 abcjs-vN 编号一致）, rh, rh2, lh, lh2 } */
   function buildAbc(song, hands, opts) {
     opts = opts || {};
-    var rh = parseHand(song.rh, song.meter), lh = parseHand(song.lh, song.meter);
-    var useRh = rh.events.length && hands !== "lh";
-    var useLh = lh.events.length && hands !== "rh";
-    if (!useRh && !useLh) { useRh = !!rh.events.length; useLh = !useRh; }
-    var head = ["X:1", "M:" + song.meter, "L:1/16", "K:" + song.key];
-    var voices = [];
-    var lines = [];
-    if (useRh && useLh) {
-      head.splice(3, 0, "%%score {RH | LH}", "V:RH clef=treble", "V:LH clef=bass");
-      lines.push("[V:RH] " + handToAbc(rh, song, opts, false));
-      lines.push("[V:LH] " + handToAbc(lh, song, opts, true));
-      voices = ["rh", "lh"];
-    } else if (useRh) {
-      head[3] = "K:" + song.key + " clef=treble";
-      lines.push(handToAbc(rh, song, opts, false));
-      voices = ["rh"];
-    } else {
-      head[3] = "K:" + song.key + " clef=bass";
-      lines.push(handToAbc(lh, song, opts, true));
-      voices = ["lh"];
-    }
-    return { abc: head.join("\n") + "\n" + lines.join("\n") + "\n", voices: voices, rh: rh, lh: lh };
+    var P = {};
+    ["rh", "rh2", "lh", "lh2"].forEach(function (k) { P[k] = parseHand(song[k] || "", song.meter); });
+    var useRh = P.rh.events.length && hands !== "lh";
+    var useLh = P.lh.events.length && hands !== "rh";
+    if (!useRh && !useLh) { useRh = !!P.rh.events.length; useLh = !useRh; }
+    var staves = [];
+    if (useRh) staves.push({ clef: "treble", parts: P.rh2.events.length ? ["rh", "rh2"] : ["rh"] });
+    if (useLh) staves.push({ clef: "bass", parts: P.lh2.events.length ? ["lh", "lh2"] : ["lh"] });
+    var head = ["X:1", "M:" + song.meter, "L:1/32"];
+    var voices = [], lines = [], score = [];
+    staves.forEach(function (st) {
+      var ids = st.parts.map(function (k) { return k.toUpperCase(); });
+      score.push(ids.length > 1 ? "(" + ids.join(" ") + ")" : ids[0]);
+      st.parts.forEach(function (k, i) {
+        head.push("V:" + k.toUpperCase() + " clef=" + st.clef + (st.parts.length > 1 ? (i ? " stem=down" : " stem=up") : ""));
+        lines.push("[V:" + k.toUpperCase() + "] " + handToAbc(P[k], song, opts, k.charAt(0) === "l"));
+        voices.push(k);
+      });
+    });
+    head.splice(3, 0, "%%score " + (staves.length > 1 ? "{" + score.join(" | ") + "}" : score[0]));
+    head.push("K:" + song.key);
+    var out = { abc: head.join("\n") + "\n" + lines.join("\n") + "\n", voices: voices };
+    Object.keys(P).forEach(function (k) { out[k] = P[k]; });
+    return out;
   }
 
   function midiToName(m) { return NAMES_SHARP[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
