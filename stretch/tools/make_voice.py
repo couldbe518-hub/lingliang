@@ -30,6 +30,7 @@ VOICES = [
     ("ruoxi", 28, "若溪", "平稳清亮（约 233 Hz）"),
 ]
 SPEED = 0.86
+CLONE_SPEED = 0.85  # 克隆声音的语速（1.0 = 录音原速）；Kevin 2026-10-13 要求再慢一点
 # 后期：去掉首尾静音、轻微暖声、很小的房间混响、统一响度
 FILTER = ("silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.05,areverse,"
           "silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.08,areverse,"
@@ -41,19 +42,66 @@ FILTER_CLONE = ("silenceremove=start_periods=1:start_threshold=-50dB:start_silen
                 "highpass=f=60,lowpass=f=10000,aecho=0.85:0.6:35|60:0.08|0.05,loudnorm=I=-17:TP=-2:LRA=7,afade=t=in:d=0.02")
 
 
-def for_speech(t):
-    """只改念法，不改句子本身（句子是查找录音的键）。"""
-    rep = [("膝-髋-肩", "膝、髋、肩"), ("4-7-8", "四七八"), ("4-6", "四六"), ("90/90", "九十九十"), (" × ", "，做 "),
-           ("—", "、"), (" / ", "，或"), (" + ", "，加"), ("50%", "百分之五十"), ("80%", "百分之八十")]
+CN_DIGIT = "零一二三四五六七八九"
+MEASURE = "秒次个组度圈分天周轮步下拳根厘米倍"
+
+
+def cn_int(n, before=""):
+    """阿拉伯数字 → 普通话读法；量词前的 2 读「两」。"""
+    if n == 2 and before[:1] in MEASURE:
+        return "两"
+    if n < 10:
+        return CN_DIGIT[n]
+    if n < 20:
+        return "十" + (CN_DIGIT[n % 10] if n % 10 else "")
+    if n < 100:
+        return CN_DIGIT[n // 10] + "十" + (CN_DIGIT[n % 10] if n % 10 else "")
+    return str(n)
+
+
+def normalize(t):
+    """按普通话说话习惯整理文字：数字读法、去掉中英文之间的空格、统一停顿标点。"""
+    rep = [("膝-髋-肩", "膝、髋、肩"), ("4-7-8", "四七八"), ("4-6", "四六"), ("90/90", "九十九十"), (" × ", "，做"),
+           ("—", "、"), (" / ", "，或"), (" + ", "，加"), ("50%", "百分之五十"), ("80%", "百分之八十"), ("「", ""), ("」", "")]
     for a, b in rep:
         t = t.replace(a, b)
-    # 多音字：Kokoro 的字典把单独的"地"读 de、"肋"读 lē 等，换成同音字让它读对
-    t = t.replace("着地", "卓第")
-    t = re.sub(r"(?<=[离贴踩跪蹬推点])地", "第", t)
-    t = re.sub(r"肋(?!骨)", "泪", t)
-    for a, b in [("变长", "变常"), ("往后倒", "往后岛"), ("两只手", "两支手"), ("这只手", "这支手"), ("距离差", "距离叉"), ("数三秒", "属三秒")]:
+    t = re.sub(r"\s*(\d+)\s*(\S?)", lambda m: cn_int(int(m.group(1)), m.group(2)) + m.group(2), t)
+    t = re.sub(r"(?<=[一-鿿，。、；：])\s+|\s+(?=[一-鿿，。、；：])", "", t)
+    return t
+
+
+# 两个模型字典里都会读错的词（用语音识别和字典逐字核对得出），换成同音字让它读对
+POLYPHONES = [("着地", "卓地"), ("变长", "变常"), ("往后倒", "往后岛"), ("倒向", "岛向"), ("两只手", "两支手"), ("这只手", "这支手"),
+              ("距离差", "距离叉"), ("数三秒", "属三秒")]
+
+
+def fix_common(t):
+    for a, b in POLYPHONES:
         t = t.replace(a, b)
+    return re.sub(r"肋(?!骨)", "泪", t)  # 单独的「肋」被读成 lē
+
+
+def for_speech(t):
+    """只改念法，不改句子本身（句子是查找录音的键）。Kokoro 用这个版本。"""
+    t = fix_common(normalize(t))
+    # Kokoro 的字典把单独的「地」读成 de：表示地面时换成同音的「第」
+    t = t.replace("卓地", "卓第")
+    t = re.sub(r"(?<=[离贴踩跪蹬推点])地", "第", t)
     return t + "。"
+
+
+def clone_text(t):
+    """克隆声音（ZipVoice）用：它的字典把「地」一律读 dì，所以副词「慢慢地」改成「的」。"""
+    t = fix_common(normalize(t))
+    for a, b in [("慢慢地", "慢慢的"), ("轻轻地", "轻轻的")]:
+        t = t.replace(a, b)
+    return t
+
+
+def sentences(t):
+    """按句号、分号等切成短句分别合成，句间留自然停顿，准确率也更高。"""
+    parts = [p for p in re.split(r"(?<=[。；！？])", t) if p.strip("。；！？ ")]
+    return parts or [t]
 
 
 def pinyin_err(ref, hyp):
@@ -118,19 +166,24 @@ def main():
             g = kokoro().generate(for_speech(text), sid=sid, speed=SPEED)
             return g.samples, g.sample_rate, FILTER
         tts, x, sr, pt = clone()
-        best = None
-        for steps in (8, 12, 16):
-            g = tts.generate(for_speech(text), pt, x, sr, speed=1.0, num_steps=steps)
-            if not rec:
-                return g.samples, g.sample_rate, FILTER_CLONE
-            err = pinyin_err(text, recognize(g.samples, g.sample_rate))
-            if best is None or err < best[0]:
-                best = (err, g.samples, g.sample_rate)
-            if err <= .15:
-                break
-        if best[0] > .15:
-            print("核对未通过（保留最好的一次）:", round(best[0], 2), text, file=sys.stderr)
-        return best[1], best[2], FILTER_CLONE
+        pieces, rate = [], None
+        for sent in sentences(clone_text(text)):
+            best = None
+            for steps in (8, 12, 16):
+                g = tts.generate(sent if sent[-1] in "。；！？" else sent + "。", pt, x, sr, speed=CLONE_SPEED, num_steps=steps)
+                if not rec:
+                    best = (0, g.samples, g.sample_rate); break
+                err = pinyin_err(sent, recognize(g.samples, g.sample_rate))
+                if best is None or err < best[0]:
+                    best = (err, g.samples, g.sample_rate)
+                if err <= .15:
+                    break
+            if best[0] > .15:
+                print("核对未通过（保留最好的一次）:", round(best[0], 2), sent, file=sys.stderr)
+            rate = best[2]
+            pieces.append(np.asarray(best[1], dtype=np.float32))
+            pieces.append(np.zeros(int(rate * (.32 if sent.endswith("；") else .45)), np.float32))
+        return np.concatenate(pieces[:-1]), rate, FILTER_CLONE
 
     lines = json.loads(subprocess.check_output(["node", os.path.join(HERE, "voice_lines.js")]))
     mf = os.path.join(OUT, "manifest.json")
