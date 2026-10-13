@@ -107,7 +107,7 @@
       if (this.ctx.state === "suspended") this.ctx.resume();
       return this.ctx;
     },
-    session: function (type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) { } },
+    session: function (type) { try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) { } },
     note: function (midi, t, dur, vel, dest) {
       var ctx = this.get(), f = M.midiToFreq(midi);
       var out = ctx.createGain(), filt = ctx.createBiquadFilter();
@@ -153,7 +153,7 @@
     /* opts: { song, parsed:{rh,lh}, hands:["rh","lh"], bpm, from, metro, countIn, onBeat(beat), onEnd() } */
     play: function (o) {
       this.stop();
-      var ctx = Audio.get(); Audio.session(Mic.active ? "play-and-record" : "playback");
+      var ctx = Audio.get(); Audio.session("auto");
       var bus = ctx.createGain(); bus.gain.value = 1; bus.connect(Audio.master); this.bus = bus;
       var spb = 60 / o.bpm, from = o.from || 0;
       var barBeats = M.meterBeats(o.song.meter);
@@ -212,8 +212,11 @@
       var self = this;
       if (self.active) return Promise.resolve();
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error("此浏览器不支持麦克风"));
-      Audio.session("play-and-record");
-      return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      Audio.session("auto");
+      var gum = function (c) { return navigator.mediaDevices.getUserMedia(c); };
+      // 先用"原声"设置；个别 iPad 不接受这些参数时，退回最简单的 {audio:true} 再试一次
+      return gum({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+        .catch(function (e) { self.lastError = e; return gum({ audio: true }); })
         .then(function (stream) {
           var ctx = Audio.get();
           self.stream = stream;
@@ -231,7 +234,7 @@
       if (this.stream) this.stream.getTracks().forEach(function (t) { t.stop(); });
       try { if (this.src) this.src.disconnect(); } catch (e) { }
       this.stream = null; this.active = false; this.current = null;
-      Audio.session("playback");
+      Audio.session("auto");
     },
     on: function (fn) { this.listeners.push(fn); var l = this.listeners; return function () { var i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); }; },
     emit: function (type, data) { this.listeners.slice().forEach(function (fn) { fn(type, data); }); },
@@ -814,9 +817,10 @@
     var box = $("#michelp");
     if (!box) { box = document.createElement("div"); box.id = "michelp"; document.body.appendChild(box); }
     box.innerHTML = '<div class="mh-card" role="dialog" aria-modal="true" aria-labelledby="mh-t"><h2 id="mh-t">' + esc(micError(e)) + '</h2><p class="muted">跟谱练、跟拍练、录音和用钢琴答题都需要麦克风。按下面的步骤打开：</p><ol>' +
-      steps.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ol><p class="muted small">声音只在这台设备上处理，不会上传。</p><div class="mh-btns">' +
+      steps.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ol><p class="muted small">声音只在这台设备上处理，不会上传。</p><p class="muted small" id="mh-diag">诊断：' + esc(((e && e.name) || "?") + " · " + ((e && e.message) || "") + " · " + (STANDALONE ? "主屏幕App" : IN_APP ? "App内浏览器" : "浏览器") + " · " + ((navigator.audioSession && navigator.audioSession.type) || "-") + " · " + VERSION) + '</p><div class="mh-btns">' +
       (IN_APP ? "" : '<button class="btn primary" id="mh-retry">再试一次</button>') + '<button class="btn ghost" id="mh-close">关闭</button></div></div>';
     box.hidden = false;
+    try { navigator.permissions.query({ name: "microphone" }).then(function (st) { var d = $("#mh-diag"); if (d) d.textContent += " · 权限:" + st.state; }); } catch (x) { }
     $("#mh-close").onclick = function () { box.hidden = true; };
     var r = $("#mh-retry");
     if (r) r.onclick = function () { box.hidden = true; if (retry) retry(); else Mic.start().then(function () { Mic.stop(); toast("麦克风可以用了，再点一次开始"); }).catch(function (e2) { micHelp(e2); }); };
@@ -845,7 +849,7 @@
           var act = b.getAttribute("data-act");
           if (act === "play") {
             if (!audio.src) audio.src = URL.createObjectURL(r.blob);
-            if (audio.paused) { $$("audio").forEach(function (a) { if (a !== audio) a.pause(); }); Audio.session("playback"); audio.play(); b.textContent = "❚❚ 暂停"; audio.onended = function () { b.textContent = "▶ 播放"; }; }
+            if (audio.paused) { $$("audio").forEach(function (a) { if (a !== audio) a.pause(); }); audio.play(); b.textContent = "❚❚ 暂停"; audio.onended = function () { b.textContent = "▶ 播放"; }; }
             else { audio.pause(); b.textContent = "▶ 播放"; }
           } else if (act === "dl") {
             var a = document.createElement("a"), ext = /mp4/.test(r.mime) ? "m4a" : /ogg/.test(r.mime) ? "ogg" : "webm";
