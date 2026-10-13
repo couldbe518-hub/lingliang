@@ -799,7 +799,7 @@
   function micError(e) {
     var n = e && e.name;
     if (IN_APP) return "现在是在微信（或其他 App）里打开的，这里不能用麦克风。";
-    if (n === "NotAllowedError" || n === "SecurityError") return "麦克风权限被关掉了。";
+    if (n === "NotAllowedError" || n === "SecurityError") return "麦克风打不开。";
     if (n === "NotFoundError") return "没有找到麦克风。";
     return (e && e.message) || "麦克风打不开";
   }
@@ -810,6 +810,7 @@
       steps = ["点右上角的「···」", "选「在 Safari 中打开」（iPad 上可能叫「在默认浏览器中打开」）", "在 Safari 里点「分享」→「添加到主屏幕」，以后从主屏幕图标打开"];
     } else if (IOS) {
       steps = [
+        "一定要在 Safari 里打开：用「快捷指令」、微信或其他 App 打开的页面不能用麦克风。请打开 Safari，在地址栏粘贴网址，再点「分享」→「添加到主屏幕」，以后从主屏幕图标打开",
         "在 Safari 地址栏左边点「aA」（或「大小」图标）→「网站设置」→「麦克风」→ 选「允许」或「询问」",
         "如果上面找不到：打开 iPad/iPhone 的「设置」→「Safari 浏览器」→ 往下找「麦克风」→ 选「询问」或「允许」",
         "再检查「设置」→「屏幕使用时间」→「内容和隐私访问限制」→「麦克风」是否被关掉",
