@@ -1,0 +1,6 @@
+@mediapipe/tasks-vision 0.10.14 (npm) — Copyright Google LLC — Apache License 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+
+pose_landmarker_lite.task / pose_landmarker_full.task — MediaPipe Pose Landmarker models (float16, v1),
+from https://storage.googleapis.com/mediapipe-models/ — Apache License 2.0
+Model card: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf
