@@ -93,6 +93,7 @@
   };
 
   /* ───────── 声音：钢琴音色、节拍器 ───────── */
+  try { if (navigator.audioSession) navigator.audioSession.type = "play-and-record"; } catch (e) { }
   var Audio = {
     ctx: null, master: null,
     get: function () {
@@ -107,7 +108,9 @@
       if (this.ctx.state === "suspended") this.ctx.resume();
       return this.ctx;
     },
-    session: function (type) { try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) { } },
+    session: function (type) {
+      // iOS：页面一开始就固定为可录音模式，之后不再切换，否则 Safari 会拒绝麦克风
+      type = "play-and-record"; try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) { } },
     note: function (midi, t, dur, vel, dest) {
       var ctx = this.get(), f = M.midiToFreq(midi);
       var out = ctx.createGain(), filt = ctx.createBiquadFilter();
@@ -153,7 +156,7 @@
     /* opts: { song, parsed:{rh,lh}, hands:["rh","lh"], bpm, from, metro, countIn, onBeat(beat), onEnd() } */
     play: function (o) {
       this.stop();
-      var ctx = Audio.get(); Audio.session("auto");
+      var ctx = Audio.get(); 
       var bus = ctx.createGain(); bus.gain.value = 1; bus.connect(Audio.master); this.bus = bus;
       var spb = 60 / o.bpm, from = o.from || 0;
       var barBeats = M.meterBeats(o.song.meter);
@@ -212,7 +215,7 @@
       var self = this;
       if (self.active) return Promise.resolve();
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error("此浏览器不支持麦克风"));
-      Audio.session("auto");
+      
       // 必须在点击的同一时刻、用最简单的参数请求，iPad Safari 才会弹出授权框；关掉回声消除等放到拿到麦克风之后再做
       var t0 = Date.now();
       return navigator.mediaDevices.getUserMedia({ audio: true })
@@ -235,7 +238,7 @@
       if (this.stream) this.stream.getTracks().forEach(function (t) { t.stop(); });
       try { if (this.src) this.src.disconnect(); } catch (e) { }
       this.stream = null; this.active = false; this.current = null;
-      Audio.session("auto");
+      
     },
     on: function (fn) { this.listeners.push(fn); var l = this.listeners; return function () { var i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); }; },
     emit: function (type, data) { this.listeners.slice().forEach(function (fn) { fn(type, data); }); },
