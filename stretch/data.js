@@ -781,9 +781,9 @@
     { id: "preTen", slot: "pre", sport: "tennis", name: "网球 · 赛前热身", sub: "8–10 分钟 · 动态激活", music: "pulse", color: "court",
       items: [["march", { r: 40 }], ["arm_circles"], ["band_er"], ["er_9090", { r: 8 }], ["leg_swing_f", { r: 10 }], ["leg_swing_s", { r: 10 }], ["ham_sweep", { r: 6 }], ["lunge_rotate", { r: 6 }], ["lateral_lunge", { r: 6 }], ["calf_raise", { r: 12 }], ["split_step", { r: 20 }], ["shadow_ten", { r: 12 }]] },
     { id: "postBad", slot: "post", sport: "badminton", name: "羽毛球 · 赛后拉伸", sub: "约 15 分钟 · 静态放松", music: "stream", color: "sage",
-      items: [["calf_wall"], ["soleus_wall"], ["quad_stretch"], ["hip_flexor"], ["supine_ham"], ["figure4"], ["butterfly"], ["seated_twist"], ["cross_body"], ["triceps_oh"], ["biceps_wall"], ["doorway_pec"], ["wrist_forearm"], ["ball_roll", { r: 12 }]] },
+      items: [["calf_wall", { d: 25 }], ["soleus_wall", { d: 25 }], ["quad_stretch", { d: 25 }], ["hip_flexor", { d: 25 }], ["supine_ham", { d: 25 }], ["figure4", { d: 25 }], ["butterfly", { d: 25 }], ["seated_twist", { d: 25 }], ["cross_body", { d: 25 }], ["triceps_oh", { d: 25 }], ["biceps_wall", { d: 25 }], ["doorway_pec", { d: 25 }], ["wrist_forearm", { d: 25 }], ["ball_roll", { r: 10 }]] },
     { id: "postTen", slot: "post", sport: "tennis", name: "网球 · 赛后拉伸", sub: "约 15 分钟 · 静态放松", music: "stream", color: "sage",
-      items: [["calf_wall"], ["soleus_wall"], ["quad_stretch"], ["hip_flexor"], ["supine_ham"], ["figure4"], ["seated_twist"], ["open_book", { r: 6 }], ["cross_body"], ["triceps_oh"], ["biceps_wall"], ["doorway_pec"], ["wrist_forearm"], ["ball_roll", { r: 12 }]] },
+      items: [["calf_wall", { d: 25 }], ["soleus_wall", { d: 25 }], ["quad_stretch", { d: 25 }], ["hip_flexor", { d: 25 }], ["supine_ham", { d: 25 }], ["figure4", { d: 25 }], ["seated_twist", { d: 25 }], ["open_book", { r: 4 }], ["cross_body", { d: 25 }], ["triceps_oh", { d: 25 }], ["biceps_wall", { d: 25 }], ["doorway_pec", { d: 25 }], ["wrist_forearm", { d: 25 }], ["ball_roll", { r: 10 }]] },
 
     { id: "quick", slot: "quick", name: "久坐 5 分钟", sub: "办公室、长途飞行后", music: "stream", color: "sky",
       items: [["chin_tuck", { r: 6 }], ["neck_side", { d: 20 }], ["doorway_pec", { d: 25 }], ["triceps_oh", { d: 20 }], ["sciatic_floss", { r: 6 }], ["calf_raise", { r: 10 }], ["lat_side", { d: 20 }]] }
