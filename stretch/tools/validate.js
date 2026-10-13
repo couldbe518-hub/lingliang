@@ -14,6 +14,7 @@ D.EX.forEach(function (e) {
   if (e.r != null && !e.tempo) w("有 r 时需要 tempo");
   if (!e.basic || !e.basic.how || !e.adv || !e.adv.how) w("basic / adv 说明不全");
   if (!e.cues || e.cues.length < 2) w("cues 至少 2 条");
+  if (e.adv && e.adv.cues && e.adv.cues.length < 2) w("adv.cues 至少 2 条");
   (e.area || []).forEach(function (a) { if (!D.AREAS[a]) w("未知部位 " + a); });
   ["basic", "adv"].forEach(function (lv) {
     var v = F.variant(e, lv);

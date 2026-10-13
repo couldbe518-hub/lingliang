@@ -6,6 +6,7 @@
  * 姿势对象：
  *   t  躯干（骨盆→颈）角度，直立 = 180，仰卧头在左 = 270，俯卧头在右 = 90
  *   h  头部方向（发髻朝向），默认与躯干相同；n 颈部方向（头的位置），默认同 h
+ *   pt 骨盆朝向（前视图），默认随躯干；侧弯时写 180 让骨盆保持水平
  *   ts 躯干长度缩放（< 1 表示身体朝向或背向观众，用于正面看四点跪等）
  *   a1 / a2  手臂 [上臂, 前臂, 上臂缩放, 前臂缩放]   侧视：1 = 近侧，2 = 远侧；前视：1 = 小人右手（画面左），2 = 左手
  *   l1 / l2  腿   [大腿, 小腿, 脚, 大腿缩放, 小腿缩放]  脚默认 = 小腿角度 + 90（侧视）
@@ -42,7 +43,8 @@
     var front = view === "front";
     var sw = front ? 13 : 0, hw = front ? 8 : 0;
     var S1 = add(S, [perp[0] * -sw, perp[1] * -sw]), S2 = add(S, [perp[0] * sw, perp[1] * sw]);
-    var H1 = add(P, [perp[0] * -hw, perp[1] * -hw]), H2 = add(P, [perp[0] * hw, perp[1] * hw]);
+    var pv = vec(p.pt == null ? p.t : p.pt, 1), pp = [-pv[1], pv[0]]; // 骨盆朝向，默认随躯干；侧弯时骨盆保持水平
+    var H1 = add(P, [pp[0] * -hw, pp[1] * -hw]), H2 = add(P, [pp[0] * hw, pp[1] * hw]);
     function arm(S0, a) {
       var E = add(S0, vec(a[0], LEN.upper * sc(a, 2)));
       var Wr = add(E, vec(a[1], LEN.fore * sc(a, 3)));
@@ -77,7 +79,7 @@
   function fill(p, view) {
     p = norm(p);
     var o = { t: p.t, h: p.h };
-    o.c = p.c || 0; o.y = p.y || 0; o.ts = p.ts == null ? 1 : p.ts; o.n = p.n == null ? p.h : p.n;
+    o.c = p.c || 0; o.y = p.y || 0; o.ts = p.ts == null ? 1 : p.ts; o.n = p.n == null ? p.h : p.n; o.pt = p.pt == null ? p.t : p.pt;
     ["a1", "a2"].forEach(function (k) { var a = p[k]; o[k] = [a[0], a[1], sc(a, 2), sc(a, 3), a[4] != null ? a[4] : null]; });
     ["l1", "l2"].forEach(function (k) {
       var l = p[k], foot = l[2];
@@ -88,7 +90,7 @@
   }
   function blend(p, q, k, view) {
     p = fill(p, view); q = fill(q, view);
-    var o = { t: lerp(p.t, q.t, k), h: lerp(p.h, q.h, k), c: lerp(p.c, q.c, k), y: lerp(p.y, q.y, k), ts: lerp(p.ts, q.ts, k), n: lerp(p.n, q.n, k) };
+    var o = { t: lerp(p.t, q.t, k), h: lerp(p.h, q.h, k), c: lerp(p.c, q.c, k), y: lerp(p.y, q.y, k), ts: lerp(p.ts, q.ts, k), n: lerp(p.n, q.n, k), pt: lerp(p.pt, q.pt, k) };
     ["a1", "a2", "l1", "l2"].forEach(function (s) {
       o[s] = p[s].map(function (x, i) { var y = q[s][i]; return x == null || y == null ? (x == null ? y : x) : lerp(x, y, k); });
     });
