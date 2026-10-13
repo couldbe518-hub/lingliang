@@ -43,7 +43,8 @@ Kevin 补充的：真人感语音指导 + 应景背景音乐（晨光、林间�
 3. GitHub Pages 约 1 分钟后发布；Grace 那边自动提示刷新。
 
 ## 语音包（自然人声）
-- 指导语音默认用 `voice/` 里预先合成的轻柔女声：开源神经语音 Kokoro-82M v1.1-zh（Apache-2.0，可商用），三个声音「安然 / 静语 / 若溪」，Grace 在设置里可切换或改回手机系统声音。
+- 指导语音默认是 **Kevin 本人的声音**：用 Kevin 的一段录音，经开源零样本声音克隆 ZipVoice（k2-fsa，Apache-2.0）合成，语速 0.85、按句合成并用语音识别逐句核对。录音本身不进仓库。
+- 另有三个轻柔女声「安然 / 静语 / 若溪」：开源神经语音 Kokoro-82M v1.1-zh（Apache-2.0）。Grace 在设置里可切换，或改回手机系统声音。
 - 播放器念的每句话都由 `voice/manifest.json` 查到对应 mp3；有句子没录音时整句自动退回系统语音。
 - 改了 `data.js` 里的动作名、做法、要领或 `LINES` 后，在 Kevin 这边运行一次 `python3 stretch/tools/make_voice.py --model <Kokoro 模型目录>`（说明在脚本开头），只补生成新句子。
 - 想用真人录音：把 mp3 放进新文件夹 `voice/<id>/`，文件名按 manifest 的 `lines`，再在 `voices` 里加一项即可。
