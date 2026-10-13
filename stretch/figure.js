@@ -5,7 +5,8 @@
  *   侧视图里小人面朝右；前视图里小人面朝观众。
  * 姿势对象：
  *   t  躯干（骨盆→颈）角度，直立 = 180，仰卧头在左 = 270，俯卧头在右 = 90
- *   h  头部方向，默认与躯干相同
+ *   h  头部方向（发髻朝向），默认与躯干相同；n 颈部方向（头的位置），默认同 h
+ *   ts 躯干长度缩放（< 1 表示身体朝向或背向观众，用于正面看四点跪等）
  *   a1 / a2  手臂 [上臂, 前臂, 上臂缩放, 前臂缩放]   侧视：1 = 近侧，2 = 远侧；前视：1 = 小人右手（画面左），2 = 左手
  *   l1 / l2  腿   [大腿, 小腿, 脚, 大腿缩放, 小腿缩放]  脚默认 = 小腿角度 + 90（侧视）
  * 缩放 < 1 用来表现肢体朝向/背向观众（透视缩短）。
@@ -34,9 +35,10 @@
     p = norm(p);
     var P = [0, 0];
     var tv = vec(p.t, 1), perp = [-tv[1], tv[0]];
-    var N = add(P, vec(p.t, LEN.trunk));
-    var S = add(P, vec(p.t, LEN.trunk - 4));
-    var Hd = add(N, vec(p.h, LEN.neck + LEN.head));
+    var ts = p.ts == null ? 1 : p.ts; // 躯干透视缩短（朝向/背向观众）
+    var N = add(P, vec(p.t, LEN.trunk * ts));
+    var S = add(P, vec(p.t, (LEN.trunk - 4) * ts));
+    var Hd = add(N, vec(p.n == null ? p.h : p.n, (LEN.neck + LEN.head) * ts));
     var front = view === "front";
     var sw = front ? 13 : 0, hw = front ? 8 : 0;
     var S1 = add(S, [perp[0] * -sw, perp[1] * -sw]), S2 = add(S, [perp[0] * sw, perp[1] * sw]);
@@ -50,7 +52,7 @@
       var K = add(H0, vec(l[0], LEN.thigh * sc(l, 3)));
       var A = add(K, vec(l[1], LEN.shin * sc(l, 4)));
       var fa = l[2] != null ? l[2] : (front ? (side === 1 ? -100 : 100) : l[1] + 90);
-      var fl = front ? 7 : LEN.foot * sc(l, 5);
+      var fl = (front ? 7 : LEN.foot) * sc(l, 5);
       var T = add(A, vec(fa, fl));
       var Hl = front ? A : add(A, vec(fa, -4));
       return { H: H0, K: K, A: A, T: T, Hl: Hl };
@@ -75,7 +77,7 @@
   function fill(p, view) {
     p = norm(p);
     var o = { t: p.t, h: p.h };
-    o.c = p.c || 0; o.y = p.y || 0;
+    o.c = p.c || 0; o.y = p.y || 0; o.ts = p.ts == null ? 1 : p.ts; o.n = p.n == null ? p.h : p.n;
     ["a1", "a2"].forEach(function (k) { var a = p[k]; o[k] = [a[0], a[1], sc(a, 2), sc(a, 3), a[4] != null ? a[4] : null]; });
     ["l1", "l2"].forEach(function (k) {
       var l = p[k], foot = l[2];
@@ -86,7 +88,7 @@
   }
   function blend(p, q, k, view) {
     p = fill(p, view); q = fill(q, view);
-    var o = { t: lerp(p.t, q.t, k), h: lerp(p.h, q.h, k), c: lerp(p.c, q.c, k), y: lerp(p.y, q.y, k) };
+    var o = { t: lerp(p.t, q.t, k), h: lerp(p.h, q.h, k), c: lerp(p.c, q.c, k), y: lerp(p.y, q.y, k), ts: lerp(p.ts, q.ts, k), n: lerp(p.n, q.n, k) };
     ["a1", "a2", "l1", "l2"].forEach(function (s) {
       o[s] = p[s].map(function (x, i) { var y = q[s][i]; return x == null || y == null ? (x == null ? y : x) : lerp(x, y, k); });
     });
@@ -204,7 +206,7 @@
     if (ex[key]) return ex[key];
     var src = key === "_va" ? ex.adv : ex;
     var v = { name: ex.name, kind: ex.kind, view: src.view || ex.view || "side", kf: src.kf, props: src.props || (key === "_va" && !src.view ? ex.props : null) || {},
-      hl: src.hl || ex.hl, beat: src.beat || ex.beat, hold: src.hold != null ? src.hold : ex.hold, seq: src.seq || ex.seq, free: src.free != null ? src.free : ex.free };
+      note: src.note || (src !== ex && src.view ? null : ex.note), hl: src.hl || ex.hl, beat: src.beat || ex.beat, hold: src.hold != null ? src.hold : ex.hold, seq: src.seq || ex.seq, free: src.free != null ? src.free : ex.free };
     prepare(v);
     ex[key] = v;
     return v;
@@ -258,9 +260,10 @@
     return blend(poses[a], poses[b], k, ex.view);
   }
 
-  function shell(label, inner, free) {
+  function shell(label, inner, free, note) {
     return '<svg class="fig" viewBox="0 0 ' + W + " " + H + '"' + (label ? ' role="img" aria-label="' + label + '"' : ' aria-hidden="true"') + '>' +
-      (free ? "" : '<g class="mat"><line x1="14" y1="' + (GROUND + 1) + '" x2="' + (W - 14) + '" y2="' + (GROUND + 1) + '"/></g>') + inner + "</svg>";
+      (free ? "" : '<g class="mat"><line x1="14" y1="' + (GROUND + 1) + '" x2="' + (W - 14) + '" y2="' + (GROUND + 1) + '"/></g>') +
+      (note ? '<text class="vnote" x="14" y="20">' + note + "</text>" : "") + inner + "</svg>";
   }
 
   // 生成一个会动的示范：返回控制器
@@ -271,7 +274,7 @@
     var v, g;
     function build() {
       v = variant(ex, level);
-      host.innerHTML = shell(ex.name + " 动作示范", '<g class="fig-g"></g>', v.free);
+      host.innerHTML = shell(ex.name + " 动作示范", '<g class="fig-g"></g>', v.free, v.note);
       g = host.querySelector(".fig-g");
     }
     function draw(now) {
@@ -296,7 +299,7 @@
   function thumb(ex, level, at) {
     var v = variant(ex, level);
     var p = at != null ? v.kf[at] : v.seq === "cycle" ? v.kf[Math.floor(v.kf.length / 2)] : v.kf[v.kf.length - 1];
-    return shell("", "<g>" + svgFor(v, p) + "</g>", v.free);
+    return shell("", "<g>" + svgFor(v, p) + "</g>", v.free, v.note);
   }
 
   window.Figure = { mount: mount, thumb: thumb, joints: joints, variant: variant, W: W, H: H };
