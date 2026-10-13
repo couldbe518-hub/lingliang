@@ -109,16 +109,20 @@ h1,h2,h3{font-family:var(--f-head);font-weight:700;margin:0;text-wrap:balance}
 .score.small{min-height:0;padding:4px} .score.quiz{max-width:360px;margin:10px auto;min-height:0}
 .score .abcjs-note,.score .abcjs-rest{cursor:pointer}
 .score .cur path,.score .cur{fill:#C2412D!important;color:#C2412D}
-.score .target path{fill:#2F5FA8!important} .score .target{filter:drop-shadow(0 0 3px rgba(47,95,168,.6))}
-.score .ok path{fill:#2F7A4F!important} .score .bad path,.score .miss path{fill:#C2412D!important}
+.score .target path{fill:#F08C00!important} .score .target{filter:drop-shadow(0 0 4px rgba(240,140,0,.9))}
+.score .ok path{fill:#1E9E4A!important} .score .bad path,.score .miss path{fill:#D93025!important}
 .score .from path{fill:#A67C1E!important}
 .kbwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0;border-radius:10px;scrollbar-width:thin}
 .kb{display:block}
 .kb .kw{fill:#FFFFFF;stroke:#B9B2A5} .kb .kb-b{fill:#26231F}
 .kb .kl{font-size:9px;fill:#857E72;text-anchor:middle;font-family:var(--f-ui)} .kb .kl2{fill:#B3AC9F}
-.kb rect.tgt{fill:#5B87C9} .kb rect.kb-b.tgt{fill:#2F5FA8}
-.kb rect.hear{fill:#9FD1B2} .kb rect.kb-b.hear{fill:#2F7A4F}
-.kb rect.wrong{fill:#F0A090} .kb rect.kb-b.wrong{fill:#C2412D}
+/* 键盘颜色：橙色 = 该弹；绿色 = 弹对（闪一下）；红色 = 弹错（闪一下） */
+.kb rect.tgt{fill:#FF9F0A;stroke:#C77700;stroke-width:2} .kb rect.kb-b.tgt{fill:#F08C00}
+.kb rect.okk{fill:#34C759;stroke:#1E8E3E;stroke-width:2} .kb rect.kb-b.okk{fill:#1E9E4A}
+.kb rect.wrong{fill:#FF3B30;stroke:#B3261E;stroke-width:2} .kb rect.kb-b.wrong{fill:#D93025}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--muted);margin:2px 0 8px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.lg-t{background:#FF9F0A} .lg-ok{background:#34C759} .lg-bad{background:#FF3B30}
 .opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:8px 0}
 .opts select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:40px;padding:0 8px}
 .result{background:var(--card);border:2px solid var(--accent);border-radius:18px;padding:18px;margin:12px 0;text-align:center}

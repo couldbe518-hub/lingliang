@@ -226,7 +226,7 @@
           var ctx = Audio.get();
           self.stream = stream;
           self.src = ctx.createMediaStreamSource(stream);
-          self.analyser = ctx.createAnalyser(); self.analyser.fftSize = 2048;
+          self.analyser = ctx.createAnalyser(); self.analyser.fftSize = 8192;
           self.src.connect(self.analyser);
           self.buf = new Float32Array(self.analyser.fftSize);
           self.active = true; self.hist = []; self.cand = null; self.stable = 0; self.lastDecided = null;
@@ -245,7 +245,8 @@
     emit: function (type, data) { this.listeners.slice().forEach(function (fn) { fn(type, data); }); },
     frame: function () {
       if (!this.analyser) return;
-      var buf = this.buf; this.analyser.getFloatTimeDomainData(buf);
+      var full = this.buf; this.analyser.getFloatTimeDomainData(full);
+      var buf = full.subarray(full.length - 2048);
       var rms = 0; for (var i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
       rms = Math.sqrt(rms / buf.length); this.level = rms;
       if (rms < this.noise) this.noise = this.noise * 0.9 + rms * 0.1; else this.noise += (rms - this.noise) * 0.003;
@@ -257,7 +258,17 @@
         this.emit("level", { rms: rms }); return;
       }
       this.silent = 0;
-      if (rms > minHist * 1.45 && rms > thr * 1.3) { this.pendingOnset = true; this.stable = 0; this.cand = null; }
+      if (rms > minHist * 1.45 && rms > thr * 1.3) { this.pendingOnset = true; this.stable = 0; this.cand = null; this.armed = true; this.hitStreak = {}; this.onsetId = (this.onsetId || 0) + 1; this.sinceOnset = 0; }
+      this.sinceOnset = (this.sinceOnset || 0) + 1;
+      if (this.needOnset && this.sinceOnset > 12) this.armed = false; // 同一个音重复时，只在刚按下琴键的 0.36 秒内判断
+      // 已知"该弹哪个音"时，直接量这个音（及其八度）的能量是否明显盖过相邻半音：比单纯猜音高稳得多
+      if (this.expect && this.expect.length && this.armed) {
+        var sr = Audio.ctx.sampleRate, self = this;
+        this.expect.forEach(function (m) {
+          if (targetScore(full, sr, m) >= 1.6) self.hitStreak[m] = (self.hitStreak[m] || 0) + 1; else self.hitStreak[m] = 0;
+          if (self.armed && self.hitStreak[m] >= 2) { self.armed = false; self.hitStreak = {}; self.emit("hit", { midi: m, time: now() - 0.08, onset: self.onsetId }); }
+        });
+      }
       var p = detectPitch(buf, Audio.ctx.sampleRate);
       if (!p) { this.emit("level", { rms: rms }); return; }
       var mf = 69 + 12 * Math.log2(p.freq / 440), m = Math.round(mf);
@@ -267,10 +278,38 @@
       this.emit("pitch", this.current);
       if (this.stable >= 2 && (this.pendingOnset || m !== this.lastDecided)) {
         this.lastDecided = m; this.pendingOnset = false;
-        this.emit("note", { midi: m, time: now() - 0.06, clarity: p.clarity });
+        this.emit("note", { midi: m, time: now() - 0.06, clarity: p.clarity, onset: this.onsetId });
       }
     }
   };
+
+  /* needOnset：下一个音和上一个音相同时为 true，必须重新按键才算 */
+  Mic.setExpect = function (midis, needOnset) {
+    var key = (midis || []).join();
+    if (key === this.expectKey && !needOnset) return;
+    this.expectKey = key; this.expect = midis || null; this.hitStreak = {}; this.needOnset = !!needOnset; this.armed = !needOnset;
+  };
+  var HANN = null;
+  function goertzel(x, sr, f) {
+    if (!HANN || HANN.length !== x.length) { HANN = new Float32Array(x.length); for (var i = 0; i < x.length; i++) HANN[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (x.length - 1)); }
+    var w = 2 * Math.PI * f / sr, c = 2 * Math.cos(w), s1 = 0, s2 = 0;
+    for (var j = 0; j < x.length; j++) { var s0 = x[j] * HANN[j] + c * s1 - s2; s2 = s1; s1 = s0; }
+    return s1 * s1 + s2 * s2 - c * s1 * s2;
+  }
+  function noteEnergy(x, sr, m) {
+    var f = M.midiToFreq(m), e = 0;
+    for (var h = 1; h <= 4; h++) { if (f * h < sr / 2 - 200) e += goertzel(x, sr, f * h) / h; }
+    return e;
+  }
+  /* 目标音得分：在目标音上下各半个八度的 12 个半音里，目标音（基音 + 泛音）的能量必须最大，且比第二名高出一截 */
+  function targetScore(x, sr, m) {
+    var e = {}, best = -1, second = 0;
+    for (var k = m - 5; k <= m + 6; k++) e[k] = noteEnergy(x, sr, k);
+    for (k = m - 5; k <= m + 6; k++) if (k !== m) second = Math.max(second, e[k]);
+    for (k = m - 5; k <= m + 6; k++) best = Math.max(best, e[k]);
+    if (e[m] < best) return 0;
+    return e[m] / (second + 1e-9);
+  }
 
   /* McLeod 音高法（NSDF），对钢琴的倍频比普通自相关稳 */
   function detectPitch(buf, sr) {
@@ -508,12 +547,14 @@
       '<div class="live" id="live" hidden></div>' +
       '<div class="score" id="score" aria-label="乐谱"></div>' +
       '<div class="kbwrap" id="kbwrap">' + keyboardSVG() + "</div>" +
+      '<p class="legend"><span><i class="lg-t"></i>橙色 = 现在该弹的键</span><span><i class="lg-ok"></i>绿色 = 弹对了</span><span><i class="lg-bad"></i>红色 = 弹错的键</span></p>' +
       '<div id="result"></div>' +
       '<div class="opts"><label>谱上标注 <select id="labels"><option value="none">不标</option><option value="name">音名 C D E</option><option value="jianpu">简谱 1 2 3</option><option value="solfege">唱名 do re mi</option></select></label>' +
       '<button class="btn ghost small" id="setcur">' + (state.settings.current === s.id ? "✓ 正在练这首" : "设为\"在练\"") + "</button></div>" +
       '<section class="card"><h2 class="h2">我的录音</h2><div id="myrecs" class="recs"></div></section>';
     $("#labels").value = state.settings.labels;
     var kb = $("#kbwrap svg");
+    function flashKeys(midis, cls) { kbMark(kb, midis, cls); clearTimeout(flashKeys["t" + cls]); flashKeys["t" + cls] = setTimeout(function () { kbMark(kb, [], cls); }, 700); }
 
     function drawScore() {
       var b = M.buildAbc(s, hand, { labels: state.settings.labels });
@@ -645,7 +686,7 @@
     function startWait() {
       var targets = targetsFor(); if (!targets.length) return;
       Mic.start().then(function () {
-        var idx = 0, mistakes = 0, wrongAt = {}, pending = null, t0 = Date.now(), running = true;
+        var idx = 0, mistakes = 0, wrongAt = {}, pending = null, t0 = Date.now(), running = true, lastHit = 0;
         clearCls("ok"); clearCls("bad"); $("#result").innerHTML = "";
         $("#go").textContent = "■ 停止"; $("#skip").disabled = false;
         function show() {
@@ -654,35 +695,41 @@
           t.els.forEach(function (e) { e.classList.add("target"); });
           if (t.els[0]) follow(t.els[0]);
           kbMark(kb, t.midis, "tgt", true);
+          var prev = targets[idx - 1];
+          Mic.setExpect(t.midis, !!prev && prev.midis.join() === t.midis.join());
           live('<span class="muted">第 ' + (idx + 1) + " / " + targets.length + ' 个音　该弹：</span><b>' + t.midis.map(nm).join(" + ") + '</b><span class="muted">　错 ' + mistakes + "</span>");
         }
         function advance(ok) {
           var t = targets[idx];
+          if (ok) flashKeys(t.midis, "okk");
           t.els.forEach(function (e) { e.classList.remove("target"); e.classList.add(ok ? "ok" : "bad"); });
           idx++;
           if (idx >= targets.length) finish(); else show();
         }
         var off = Mic.on(function (type, d) {
           if (!running) return;
-          if (type === "pitch") kbMark(kb, [d.midi], "hear");
-          if (type !== "note") return;
           var t = targets[idx]; if (!t) return;
-          if (t.pcs[d.midi % 12]) { if (pending) { clearTimeout(pending); pending = null; } advance(true); return; }
-          if (pending) return;
-          var myIdx = idx, m = d.midi;
+          if (type === "note" && now() - lastHit < 0.4) return; // 刚判对的那一下，余音不再判
+          if (type === "hit") { if (t.pcs[d.midi % 12]) { if (pending) { clearTimeout(pending); pending = null; } lastHit = now(); advance(true); } return; }
+          if (type !== "note") return;
+          if (t.pcs[d.midi % 12]) { if (pending) { clearTimeout(pending); pending = null; } lastHit = now(); advance(true); return; }
+          // 只有听得很清楚、而且离该弹的音不远（9 个半音以内）时才算弹错；远处的杂音、琴弦共鸣不算
+          var near = t.midis.some(function (x) { return Math.abs(x - d.midi) <= 9; });
+          if (pending || !near || d.clarity < 0.8) return;
+          var myIdx = idx, m = d.midi, myOnset = d.onset;
           pending = setTimeout(function () {
             pending = null;
-            if (!running || idx !== myIdx) return;
+            if (!running || idx !== myIdx || now() - lastHit < 0.4) return;
             var k = idx + ":" + m; if (wrongAt[k]) return; wrongAt[k] = true;
             mistakes++;
             t.els.forEach(function (e) { e.classList.add("bad"); setTimeout(function () { e.classList.remove("bad"); }, 600); });
-            kbMark(kb, [m], "wrong"); setTimeout(function () { kbMark(kb, [], "wrong"); }, 700);
+            flashKeys([m], "wrong");
             live('<span class="bad-t">听到 ' + nm(m) + "，应该是 " + t.midis.map(nm).join(" + ") + '</span><span class="muted">　错 ' + mistakes + "</span>");
-          }, 170);
+          }, 380);
         });
         function stop() {
-          running = false; off(); if (pending) clearTimeout(pending);
-          clearCls("target"); kbMark(kb, [], "hear"); kbMark(kb, [], "tgt");
+          running = false; off(); if (pending) clearTimeout(pending); Mic.setExpect(null);
+          clearCls("target"); kbMark(kb, [], "tgt");
           if (!Recorder.rec) Mic.stop();
           var g = $("#go"); if (g) { g.textContent = "🎤 开始跟谱练"; $("#skip").disabled = true; }
           practice.running = false;
@@ -714,18 +761,17 @@
         var acc = $("#acc") && $("#acc").checked;
         var off = Mic.on(function (type, d) {
           if (!running) return;
-          if (type === "pitch") kbMark(kb, [d.midi], "hear");
-          if (type !== "note" || !Player.playing) return;
+          if ((type !== "note" && type !== "hit") || !Player.playing) return;
           var b = Player.beatAt(d.time - 0.04), best = null;
           targets.forEach(function (t) {
             if (t.hit || !t.pcs[d.midi % 12]) return;
             var dt = b - t.start;
             if (dt > -tolBeat && dt < Math.max(tolBeat, t.dur * 0.6) && (!best || Math.abs(dt) < Math.abs(best.dt))) best = { t: t, dt: dt };
           });
-          if (best) { best.t.hit = true; hits++; offsets.push(best.dt * spb); best.t.els.forEach(function (e) { e.classList.add("ok"); }); }
+          if (best) { best.t.hit = true; hits++; offsets.push(best.dt * spb); best.t.els.forEach(function (e) { e.classList.add("ok"); }); flashKeys(best.t.midis, "okk"); }
         });
         function stop() {
-          running = false; off(); Player.stop(); resetCursor(); kbMark(kb, [], "hear");
+          running = false; off(); Player.stop(); Mic.setExpect(null); resetCursor();
           if (!Recorder.rec) Mic.stop();
           var g = $("#go"); if (g) g.textContent = "🎤 开始跟拍练";
           practice.running = false;
@@ -737,6 +783,7 @@
           onBeat: function (beat) {
             if (beat < from) { live('<span class="muted">预备：' + Math.ceil(from - beat) + "</span>"); return; }
             cursor(beat);
+            Mic.setExpect(targets.filter(function (t) { return !t.hit && Math.abs(t.start - beat) < tolBeat * 1.5; }).reduce(function (a, t) { return a.concat(t.midis); }, []));
             targets.forEach(function (t) {
               if (!t.hit && !t.missed && beat > t.start + Math.max(tolBeat, t.dur * 0.6)) { t.missed = true; t.els.forEach(function (e) { e.classList.add("miss"); }); }
             });
@@ -949,6 +996,7 @@
       '<p class="qfb" id="qfb" aria-live="polite">这个音是什么？</p>' +
       '<div class="answers" id="answers">' + M.LETTERS.map(function (L) { return '<button data-l="' + L + '"><b>' + L + "</b><span>" + M.SOLFEGE[L] + "</span></button>"; }).join("") + "</div>" +
       '<div class="kbwrap" id="qkb">' + keyboardSVG() + "</div>" +
+      '<p class="legend"><span><i class="lg-t"></i>橙色 = 正确答案的键</span><span><i class="lg-bad"></i>红色 = 你弹的键（弹错时）</span></p>' +
       '<div id="qres"></div>';
     var kb = $("#qkb svg");
     function clefOf(m) { return z.clef === "grand" ? (m >= 60 ? "treble" : "bass") : z.clef; }
@@ -967,6 +1015,7 @@
     }
     function ask() {
       answered = false; cur = pick();
+      if (useMic) Mic.setExpect([cur - 12, cur, cur + 12]);
       $("#qprog").textContent = (n + 1) + " / " + N;
       renderScore($("#qscore"), abcFor(cur), { noWrap: true, scale: 1.6 });
       $("#qfb").className = "qfb"; $("#qfb").textContent = useMic ? "在钢琴上弹出这个音（哪个八度都算对）" : "这个音是什么？";
@@ -1004,15 +1053,21 @@
       Mic.start().then(function () {
         if (offMic) offMic();
         offMic = Mic.on(function (type, d) {
-          if (type === "pitch") kbMark(kb, [d.midi], "hear");
-          if (type === "note" && !answered) answer(M.midiToName(d.midi).charAt(0) + (M.midiToName(d.midi).charAt(1) === "#" ? "#" : ""), d.midi);
+          if (answered) return;
+          if (type === "hit") { answer(M.midiToName(cur).charAt(0), cur); return; }
+          // 弹错：要听得很清楚，并且稍等一下，给"目标音检测"留出时间
+          if (type === "note" && d.clarity >= 0.8 && M.midiToName(d.midi).charAt(0) !== M.midiToName(cur).charAt(0)) {
+            var q = cur; setTimeout(function () { if (!answered && cur === q) answer(M.midiToName(d.midi).charAt(0) + (M.midiToName(d.midi).charAt(1) === "#" ? "#" : ""), d.midi); }, 350);
+            return;
+          }
+          if (type === "note") answer(M.midiToName(d.midi).charAt(0) + (M.midiToName(d.midi).charAt(1) === "#" ? "#" : ""), d.midi);
         });
       }).catch(function (e) { micHelp(e); $("#qmic").checked = false; useMic = false; });
     }
     $$("#answers button").forEach(function (b) { b.onclick = function () { answer(b.getAttribute("data-l")); }; });
     $("#qmic").onchange = function () {
       useMic = state.settings.quizMic = this.checked; save();
-      if (useMic) startMic(); else { if (offMic) offMic(); offMic = null; Mic.stop(); kbMark(kb, [], "hear"); }
+      if (useMic) { startMic(); Mic.setExpect([cur - 12, cur, cur + 12]); } else { if (offMic) offMic(); offMic = null; Mic.setExpect(null); Mic.stop(); }
       if (!answered) $("#qfb").textContent = useMic ? "在钢琴上弹出这个音（哪个八度都算对）" : "这个音是什么？";
     };
     onLeave(function () { clearTimeout(timer); if (offMic) offMic(); });
