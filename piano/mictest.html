@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>麦克风测试</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;background:#F6F3EC;color:#22201C;margin:0;padding:24px 16px;line-height:1.6}
+button{font:inherit;font-size:1.2rem;padding:14px 24px;border-radius:14px;border:0;background:#7A2E3A;color:#fff}
+#out{margin-top:20px;padding:14px;background:#fff;border-radius:12px;white-space:pre-wrap;font-size:.95rem}
+@media (prefers-color-scheme: dark){body{background:#14161C;color:#ECE7DD}#out{background:#1D2028}}</style></head>
+<body><h1>麦克风测试</h1><p>点下面的按钮。如果弹出"要允许使用麦克风吗"，点"允许"。然后把下面白框里的文字截图发给 Kevin。</p>
+<button id="b">测试麦克风</button><div id="out">（还没测试）</div>
+<script>
+var out=document.getElementById('out');
+function log(t){out.textContent+= '\n'+t;}
+document.getElementById('b').onclick=function(){
+  out.textContent='开始：'+new Date().toLocaleTimeString();
+  log('浏览器：'+navigator.userAgent);
+  log('主屏幕App：'+(navigator.standalone===true)+'  有焦点：'+document.hasFocus()+'  安全环境：'+window.isSecureContext);
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){log('结果：这个浏览器没有麦克风接口');return;}
+  var t0=Date.now();
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+    log('结果：✅ 成功（'+(Date.now()-t0)+'ms）：'+s.getAudioTracks().map(function(t){return t.label;}).join(','));
+    s.getTracks().forEach(function(t){t.stop();});
+  }).catch(function(e){log('结果：❌ '+e.name+'（'+(Date.now()-t0)+'ms）'+e.message);});
+  try{navigator.permissions.query({name:'microphone'}).then(function(p){log('权限状态：'+p.state);});}catch(e){log('权限状态：查不到');}
+};
+</script></body></html>

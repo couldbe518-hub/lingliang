@@ -213,11 +213,12 @@
       if (self.active) return Promise.resolve();
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error("此浏览器不支持麦克风"));
       Audio.session("auto");
-      var gum = function (c) { return navigator.mediaDevices.getUserMedia(c); };
-      // 先用"原声"设置；个别 iPad 不接受这些参数时，退回最简单的 {audio:true} 再试一次
-      return gum({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-        .catch(function (e) { self.lastError = e; return gum({ audio: true }); })
+      // 必须在点击的同一时刻、用最简单的参数请求，iPad Safari 才会弹出授权框；关掉回声消除等放到拿到麦克风之后再做
+      var t0 = Date.now();
+      return navigator.mediaDevices.getUserMedia({ audio: true })
+        .catch(function (e) { e.ms = Date.now() - t0; throw e; })
         .then(function (stream) {
+          try { stream.getAudioTracks()[0].applyConstraints({ echoCancellation: false, noiseSuppression: false, autoGainControl: false }).catch(function () { }); } catch (x) { }
           var ctx = Audio.get();
           self.stream = stream;
           self.src = ctx.createMediaStreamSource(stream);
@@ -817,7 +818,7 @@
     var box = $("#michelp");
     if (!box) { box = document.createElement("div"); box.id = "michelp"; document.body.appendChild(box); }
     box.innerHTML = '<div class="mh-card" role="dialog" aria-modal="true" aria-labelledby="mh-t"><h2 id="mh-t">' + esc(micError(e)) + '</h2><p class="muted">跟谱练、跟拍练、录音和用钢琴答题都需要麦克风。按下面的步骤打开：</p><ol>' +
-      steps.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ol><p class="muted small">声音只在这台设备上处理，不会上传。</p><p class="muted small" id="mh-diag">诊断：' + esc(((e && e.name) || "?") + " · " + ((e && e.message) || "") + " · " + (STANDALONE ? "主屏幕App" : IN_APP ? "App内浏览器" : "浏览器") + " · " + ((navigator.audioSession && navigator.audioSession.type) || "-") + " · " + VERSION) + '</p><div class="mh-btns">' +
+      steps.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ol><p class="muted small">声音只在这台设备上处理，不会上传。</p><p class="muted small" id="mh-diag">诊断：' + esc(((e && e.name) || "?") + " · " + ((e && e.message) || "") + (e && e.ms !== undefined ? " · " + e.ms + "ms" : "") + " · " + (STANDALONE ? "主屏幕App" : IN_APP ? "App内浏览器" : "浏览器") + " · " + ((navigator.audioSession && navigator.audioSession.type) || "-") + " · " + VERSION) + '</p><div class="mh-btns">' +
       (IN_APP ? "" : '<button class="btn primary" id="mh-retry">再试一次</button>') + '<button class="btn ghost" id="mh-close">关闭</button></div></div>';
     box.hidden = false;
     try { navigator.permissions.query({ name: "microphone" }).then(function (st) { var d = $("#mh-diag"); if (d) d.textContent += " · 权限:" + st.state; }); } catch (x) { }
