@@ -261,7 +261,12 @@
       this.silent = 0;
       this.sinceOnset = (this.sinceOnset || 0);
       // 0.16 秒内不重复算按键（一次按键的音量是分几帧涨上来的）
-      if (rms > minHist * 1.45 && rms > thr * 1.3 && (this.sinceOnset >= 8 || !this.onsetId)) { this.pendingOnset = true; this.stable = 0; this.cand = null; this.armed = true; this.hitStreak = {}; this.onsetId = (this.onsetId || 0) + 1; this.sinceOnset = 0; }
+      // 起音还看：最近 20 毫秒的音量比 40 毫秒前猛增（前一个音还在响也能分出新按的键）
+      var eNew = 0, eOld = 0, Lf = full.length;
+      for (var q = Lf - 1024; q < Lf; q++) eNew += full[q] * full[q];
+      for (q = Lf - 3072; q < Lf - 2048; q++) eOld += full[q] * full[q];
+      var jump = eNew > eOld * 2.2 && Math.sqrt(eNew / 1024) > thr;
+      if ((jump || (rms > minHist * 1.45 && rms > thr * 1.3)) && (this.sinceOnset >= 8 || !this.onsetId)) { this.pendingOnset = true; this.stable = 0; this.cand = null; this.armed = true; this.hitStreak = {}; this.onsetId = (this.onsetId || 0) + 1; this.sinceOnset = 0; }
       this.sinceOnset = (this.sinceOnset || 0) + 1;
       if (this.needOnset && this.sinceOnset > 18) this.armed = false; // 同一个音重复时，只在刚按下琴键的 0.36 秒内判断
       // 已知"该弹哪个音"时，直接量这个音（及其八度）的能量是否明显盖过相邻半音：比单纯猜音高稳得多
@@ -269,7 +274,7 @@
         var sr = Audio.ctx.sampleRate, self = this;
         var win = full.subarray(full.length - 4096); // 约 85 毫秒：窗口越短，前一个音的余音影响越小、反应越快
         this.expect.forEach(function (m) {
-          var sc = targetScore(win, sr, m);
+          var sc = targetScore(m < 60 ? full : win, sr, m); // 中央C以下用 170 毫秒长窗口，相邻半音才分得清
           if (sc >= 1.6) self.hitStreak[m] = (self.hitStreak[m] || 0) + 1; else self.hitStreak[m] = 0;
           if (self.armed && (self.hitStreak[m] >= 2 || sc >= 3.5)) { self.armed = false; self.hitStreak = {}; self.emit("hit", { midi: m, time: now() - 0.08, onset: self.onsetId }); }
         });
@@ -280,10 +285,15 @@
       if (m < 33 || m > 96) return;
       if (m === this.cand) this.stable++; else { this.cand = m; this.stable = 1; }
       this.current = { midi: m, cents: Math.round((mf - m) * 100), clarity: p.clarity };
+      // 自动校准钢琴整体音准：用听得很清楚的音的偏差中位数，限制在 ±40 音分
+      if (p.clarity > 0.9 && this.stable >= 3) {
+        var ts = this.tuneHist = this.tuneHist || []; ts.push(this.current.cents); if (ts.length > 25) ts.shift();
+        if (ts.length >= 6) { var srt = ts.slice().sort(function (a, b) { return a - b; }); Mic.tune = Math.max(-40, Math.min(40, srt[srt.length >> 1])); }
+      }
       this.emit("pitch", this.current);
       if (this.stable >= 2 && (this.pendingOnset || m !== this.lastDecided)) {
         this.lastDecided = m; this.pendingOnset = false;
-        this.emit("note", { midi: m, time: now() - 0.06, clarity: p.clarity, onset: this.onsetId });
+        this.emit("note", { midi: m, time: now() - 0.06, clarity: p.clarity, onset: this.onsetId, fresh: this.sinceOnset <= 7 });
       }
     }
   };
@@ -301,9 +311,16 @@
     for (var j = 0; j < x.length; j++) { var s0 = x[j] * HANN[j] + c * s1 - s2; s2 = s1; s1 = s0; }
     return s1 * s1 + s2 * s2 - c * s1 * s2;
   }
+  var HW = [0, 1, 0.7, 0.35, 0.2, 0.12];
   function noteEnergy(x, sr, m) {
-    var f = M.midiToFreq(m), e = 0;
-    for (var h = 1; h <= 4; h++) { if (f * h < sr / 2 - 200) e += goertzel(x, sr, f * h) / h; }
+    var f = M.midiToFreq(m) * Math.pow(2, (Mic.tune || 0) / 1200), e = 0;
+    for (var h = 1; h <= 5; h++) {
+      var fh = f * h; if (fh > sr / 2 - 200) break;
+      // 钢琴音准偏一点也能认：高频处在 ±25 音分里取最大（低频时 25 音分远小于频率分辨率，算一次即可）
+      var cs = fh * 0.0145 < sr / x.length * 0.5 ? [0] : [-25, 0, 25], best = 0;
+      cs.forEach(function (c) { best = Math.max(best, goertzel(x, sr, fh * Math.pow(2, c / 1200))); });
+      e += best * HW[h];
+    }
     return e;
   }
   /* 目标音得分：在目标音上下各半个八度的 12 个半音里，目标音（基音 + 泛音）的能量必须最大，且比第二名高出一截 */
@@ -719,9 +736,10 @@
           if (type !== "note") return;
           if (t.pcs[d.midi % 12]) { if (pending) { clearTimeout(pending); pending = null; } lastHit = now(); advance(true); return; }
           // 只有听得很清楚、而且离该弹的音不远（9 个半音以内）时才算弹错；远处的杂音、琴弦共鸣不算
-          var near = t.midis.some(function (x) { return Math.abs(x - d.midi) <= 9; });
-          if (pending || !near || d.clarity < 0.8) return;
-          var myIdx = idx, m = d.midi, myOnset = d.onset;
+          // 只认"刚按下的键"（前一个音的余音不算）；音高算法常差一两个八度，先挪到离目标最近的八度再比
+          var fold = d.midi + 12 * Math.round((t.midis[0] - d.midi) / 12);
+          if (pending || Math.abs(fold - t.midis[0]) > 9 || t.pcs[fold % 12] || d.clarity < 0.8 || !d.fresh) return;
+          var myIdx = idx, m = fold, myOnset = d.onset;
           pending = setTimeout(function () {
             pending = null;
             if (!running || idx !== myIdx || now() - lastHit < 0.4) return;
@@ -1061,7 +1079,7 @@
           if (answered) return;
           if (type === "hit") { answer(M.midiToName(cur).charAt(0), cur); return; }
           // 弹错：要听得很清楚，并且稍等一下，给"目标音检测"留出时间
-          if (type === "note" && d.clarity >= 0.8 && M.midiToName(d.midi).charAt(0) !== M.midiToName(cur).charAt(0)) {
+          if (type === "note" && d.clarity >= 0.8 && d.fresh && M.midiToName(d.midi).charAt(0) !== M.midiToName(cur).charAt(0)) {
             var q = cur; setTimeout(function () { if (!answered && cur === q) answer(M.midiToName(d.midi).charAt(0) + (M.midiToName(d.midi).charAt(1) === "#" ? "#" : ""), d.midi); }, 350);
             return;
           }
