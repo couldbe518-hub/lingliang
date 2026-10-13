@@ -578,7 +578,7 @@
       var b = $("#recbtn"); if (!b) return;
       b.onclick = function () {
         if (Recorder.rec) { Recorder.stop(); return; }
-        Recorder.start({ songId: s.id, title: s.title, hand: hand }).catch(function (e) { toast(micError(e), 4000); });
+        Recorder.start({ songId: s.id, title: s.title, hand: hand }).catch(function (e) { micHelp(e); });
       };
     }
     var unsubRec = function () { Recorder.subs = Recorder.subs.filter(function (f) { return f !== onRecChange; }); };
@@ -687,7 +687,7 @@
         }
         practice = { running: true, stop: stop, skip: function () { if (running && targets[idx]) { mistakes++; advance(false); } } };
         show();
-      }).catch(function (e) { toast(micError(e), 4500); });
+      }).catch(function (e) { micHelp(e); });
     }
 
     function startTempo() {
@@ -738,7 +738,7 @@
             showResult(score, "tempo", "速度 ♩=" + bpm() + "，" + targets.length + " 个音弹中 " + hits + " 个。" + feel, badBars);
           }
         });
-      }).catch(function (e) { toast(micError(e), 4500); });
+      }).catch(function (e) { micHelp(e); });
     }
 
     function showResult(score, kind, detail, badBars) {
@@ -785,11 +785,48 @@
   }
 
   function fmtDur(sec) { sec = Math.round(sec); return sec < 60 ? sec + " 秒" : Math.floor(sec / 60) + " 分 " + (sec % 60) + " 秒"; }
+  var UA = navigator.userAgent || "";
+  var IN_APP = /MicroMessenger|WeChat|QQ\/|MQQBrowser|Weibo|DingTalk|Lark|Feishu|FBAN|FBAV|Instagram|Line\//i.test(UA);
+  var STANDALONE = (window.navigator.standalone === true) || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  var IOS = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
   function micError(e) {
     var n = e && e.name;
-    if (n === "NotAllowedError" || n === "SecurityError") return "没有麦克风权限。iPhone/iPad：设置 → Safari → 麦克风 → 允许；或点地址栏的\"aA\"→网站设置。";
+    if (IN_APP) return "现在是在微信（或其他 App）里打开的，这里不能用麦克风。";
+    if (n === "NotAllowedError" || n === "SecurityError") return "麦克风权限被关掉了。";
     if (n === "NotFoundError") return "没有找到麦克风。";
     return (e && e.message) || "麦克风打不开";
+  }
+  /* 麦克风打不开时弹出的帮助：按打开方式给出具体步骤，并可一键重试 */
+  function micHelp(e, retry) {
+    var steps;
+    if (IN_APP) {
+      steps = ["点右上角的「···」", "选「在 Safari 中打开」（iPad 上可能叫「在默认浏览器中打开」）", "在 Safari 里点「分享」→「添加到主屏幕」，以后从主屏幕图标打开"];
+    } else if (IOS) {
+      steps = [
+        "在 Safari 地址栏左边点「aA」（或「大小」图标）→「网站设置」→「麦克风」→ 选「允许」或「询问」",
+        "如果上面找不到：打开 iPad/iPhone 的「设置」→「Safari 浏览器」→ 往下找「麦克风」→ 选「询问」或「允许」",
+        "再检查「设置」→「屏幕使用时间」→「内容和隐私访问限制」→「麦克风」是否被关掉",
+        STANDALONE ? "改完后把主屏幕上的「Grace 练琴」完全关掉（从底部上滑划掉），再重新打开" : "改完后回到这里，点下面的「再试一次」"
+      ];
+    } else {
+      steps = ["点地址栏左边的锁形图标 → 麦克风 → 允许", "然后点下面的「再试一次」"];
+    }
+    var box = $("#michelp");
+    if (!box) { box = document.createElement("div"); box.id = "michelp"; document.body.appendChild(box); }
+    box.innerHTML = '<div class="mh-card" role="dialog" aria-modal="true" aria-labelledby="mh-t"><h2 id="mh-t">' + esc(micError(e)) + '</h2><p class="muted">跟谱练、跟拍练、录音和用钢琴答题都需要麦克风。按下面的步骤打开：</p><ol>' +
+      steps.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ol><p class="muted small">声音只在这台设备上处理，不会上传。</p><div class="mh-btns">' +
+      (IN_APP ? "" : '<button class="btn primary" id="mh-retry">再试一次</button>') + '<button class="btn ghost" id="mh-close">关闭</button></div></div>';
+    box.hidden = false;
+    $("#mh-close").onclick = function () { box.hidden = true; };
+    var r = $("#mh-retry");
+    if (r) r.onclick = function () { box.hidden = true; if (retry) retry(); else Mic.start().then(function () { Mic.stop(); toast("麦克风可以用了，再点一次开始"); }).catch(function (e2) { micHelp(e2); }); };
+  }
+  if (IN_APP) {
+    setTimeout(function () {
+      var b = document.createElement("div"); b.className = "inapp";
+      b.innerHTML = "你现在是在微信里打开的，<b>麦克风和录音用不了</b>。请点右上角「···」→「在 Safari 中打开」。";
+      document.body.insertBefore(b, document.body.firstChild);
+    }, 0);
   }
 
   /* ───────── 录音列表 ───────── */
@@ -955,7 +992,7 @@
           if (type === "pitch") kbMark(kb, [d.midi], "hear");
           if (type === "note" && !answered) answer(M.midiToName(d.midi).charAt(0) + (M.midiToName(d.midi).charAt(1) === "#" ? "#" : ""), d.midi);
         });
-      }).catch(function (e) { toast(micError(e), 4500); $("#qmic").checked = false; useMic = false; });
+      }).catch(function (e) { micHelp(e); $("#qmic").checked = false; useMic = false; });
     }
     $$("#answers button").forEach(function (b) { b.onclick = function () { answer(b.getAttribute("data-l")); }; });
     $("#qmic").onchange = function () {
@@ -985,7 +1022,7 @@
           if (type === "pitch") { $("#tn").textContent = M.midiToName(d.midi).replace("#", "♯"); $("#tc").textContent = (d.cents > 0 ? "+" : "") + d.cents + " 音分"; }
           $("#tl").style.width = Math.min(100, Math.round(Mic.level * 600)) + "%";
         });
-      }).catch(function (e) { toast(micError(e), 4500); });
+      }).catch(function (e) { micHelp(e); });
     };
     onLeave(function () { if (off) off(); });
     $("#exp").onclick = function () {
