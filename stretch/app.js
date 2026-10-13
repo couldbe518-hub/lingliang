@@ -41,8 +41,7 @@
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function mins(sec) { return Math.max(1, Math.round(sec / 60)); }
   function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove("show"); }, 2400); }
-  var CN = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
-  function cnum(n) { if (n <= 10) return CN[n]; if (n < 20) return "十" + CN[n - 10]; var t = Math.floor(n / 10), o = n % 10; return CN[t] + "十" + (o ? CN[o] : ""); }
+  var cnum = Sound.cnum, L = D.LINES, sp = D.spoken;
   function q(sel, el) { return (el || document).querySelector(sel); }
   function qa(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
 
@@ -435,9 +434,9 @@
     main.innerHTML = '<a class="back" href="#/today">' + icon("back") + "今天</a><h1>设置</h1>" +
       '<h2 class="sec">声音</h2><div class="card">' +
       sw("voiceOn", "语音指导", "动作讲解、要领提示、报数") +
-      '<div class="field"><div><label for="vsel">指导声音</label><small>iPhone 可在 设置 › 辅助功能 › 朗读内容 › 声音 里下载「高音质」中文声音，音色更自然</small></div><select id="vsel"><option value="">自动选择最好的</option>' +
-      voices.map(function (v) { return '<option value="' + esc(v.voiceURI) + '"' + (s.voice === v.voiceURI ? " selected" : "") + ">" + esc(v.name) + " (" + esc(v.lang) + ")</option>"; }).join("") + "</select></div>" +
-      '<div class="field"><label for="rate">语速</label><input type="range" id="rate" min="0.75" max="1.25" step="0.05" value="' + s.rate + '"></div>' +
+      '<div class="field"><div><label for="vsel">指导声音</label><small>「自然人声」是预先合成好的轻柔女声，最舒缓；「手机系统声音」不用下载，但比较机械</small></div><select id="vsel"><option value="">自动（自然人声优先）</option><optgroup label="自然人声" id="vpack"></optgroup><optgroup label="手机系统声音">' +
+      voices.map(function (v) { return '<option value="' + esc(v.voiceURI) + '"' + (s.voice === v.voiceURI ? " selected" : "") + ">" + esc(v.name) + " (" + esc(v.lang) + ")</option>"; }).join("") + "</optgroup></select></div>" +
+      '<div class="field"><label for="rate">语速<small>只对系统声音有效</small></label><input type="range" id="rate" min="0.75" max="1.25" step="0.05" value="' + s.rate + '"></div>' +
       '<div class="field"><label for="vv">语音音量</label><input type="range" id="vv" min="0.2" max="1" step="0.05" value="' + s.voiceVol + '"></div>' +
       '<div class="field"><label>试听</label><button class="btn small" id="vtest">' + icon("voice") + "听一下</button></div>" +
       sw("count", "力量动作报数", "臀桥、提踵等动作数「一、二、三……」") +
@@ -468,13 +467,18 @@
     ["voiceOn", "count", "musicOn", "asym"].forEach(function (k) { q("#s_" + k).onchange = function () { s[k] = this.checked; save(); applySound(); }; });
     q("#exp").value = s.explain; q("#exp").onchange = function () { s.explain = this.value; save(); };
     q("#thm").value = s.theme; q("#thm").onchange = function () { s.theme = this.value; save(); applyTheme(); };
-    q("#vsel").onchange = function () { s.voice = this.value; save(); applySound(); };
+    q("#vsel").onchange = function () { s.voice = this.value; save(); applySound(); Sound.unlock(); Sound.say(L.test); };
+    Sound.packVoices().then(function (vs) {
+      var g = q("#vpack"); if (!g) return;
+      if (!vs.length) { g.remove(); return; }
+      g.innerHTML = vs.map(function (v) { return '<option value="pack:' + esc(v.id) + '"' + (s.voice === "pack:" + v.id ? " selected" : "") + ">" + esc(v.name) + " · " + esc(v.desc) + "</option>"; }).join("");
+    });
     q("#rate").oninput = function () { s.rate = +this.value; save(); applySound(); };
     q("#vv").oninput = function () { s.voiceVol = +this.value; save(); applySound(); };
     q("#mv").oninput = function () { s.musicVol = +this.value; save(); applySound(); };
     q("#mt").onchange = function () { s.musicTheme = this.value; save(); if (Sound.current()) { Sound.stopMusic(.3); Sound.startMusic(s.musicTheme === "auto" ? "daylight" : s.musicTheme); } };
     q("#prep").onchange = function () { s.prepSecs = Math.max(4, Math.min(20, +this.value || 7)); save(); };
-    q("#vtest").onclick = function () { Sound.unlock(); Sound.say("你好 Grace，我们开始今天的拉伸。吸气，肋骨向两侧打开；呼气，肩膀放松。"); };
+    q("#vtest").onclick = function () { Sound.unlock(); Sound.say(L.test); };
     q("#mtest").onclick = function () {
       Sound.unlock();
       if (Sound.current()) { Sound.stopMusic(); this.querySelector("span").textContent = "播放"; }
@@ -532,10 +536,13 @@
           var lv = levelOf(ex.id);
           var how = lv === "adv" ? ex.adv.how : ex.basic.how;
           var detailed = explain === "always" || (explain === "auto" && (state.exCount[ex.id] || 0) < 3);
-          var sideTxt = sg.side === "L" ? "先做左侧。" : sg.side === "R" ? "" : "";
           var intro;
-          if (k === 0) intro = (idx === 0 ? "第一个动作，" : idx === routine.items.length - 1 ? "最后一个动作，" : "下一个，") + ex.name + "。" + sideTxt + (detailed ? how : (lv === "adv" ? "进阶版，" + ex.adv.name + "。" : "") + ex.cues[0] + "。");
-          else intro = "换右侧。" + ex.cues[0] + "。";
+          if (k === 0) {
+            intro = [idx === 0 ? L.first : idx === routine.items.length - 1 ? L.last : L.next, ex.name];
+            if (sg.side === "L") intro.push(L.leftFirst);
+            if (detailed) intro.push(sp(how));
+            else { if (lv === "adv") intro.push(L.advPrefix, ex.adv.name); intro.push(ex.cues[0]); }
+          } else intro = [L.switchR, ex.cues[0]];
           var prep = k === 0 ? Math.max(idx === 0 ? 5 : S().prepSecs, Math.ceil(Sound.speechSecs(intro)) + 2) : Math.max(5, Math.ceil(Sound.speechSecs(intro)) + 1.5);
           out.push({ type: "prep", ex: ex, side: sg.side, secs: prep, idx: idx, k: k, intro: intro, how: how });
           out.push({ type: "work", ex: ex, side: sg.side, secs: sg.secs, reps: sg.reps, tempo: sg.tempo, idx: idx, k: k, last: k === segs.length - 1 });
@@ -619,11 +626,13 @@
       if (s.type === "prep") {
         q("#peb", el).textContent = (s.k ? "换边 · 准备" : s.idx === 0 ? "准备开始" : "下一个 · 准备") + (nx ? " · " + (nx.reps ? nx.reps + " 次" : nx.secs + " 秒") : "");
         Sound.say(s.intro);
+        Sound.prefetch(ex.cues.concat(nx && nx.reps ? [] : [L.ten]));
         setCue(s.k ? ex.cues[0] : s.how);
       } else {
         q("#peb", el).textContent = s.reps ? "共 " + s.reps + " 次" : "保持 " + s.secs + " 秒";
         setCue(ex.kind === "breath" ? "跟着圆圈呼吸" : ex.cues[0]);
       }
+      for (var n = i + 1; n < steps.length; n++) if (steps[n].type === "prep") { Sound.prefetch(steps[n].intro); break; }
       if (sheetOpen) fillSheet();
       paintBar();
     }
@@ -662,14 +671,14 @@
         var rep = Math.floor(t / s.tempo);
         var canCount = S().count && s.tempo >= 2.4 && s.reps > 1 && (ex.kind === "strength" || ex.kind === "nerve" || ex.kind === "dynamic");
         if (canCount && rep >= 1 && rep <= s.reps && once("rep" + rep)) {
-          Sound.say(rep === s.reps - 1 && s.reps >= 4 ? cnum(rep) + "，最后一次" : cnum(rep), { interrupt: false });
+          Sound.say(rep === s.reps - 1 && s.reps >= 4 ? L.lastRep : rep <= 60 ? Sound.NUM.rep(rep) : null, { interrupt: false });
         }
         if (!canCount) cuesAt(s, [.3, .65]);
         else if (rep === Math.floor(s.reps / 2) && once("midcue")) setCue(ex.cues[1 % ex.cues.length]);
         if (s.reps > 1 && rep === s.reps - 1 && once("lastcue")) setCue("最后一次");
       } else {
         cuesAt(s, s.secs >= 40 ? [.15, .4, .65] : s.secs >= 20 ? [.25, .6] : [.4]);
-        if (s.secs >= 30 && rem <= 10 && once("ten")) Sound.say("还有十秒", { interrupt: false });
+        if (s.secs >= 30 && rem <= 10 && once("ten")) Sound.say(L.ten, { interrupt: false });
       }
       if (rem <= 3 && rem > 0 && once("tick" + Math.ceil(rem))) Sound.chime("tick");
     }
@@ -687,7 +696,7 @@
       var inhale = ph < 4;
       br.classList.toggle("in", inhale);
       if (once("b" + n + (inhale ? "i" : "o"))) {
-        var txt = inhale ? "吸气" : "慢慢呼气";
+        var txt = inhale ? L.inhale : L.exhale;
         var extra = !inhale && n % 2 === 1 ? s.ex.cues[(Math.floor(n / 2) + 2) % s.ex.cues.length] : "";
         setCue(inhale ? "吸气 · 4 秒" : "呼气 · 6 秒" + (extra ? " · " + extra : ""));
         if (n < 3 || extra) Sound.say(extra && !inhale ? extra : txt, { interrupt: false, slow: true });
@@ -768,11 +777,11 @@
       var rec = record(workDone < totalWork * .5);
       var after = earned(), fresh = D.ACHIEVEMENTS.filter(function (a) { return after[a.id] && !before[a.id]; });
       var st = streak();
-      var praise = r.slot === "night" ? "辛苦了，今晚好好睡。" : r.slot === "pre" ? "热身完成，上场吧！" : r.slot === "post" ? "身体会感谢你的。" : r.slot === "morning" ? "可以下床了，第一步会更轻。" : "很好，又向前一步。";
-      setTimeout(function () { Sound.say("完成了。" + praise + (st > 1 ? "已经连续" + cnum(Math.min(st, 99)) + "天。" : "")); }, 900);
+      var praise = D.PRAISE[{ night: "night", pre: "pre", post: "post", morning: "morning" }[r.slot] || "other"];
+      setTimeout(function () { Sound.say([L.done, praise].concat(st > 1 && st <= 60 ? [Sound.NUM.days(st)] : [])); }, 900);
       var f = document.createElement("div"); f.className = "finish";
       f.innerHTML = '<div class="confetti">' + Array.apply(null, Array(36)).map(function (_, n) { return '<i style="left:' + (Math.random() * 100).toFixed(1) + "%;background:" + ["#FFD27A", "#FFFFFF", "#FFB59C", "#9FE0D2"][n % 4] + ";animation-delay:" + (Math.random() * .8).toFixed(2) + 's"></i>'; }).join("") + "</div>" +
-        '<p class="eyebrow" style="color:rgba(255,255,255,.8)">' + esc(r.name) + "</p><h2>完成了！</h2><p>" + praise + "</p>" +
+        '<p class="eyebrow" style="color:rgba(255,255,255,.8)">' + esc(r.name) + "</p><h2>完成了！</h2><p>" + praise + "。</p>" +
         '<div class="stats"><div><b>' + mins(rec.secs) + "</b><span>分钟</span></div><div><b>" + r.items.length + "</b><span>个动作</span></div><div><b>" + st + "</b><span>天连续</span></div></div>" +
         (fresh.length ? "<div>" + fresh.map(function (a) { return '<span class="badge">' + icon(a.icon) + " 新成就：" + esc(a.name) + "</span>"; }).join("") + "</div>" : "") +
         '<p style="margin-top:16px">现在身体感觉怎么样？</p><div class="feel">' + ["😣", "😕", "🙂", "😊", "🤩"].map(function (e, n) { return '<button data-f="' + (n + 1) + '">' + e + "</button>"; }).join("") + "</div>" +

@@ -2,7 +2,7 @@
 
 网址：https://couldbe518-hub.github.io/lingliang/stretch/
 
-Grace 的每日拉伸与球场教练。纯静态网页，所有功能在手机本地运行：示范动画（SVG）、语音指导（系统语音合成）、背景音乐（Web Audio 实时生成）、相机姿态识别（MediaPipe Pose，本地托管）。日常使用不调用任何 AI 服务，不耗 Grace 的 token；记录只存在她自己的手机里。
+Grace 的每日拉伸与球场教练。纯静态网页，所有功能在手机本地运行：示范动画（SVG）、语音指导（预先合成的开源神经语音，缺句时用系统语音）、背景音乐（Web Audio 实时生成）、相机姿态识别（MediaPipe Pose，本地托管）。日常使用不调用任何 AI 服务，不耗 Grace 的 token；记录只存在她自己的手机里。
 
 ## 按 Grace 的要求做了什么
 | Grace 的要求 | 对应设计 |
@@ -26,11 +26,12 @@ Kevin 补充的：真人感语音指导 + 应景背景音乐（晨光、林间�
 ## 文件
 - `data.js` —— 动作库、训练计划、每日小知识、成就（改内容只改这里，字段说明见文件开头）
 - `figure.js` —— 示范小人：用关节角度写姿势，自动落地、插值成动画
-- `sound.js` —— 语音（系统 TTS）、背景音乐生成、提示音
+- `sound.js` —— 语音（语音包播放 + 系统 TTS 兜底）、背景音乐生成、提示音
 - `app.js` —— 页面、播放器、打卡与进度
 - `coach.js` —— 相机教练与视频分析（评估阈值都在 `ANALYZE` 里）
 - `vendor/mediapipe/` —— @mediapipe/tasks-vision 0.10.14（Apache-2.0）与 pose_landmarker lite/full 模型
-- `voice/manifest.json` —— 真人录音替换表（见下）
+- `voice/` —— 语音包：`manifest.json` + 每个声音一个文件夹的 mp3（见下）
+- `tools/make_voice.py`、`tools/voice_lines.js` —— 生成语音包
 - `version.json` —— 每次改动后把 `v` 改成新值，Grace 的手机会在 5 分钟内或下次打开时提示刷新
 - `tools/validate.js` —— `node stretch/tools/validate.js` 检查数据；`tools/gallery.html` 一页看所有动作的示范姿势
 
@@ -39,16 +40,19 @@ Kevin 补充的：真人感语音指导 + 应景背景音乐（晨光、林间�
 2. Claude 修改 `data.js` 等文件，运行校验，用 `tools/gallery.html` 截图检查新姿势，更新 `version.json`，推送到 `main`。
 3. GitHub Pages 约 1 分钟后发布；Grace 那边自动提示刷新。
 
-## 换成真人录音（可选）
-把录好的 mp3 放进 `voice/`，在 `voice/manifest.json` 写 `{"要念的原文": "文件名.mp3"}`。播放时遇到完全相同的句子会改用录音，其余仍用合成语音。
+## 语音包（自然人声）
+- 指导语音默认用 `voice/` 里预先合成的轻柔女声：开源神经语音 Kokoro-82M v1.1-zh（Apache-2.0，可商用），三个声音「安然 / 静语 / 若溪」，Grace 在设置里可切换或改回手机系统声音。
+- 播放器念的每句话都由 `voice/manifest.json` 查到对应 mp3；有句子没录音时整句自动退回系统语音。
+- 改了 `data.js` 里的动作名、做法、要领或 `LINES` 后，在 Kevin 这边运行一次 `python3 stretch/tools/make_voice.py --model <Kokoro 模型目录>`（说明在脚本开头），只补生成新句子。
+- 想用真人录音：把 mp3 放进新文件夹 `voice/<id>/`，文件名按 manifest 的 `lines`，再在 `voices` 里加一项即可。
 
 ## 给 Grace 的安装说明
 1. iPhone 用 Safari 打开上面的网址 → 分享 → 添加到主屏幕。
-2. 进「今天」右上角设置：试听语音（建议在 iPhone 设置 › 辅助功能 › 朗读内容 › 声音 里下载「高音质」普通话声音）、设置提醒时间、加入日历。
+2. 进「今天」右上角设置：试听并选择指导声音（安然 / 静语 / 若溪）、设置提醒时间、加入日历。
 3. 想每天定时自动弹出：设置页里有「快捷指令」步骤和可复制的链接。
 
 ## 已知限制
-- 语音是手机系统的合成语音，不是真人录音；音质取决于手机里安装的中文声音。
+- 语音是开源神经语音合成，不是真人录音；个别多音字可能读错，发现后在 `make_voice.py` 的 `for_speech` 里加替换再重新生成。
 - 相机分析是单摄像头 2D 估算，受拍摄角度影响，适合看趋势和明显问题。
 - 示范动画是简笔小人；转体类动作（如开书）用俯视图表示。
 - 记录保存在浏览器本地；换手机前在设置里导出备份。
