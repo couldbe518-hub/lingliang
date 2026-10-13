@@ -212,7 +212,7 @@
     var tip = D.TIPS[Math.floor(parseKey(today) / 864e5) % D.TIPS.length];
     var msg = st === 0 ? "今天开始，第一天最重要。" : st < 3 ? "已经连续 " + st + " 天，保持住！" : st < 7 ? "连续 " + st + " 天，身体正在记住这个习惯。" : st < 21 ? "连续 " + st + " 天，了不起！" : "连续 " + st + " 天，这已经是你的生活方式了。";
     main.innerHTML =
-      '<div class="top"><div class="hero"><p class="eyebrow">' + (new Date().getMonth() + 1) + " 月 " + new Date().getDate() + " 日 · 星期" + "日一二三四五六"[new Date().getDay()] + "</p><h1>" + greet() + "，Grace</h1></div>" +
+      '<div class="top"><img class="brand" src="logo-96.png" alt="Grace 拉伸" width="48" height="48"><div class="hero grow"><p class="eyebrow">' + (new Date().getMonth() + 1) + " 月 " + new Date().getDate() + " 日 · 星期" + "日一二三四五六"[new Date().getDay()] + "</p><h1>" + greet() + "，Grace</h1></div>" +
       '<a class="iconbtn" href="#/settings" aria-label="设置">' + icon("gear") + "</a></div>" +
       '<div class="card"><div class="streak"><div class="big num">' + st + '</div><div class="grow"><b>天连续练习</b><div class="lbl">' + esc(msg) + "</div></div>" + icon("flame", "ic") + "</div>" + weekStrip() +
       '<div class="row small muted" style="margin-top:10px;gap:14px"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold)"></i> 白天</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5468A8"></i> 睡前</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent)"></i> 球场</span></div></div>' +
