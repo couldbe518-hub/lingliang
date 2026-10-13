@@ -230,7 +230,7 @@
           self.src.connect(self.analyser);
           self.buf = new Float32Array(self.analyser.fftSize);
           self.active = true; self.hist = []; self.cand = null; self.stable = 0; self.lastDecided = null;
-          self.timer = setInterval(function () { self.frame(); }, 30);
+          self.timer = setInterval(function () { self.frame(); }, 20);
         });
     },
     stop: function () {
@@ -250,7 +250,8 @@
       var rms = 0; for (var i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
       rms = Math.sqrt(rms / buf.length); this.level = rms;
       if (rms < this.noise) this.noise = this.noise * 0.9 + rms * 0.1; else this.noise += (rms - this.noise) * 0.003;
-      var thr = Math.max(0.006, this.noise * 3);
+      // 底噪门限封顶：连续弹琴时"底噪"估计会被琴声慢慢抬高，不封顶的话后面的音会被当成安静而漏判
+      var thr = Math.max(0.006, Math.min(this.noise * 3, 0.02));
       var minHist = this.hist.length ? Math.min.apply(null, this.hist) : 1;
       this.hist.push(rms); if (this.hist.length > 5) this.hist.shift();
       if (rms < thr) {
@@ -258,15 +259,19 @@
         this.emit("level", { rms: rms }); return;
       }
       this.silent = 0;
-      if (rms > minHist * 1.45 && rms > thr * 1.3) { this.pendingOnset = true; this.stable = 0; this.cand = null; this.armed = true; this.hitStreak = {}; this.onsetId = (this.onsetId || 0) + 1; this.sinceOnset = 0; }
+      this.sinceOnset = (this.sinceOnset || 0);
+      // 0.16 秒内不重复算按键（一次按键的音量是分几帧涨上来的）
+      if (rms > minHist * 1.45 && rms > thr * 1.3 && (this.sinceOnset >= 8 || !this.onsetId)) { this.pendingOnset = true; this.stable = 0; this.cand = null; this.armed = true; this.hitStreak = {}; this.onsetId = (this.onsetId || 0) + 1; this.sinceOnset = 0; }
       this.sinceOnset = (this.sinceOnset || 0) + 1;
-      if (this.needOnset && this.sinceOnset > 12) this.armed = false; // 同一个音重复时，只在刚按下琴键的 0.36 秒内判断
+      if (this.needOnset && this.sinceOnset > 18) this.armed = false; // 同一个音重复时，只在刚按下琴键的 0.36 秒内判断
       // 已知"该弹哪个音"时，直接量这个音（及其八度）的能量是否明显盖过相邻半音：比单纯猜音高稳得多
       if (this.expect && this.expect.length && this.armed) {
         var sr = Audio.ctx.sampleRate, self = this;
+        var win = full.subarray(full.length - 4096); // 约 85 毫秒：窗口越短，前一个音的余音影响越小、反应越快
         this.expect.forEach(function (m) {
-          if (targetScore(full, sr, m) >= 1.6) self.hitStreak[m] = (self.hitStreak[m] || 0) + 1; else self.hitStreak[m] = 0;
-          if (self.armed && self.hitStreak[m] >= 2) { self.armed = false; self.hitStreak = {}; self.emit("hit", { midi: m, time: now() - 0.08, onset: self.onsetId }); }
+          var sc = targetScore(win, sr, m);
+          if (sc >= 1.6) self.hitStreak[m] = (self.hitStreak[m] || 0) + 1; else self.hitStreak[m] = 0;
+          if (self.armed && (self.hitStreak[m] >= 2 || sc >= 3.5)) { self.armed = false; self.hitStreak = {}; self.emit("hit", { midi: m, time: now() - 0.08, onset: self.onsetId }); }
         });
       }
       var p = detectPitch(buf, Audio.ctx.sampleRate);
