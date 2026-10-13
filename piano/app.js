@@ -105,7 +105,7 @@
         this.master = this.ctx.createGain(); this.master.gain.value = 0.9;
         this.master.connect(comp); comp.connect(this.ctx.destination);
       }
-      if (this.ctx.state === "suspended") this.ctx.resume();
+      if (this.ctx.state !== "running" && this.ctx.state !== "closed") { try { this.ctx.resume(); } catch (e) { } }
       return this.ctx;
     },
     session: function (type) {
@@ -151,6 +151,7 @@
     return out;
   }
 
+  function now() { return performance.now() / 1000; }
   var Player = {
     playing: false, bus: null, raf: 0,
     /* opts: { song, parsed:{rh,lh}, hands:["rh","lh"], bpm, from, metro, countIn, onBeat(beat), onEnd() } */
@@ -184,17 +185,17 @@
           Audio.click(t0 + b * spb, accent, bus);
         }
       }
-      this.playing = true; this.t0 = t0; this.spb = spb; this.from = from;
+      this.playing = true; this.t0 = now() + (t0 - ctx.currentTime); this.spb = spb; this.from = from;
       var self = this;
       (function tick() {
         if (!self.playing) return;
-        var beat = (ctx.currentTime - t0) / spb + from;
+        var beat = (now() - self.t0) / spb + from;
         if (o.onBeat) o.onBeat(beat);
         if (beat > total + 0.3) { self.playing = false; if (o.onEnd) o.onEnd(); return; }
         self.raf = requestAnimationFrame(tick);
       })();
     },
-    beatAt: function (ctxTime) { return (ctxTime - this.t0) / this.spb + this.from; },
+    beatAt: function (t) { return (t - this.t0) / this.spb + this.from; },
     stop: function () {
       this.playing = false; cancelAnimationFrame(this.raf);
       if (this.bus) {
@@ -266,7 +267,7 @@
       this.emit("pitch", this.current);
       if (this.stable >= 2 && (this.pendingOnset || m !== this.lastDecided)) {
         this.lastDecided = m; this.pendingOnset = false;
-        this.emit("note", { midi: m, time: Audio.ctx.currentTime - 0.06, clarity: p.clarity });
+        this.emit("note", { midi: m, time: now() - 0.06, clarity: p.clarity });
       }
     }
   };
@@ -699,7 +700,12 @@
 
     function startTempo() {
       var targets = targetsFor(); if (!targets.length) return;
+      Audio.get(); // 在点击的同一时刻唤醒声音
       Mic.start().then(function () {
+        // 打开麦克风后 iPad 会把声音"打断"，再唤醒一次，等它恢复后再开始
+        var c = Audio.get();
+        return c.resume ? Promise.race([c.resume().catch(function () { }), new Promise(function (r) { setTimeout(r, 400); })]) : null;
+      }).then(function () {
         var running = true, hits = 0, offsets = [];
         targets.forEach(function (t) { t.hit = false; t.missed = false; });
         clearCls("ok"); clearCls("miss"); $("#result").innerHTML = "";
