@@ -1,24 +1,31 @@
 <!doctype html><meta charset="utf-8"><title>Pose gallery</title>
+<!-- 一页看所有动作的示范关键帧（基础 / 进阶），和文字说明对照检查。用法：tools/gallery.html#id1,id2 -->
 <style>
-body{font-family:sans-serif;background:#fff;margin:8px}
-.g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.c{border:1px solid #ddd;padding:2px;font-size:11px}
+body{font-family:sans-serif;background:#fff;margin:8px;font-size:12px}
+.row{display:grid;grid-template-columns:260px 1fr;gap:8px;border-bottom:2px solid #333;padding:6px 0}
+.txt b{font-size:14px} .txt p{margin:3px 0}
+.kfs{display:flex;flex-wrap:wrap;gap:4px}
+.c{border:1px solid #ddd;width:150px;font-size:10px}
+.c.adv{border-color:#e07a5f}
 .fig{width:100%;display:block}
 .fig .limb{stroke:#2f5d62;stroke-linecap:round;fill:none}.fig .limb.far{stroke:#9bb7b4}
 .fig .limb.hl{stroke:#e07a5f}.fig .hand{fill:#2f5d62;stroke:none}.fig .head{fill:#2f5d62}.fig .hair{fill:#1d3b3e}
 .fig .mat line{stroke:#ccc;stroke-width:3}.prop-wall{fill:#ddd}.prop-chair{stroke:#a98;stroke-width:4;fill:none}
 .prop-strap{stroke:#c96;stroke-width:2}.prop-ball{fill:#bc4}.prop-racket{stroke:#555}.prop-racket-head{fill:none;stroke:#555;stroke-width:2}
+.fig .note{font-size:11px;fill:#888}
 </style>
-<div class="g" id="g"></div>
+<div id="g"></div>
 <script src="../figure.js"></script><script src="../data.js"></script>
 <script>
 var g=document.getElementById('g'), only=location.hash.slice(1);
 STRETCH.EX.filter(e=>!only||only.split(',').includes(e.id)).forEach(function(ex){
+  var row=document.createElement('div');row.className='row';
+  var k='<div class="kfs">';
   ['basic','adv'].forEach(function(lv){
     var v=Figure.variant(ex,lv); if(lv==='adv'&&v===Figure.variant(ex,'basic'))return;
-    v.kf.forEach(function(_,i){
-      var d=document.createElement('div');d.className='c';d.innerHTML=Figure.thumb(ex,lv,i)+ex.id+' '+lv+' kf'+i;g.appendChild(d);
-    });
+    v.kf.forEach(function(_,i){ k+='<div class="c '+lv+'">'+Figure.thumb(ex,lv,i)+lv+' '+i+'</div>'; });
   });
+  row.innerHTML='<div class="txt"><b>'+ex.id+' '+ex.name+'</b><p>基础：'+ex.basic.how+'</p><p style="color:#c63">进阶：'+ex.adv.how+'</p></div>'+k+'</div>';
+  g.appendChild(row);
 });
 </script>
