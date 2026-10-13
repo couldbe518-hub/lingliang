@@ -244,18 +244,67 @@
     duckGain.gain.setValueAtTime(duckGain.gain.value, t);
     duckGain.gain.linearRampToValueAtTime(on ? .45 : 1, t + (on ? .25 : 1.2));
   }
-  var packAudio = null;
-  function say(text, opts) {
-    opts = opts || {};
-    if (!settings.voiceOn || !text) { if (opts.onend) setTimeout(opts.onend, 10); return; }
-    if (pack[text]) {
-      if (packAudio) packAudio.pause();
-      packAudio = new Audio("voice/" + pack[text]); packAudio.volume = settings.voiceVol;
-      duck(true); speaking++;
-      packAudio.onended = packAudio.onerror = function () { speaking = Math.max(0, speaking - 1); if (!speaking) duck(false); if (opts.onend) opts.onend(); };
-      packAudio.play().catch(function () { speaking = 0; duck(false); });
-      return;
+  // ───────── 语音包（预先合成好的自然人声片段）─────────
+  // voice/manifest.json：{ voices: [{id, name, desc}], lines: { "句子": ["文件名", 秒数] } }
+  // 每个声音的文件放在 voice/<id>/ 下，文件名相同。一句话由几个片段拼成，全部有录音才用录音，否则整句改用系统语音。
+  var clipCache = {}, voiceOut = null, clipEnd = 0, clipSrcs = [], clipTimer = 0;
+  function key(t) { return String(t).trim().replace(/[，。、；：！？,.!?;:\s]+$/, ""); }
+  function packVoice() {
+    var vs = pack.voices || [];
+    if (!vs.length || !pack.lines) return null;
+    if (settings.voice && settings.voice.indexOf("pack:") === 0) {
+      var id = settings.voice.slice(5);
+      return vs.filter(function (v) { return v.id === id; })[0] || vs[0];
     }
+    return settings.voice ? null : vs[0]; // 选了系统声音就不用语音包
+  }
+  function clipUrl(pv, text) { var e = pack.lines[key(text)]; return e ? "voice/" + pv.id + "/" + e[0] : null; }
+  function loadClip(url) {
+    if (!clipCache[url]) {
+      clipCache[url] = fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then(function (b) { return new Promise(function (res, rej) { ctx.decodeAudioData(b, res, rej); }); });
+      clipCache[url].catch(function () { delete clipCache[url]; });
+    }
+    return clipCache[url];
+  }
+  function partsOf(input) { return (Array.isArray(input) ? input : [input]).filter(function (x) { return x && key(x); }); }
+  function prefetch(input) {
+    var pv = packVoice(); if (!pv || !ensure()) return;
+    partsOf(input).forEach(function (t) { var u = clipUrl(pv, t); if (u) loadClip(u); });
+  }
+  function playClips(urls, opts) {
+    if (!voiceOut) { voiceOut = ctx.createGain(); voiceOut.connect(master); }
+    voiceOut.gain.value = settings.voiceVol * 1.1;
+    if (opts.interrupt !== false) stopClips();
+    Promise.all(urls.map(loadClip)).then(function (bufs) {
+      var t = Math.max(ctx.currentTime + .05, clipEnd + (clipEnd > ctx.currentTime ? .35 : 0));
+      duck(true);
+      bufs.forEach(function (b, n) {
+        var s = ctx.createBufferSource(); s.buffer = b; s.connect(voiceOut); s.start(t);
+        clipSrcs.push(s); t += b.duration + (n < bufs.length - 1 ? .28 : 0);
+      });
+      clipEnd = t;
+      clearTimeout(clipTimer);
+      clipTimer = setTimeout(function () { clipSrcs = []; duck(false); }, (t - ctx.currentTime) * 1000 + 100);
+      if (opts.onend) setTimeout(opts.onend, (t - ctx.currentTime) * 1000);
+    }).catch(function () { ttsSay(urls._text, opts); });
+  }
+  function stopClips() {
+    clipSrcs.forEach(function (s) { try { s.stop(); } catch (e) { /* 已停 */ } });
+    clipSrcs = []; clipEnd = 0; clearTimeout(clipTimer);
+  }
+  function say(input, opts) {
+    opts = opts || {};
+    var parts = partsOf(input);
+    if (!settings.voiceOn || !parts.length) { if (opts.onend) setTimeout(opts.onend, 10); return; }
+    var pv = packVoice();
+    if (pv && ensure()) {
+      var urls = parts.map(function (t) { return clipUrl(pv, t); });
+      if (urls.every(Boolean)) { urls._text = parts.map(key).join("。"); return playClips(urls, opts); }
+    }
+    ttsSay(parts.map(key).join("。"), opts);
+  }
+  function ttsSay(text, opts) {
     if (!synth) { if (opts.onend) opts.onend(); return; }
     if (opts.interrupt !== false) { synth.cancel(); speaking = 0; }
     var u = new SpeechSynthesisUtterance(text);
@@ -266,18 +315,33 @@
     u.onend = u.onerror = function () { speaking = Math.max(0, speaking - 1); if (!speaking) duck(false); if (opts.onend) opts.onend(); };
     synth.speak(u);
   }
-  function quiet() { if (synth) synth.cancel(); if (packAudio) packAudio.pause(); speaking = 0; duck(false); }
+  function quiet() { if (synth) synth.cancel(); stopClips(); speaking = 0; duck(false); }
   // iOS 要求在用户点击时先"解锁"一次语音和音频
   function unlock() {
     ensure();
     if (synth && !unlock.done) { var u = new SpeechSynthesisUtterance(" "); u.volume = 0; synth.speak(u); unlock.done = true; }
-    if (!packLoaded) {
-      packLoaded = true;
-      fetch("voice/manifest.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { pack = j || {}; }).catch(function () { });
-    }
+    loadPack();
   }
+  var packPromise = null;
+  function loadPack() {
+    if (!packPromise) {
+      packPromise = fetch("voice/manifest.json?v=" + encodeURIComponent(window.STRETCH_VERSION || ""), { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { pack = j || {}; return pack; }).catch(function () { return pack; });
+    }
+    return packPromise;
+  }
+  loadPack();
   // 估算一句话要念多久（秒），用于安排节奏
-  function speechSecs(text) { return text ? text.replace(/[\s，。、；：！？,.]/g, "").length / (4.3 * settings.rate) + .6 : 0; }
+  function speechSecs(input) {
+    var parts = partsOf(input), pv = packVoice();
+    if (pv && parts.every(function (t) { return pack.lines[key(t)]; })) return parts.reduce(function (a, t) { return a + pack.lines[key(t)][1] + .3; }, 0);
+    return parts.reduce(function (a, t) { return a + key(t).replace(/[\s，。、；：！？,.]/g, "").length / (4.3 * settings.rate) + .5; }, 0);
+  }
+  var CN = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  function cnum(n) { if (n <= 10) return CN[n]; if (n < 20) return "十" + CN[n - 10]; var t = Math.floor(n / 10), o = n % 10; return CN[t] + "十" + (o ? CN[o] : ""); }
+  function qnum(n) { return n === 2 ? "两" : cnum(n); } // 数量：两天、两秒
+  // 计数和数字都放在整句里念（单独一个字的数字，合成语音念不清）
+  var NUM = { rep: function (n) { return "第" + cnum(n) + "次"; }, secs: function (n) { return "坚持了" + qnum(n) + "秒"; }, days: function (n) { return "已经连续" + qnum(n) + "天"; } };
 
   function configure(s) {
     for (var k in s) settings[k] = s[k];
@@ -291,7 +355,8 @@
   window.Sound = {
     THEMES: THEMES, configure: configure, settings: settings, unlock: unlock,
     startMusic: startMusic, stopMusic: stopMusic, current: function () { return cur && cur.name; },
-    chime: chime, say: say, quiet: quiet, speechSecs: speechSecs,
+    chime: chime, say: say, quiet: quiet, speechSecs: speechSecs, prefetch: prefetch, cnum: cnum, NUM: NUM, key: key,
+    packVoices: function () { return loadPack().then(function (p) { return p.voices || []; }); },
     voices: function () { return loadVoices().slice().sort(function (a, b) { return rank(b) - rank(a); }); },
     pause: function () { if (ctx) ctx.suspend(); if (synth) synth.pause(); },
     resume: function () { if (ctx) ctx.resume(); if (synth) synth.resume(); }

@@ -701,5 +701,18 @@
     { id: "adv5", name: "进阶者", desc: "用进阶版完成 5 次练习", icon: "mountain" }
   ];
 
-  window.STRETCH = { EX: EX, ROUTINES: ROUTINES, AREAS: AREAS, PROFILE: PROFILE, TIPS: TIPS, ACHIEVEMENTS: ACHIEVEMENTS };
+  /* ───────────── 语音固定句 ─────────────
+   * 播放器和教练念的固定句子。改了这里或动作文字后，要重新生成语音包：python3 stretch/tools/make_voice.py
+   * spoken()：念出来前去掉括号里的补充说明。
+   */
+  var LINES = {
+    first: "第一个动作", next: "下一个", last: "最后一个动作", leftFirst: "先做左侧", switchR: "换右侧", advPrefix: "进阶版",
+    ten: "还有十秒", inhale: "吸气", exhale: "慢慢呼气", lastRep: "最后一次", done: "完成了",
+    knee: "膝盖对准脚尖，向外推", legL: "左腿", legR: "右腿",
+    test: ["你好 Grace，我们开始今天的拉伸", "吸气，肋骨向两侧打开", "呼气，肩膀放松"]
+  };
+  var PRAISE = { night: "辛苦了，今晚好好睡", pre: "热身完成，上场吧", post: "身体会感谢你的", morning: "可以下床了，第一步会更轻", other: "很好，又向前一步" };
+  function spoken(t) { return String(t || "").replace(/（[^）]*）/g, "").replace(/\([^)]*\)/g, "").trim(); }
+
+  window.STRETCH = { EX: EX, ROUTINES: ROUTINES, AREAS: AREAS, PROFILE: PROFILE, TIPS: TIPS, ACHIEVEMENTS: ACHIEVEMENTS, LINES: LINES, PRAISE: PRAISE, spoken: spoken };
 })();

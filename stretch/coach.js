@@ -219,7 +219,7 @@
             var sway = sd(b.xs) * 100;
             st.results.push({ leg: st.balLeg, secs: secs, sway: sway });
             b.best = Math.max(b.best, secs); if (sb) sb.disabled = false;
-            window.Sound && window.Sound.say((st.balLeg === "L" ? "左腿" : "右腿") + Math.round(secs) + "秒");
+            window.Sound && window.Sound.say([st.balLeg === "L" ? window.STRETCH.LINES.legL : window.STRETCH.LINES.legR, window.Sound.NUM.secs(Math.min(60, Math.round(secs)))]);
           }
         }
       }
@@ -240,9 +240,9 @@
       }
       var vL = valgus(p.lHip, p.lKn, p.lAn, -1), vR = valgus(p.rHip, p.rKn, p.rAn, 1); // 图像中人物左侧在画面右边
       var inward = Math.max(vL, vR) > .07 && k < 160;
-      if (inward) { hot.push(vL > vR ? 25 : 26, vL > vR ? 23 : 24, vL > vR ? 27 : 28); if (now - st.lastWarn > 4000) { st.lastWarn = now; window.Sound && window.Sound.say("膝盖对准脚尖，向外推"); } }
+      if (inward) { hot.push(vL > vR ? 25 : 26, vL > vR ? 23 : 24, vL > vR ? 27 : 28); if (now - st.lastWarn > 4000) { st.lastWarn = now; window.Sound && window.Sound.say(window.STRETCH.LINES.knee); } }
       if (st.phase === "up" && k < 140) { st.phase = "down"; st.minKnee = k; }
-      if (st.phase === "down") { st.minKnee = Math.min(st.minKnee, k); if (k > 165) { st.phase = "up"; st.reps++; st.results.push({ knee: st.minKnee }); window.Sound && window.Sound.say(String(st.reps)); } }
+      if (st.phase === "down") { st.minKnee = Math.min(st.minKnee, k); if (k > 165) { st.phase = "up"; st.reps++; st.results.push({ knee: st.minKnee }); window.Sound && window.Sound.say(st.reps <= 60 ? window.Sound.NUM.rep(st.reps) : null); } }
       var depth = st.results.length ? st.results[st.results.length - 1].knee : 0;
       return [["次数 <b>" + st.reps + "</b>"], ["膝角 " + Math.round(k) + "°" + (depth ? " · 上次最低 " + Math.round(depth) + "°" : "")], inward ? ["膝盖内扣了，向外推", "warn"] : ["膝盖方向 ✓", "good"]];
     }
