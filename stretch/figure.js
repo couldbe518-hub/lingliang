@@ -115,7 +115,7 @@
         var mlo = Math.min.apply(null, ptsM.map(function (q) { return q[0]; })) - 16, mhi = Math.max.apply(null, ptsM.map(function (q) { return q[0]; })) + 16;
         var mtop = Math.min.apply(null, ptsM.map(function (q) { return q[1]; })) - 22, mbot = Math.max.apply(null, ptsM.map(function (q) { return q[1]; })) + 18;
         out += '<rect class="prop-mat" x="' + mlo.toFixed(1) + '" y="' + mtop.toFixed(1) + '" width="' + (mhi - mlo).toFixed(1) + '" height="' + (mbot - mtop).toFixed(1) + '" rx="8"/>';
-        out += '<rect class="prop-pillow" x="' + (hd[0] - 16).toFixed(1) + '" y="' + (hd[1] - 12).toFixed(1) + '" width="32" height="24" rx="8"/>';
+        if (props.pillow) out += '<rect class="prop-pillow" x="' + (hd[0] - 16).toFixed(1) + '" y="' + (hd[1] - 12).toFixed(1) + '" width="32" height="24" rx="8"/>';
       }
       if (props.wall != null) {
         var wx = ex._wallX;
@@ -172,7 +172,7 @@
   function along(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
 
   function anatomySvg(ex, pose, T) {
-    var view = ex.view || "side", front = view === "front";
+    var view = ex.view || "side", front = view === "front", back = front && !!ex.back; // back：俯视看到背面
     var j = joints(pose, view);
     var tg = {}; (ex.mus || []).forEach(function (k) { tg[k] = 1; });
     function isT(name, n) { return tg[name] || (n != null && tg[name + n]); }
@@ -340,6 +340,14 @@
           var p = along(P, Sh, .12 + i * .12), mo = bend(.12 + i * .12);
           s += '<path class="fib' + (isT("abs") ? " tgtl" : "") + '" d="' + ptsPath([T([p[0] + mo[0] + tant[0] * 4, p[1] + mo[1] + tant[1] * 4]), T([p[0] + mo[0] + tant[0] * 6.6, p[1] + mo[1] + tant[1] * 6.6])]) + '"/>';
         }
+      } else if (back) {
+        [1, -1].forEach(function (sd) {
+          s += bl(sd, .08, .78, 3.2, 3.2, .9, cls("erector"), 0, 2);
+          s += bl(sd, .3, .8, 8.6, 9.4, 1.2, cls("lat"), 4, 3);
+          s += bl(sd, .62, 1.08, 10.5, 2.5, 1.6, cls("trap"), 1, 3);
+          s += bl(sd, -.14, .2, 8.5, 8.5, 2.4, cls("glute"), 1.5, 3);
+          s += belly(along(P, Sh, .86), along(P, Sh, .98), tant, sd, 0, 1, 11, 12, 2.2, "m" + (isT("rotator", sd === 1 ? 1 : 2) ? " tgt" : ""), 7, 2);
+        });
       } else {
         [1, -1].forEach(function (sd) {
           s += bl(sd, .62, .96, 6, 6, 2.6, cls("pec"), .5, 3);
@@ -393,6 +401,12 @@
       var s = "";
       function P2(x, y) { return T(hp(x, y)); }
       function dot(x, y, r, c) { var q = P2(x, y); return '<circle class="' + c + '" cx="' + f1(q[0]) + '" cy="' + f1(q[1]) + '" r="' + r + '"/>'; }
+      if (back) {
+        s += '<path class="ahair" d="' + smooth([[-8.6, 1], [-8.2, 6.4], [-4.4, 10.2], [0, 10.9], [4.4, 10.2], [8.2, 6.4], [8.6, 1], [7.4, -5], [3, -9.4], [-3, -9.4], [-7.4, -5]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
+        var bb = P2(0, 1.5);
+        s += '<circle class="ahair" cx="' + f1(bb[0]) + '" cy="' + f1(bb[1]) + '" r="4.6" style="stroke:#2E2019;stroke-width:.6"/>';
+        return s;
+      }
       if (front) {
         var bun = P2(0, 12.2);
         s += '<circle class="ahair" cx="' + f1(bun[0]) + '" cy="' + f1(bun[1]) + '" r="4.4"/>';
@@ -423,9 +437,15 @@
       b += skin(na.skin) + na.mus;
     } else {
       var l1 = leg(j.L1, 1, false), l2 = leg(j.L2, 2, false), a1 = arm(j.A1, 1, false), a2 = arm(j.A2, 2, false);
-      b += skin(l1.skin.concat(l2.skin, [trunkSkin(), neckSkin(), headSkin()])) + l1.mus + l2.mus;
-      b += trunkMus() + hipsFront() + neckMus() + headDetail();
-      b += skin(a1.skin) + a1.mus + skin(a2.skin) + a2.mus;
+      if (back) {
+        b += skin(a1.skin) + a1.mus + skin(a2.skin) + a2.mus;
+        b += skin(l1.skin.concat(l2.skin, [trunkSkin(), neckSkin(), headSkin()])) + l1.mus + l2.mus;
+        b += trunkMus() + neckMus() + headDetail();
+      } else {
+        b += skin(l1.skin.concat(l2.skin, [trunkSkin(), neckSkin(), headSkin()])) + l1.mus + l2.mus;
+        b += trunkMus() + hipsFront() + neckMus() + headDetail();
+        b += skin(a1.skin) + a1.mus + skin(a2.skin) + a2.mus;
+      }
     }
     return b;
   }
@@ -499,7 +519,7 @@
     if (ex[key]) return ex[key];
     var src = key === "_va" ? ex.adv : ex;
     var v = { name: ex.name, kind: ex.kind, view: src.view || ex.view || "side", kf: src.kf, props: src.props || (key === "_va" && !src.view ? ex.props : null) || {},
-      note: src.note || (src !== ex && src.view ? null : ex.note), mus: src.mus || ex.mus, hl: src.hl || ex.hl, beat: src.beat || ex.beat, hold: src.hold != null ? src.hold : ex.hold, seq: src.seq || ex.seq, free: src.free != null ? src.free : ex.free };
+      note: src.note || (src !== ex && src.view ? null : ex.note), mus: src.mus || ex.mus, hl: src.hl || ex.hl, beat: src.beat || ex.beat, hold: src.hold != null ? src.hold : ex.hold, seq: src.seq || ex.seq, free: src.free != null ? src.free : ex.free, back: src.back != null ? src.back : ex.back };
     prepare(v);
     ex[key] = v;
     return v;
