@@ -13,7 +13,7 @@
   var DEFAULTS = {
     level: "basic", voiceOn: true, musicOn: true, musicVol: .55, voiceVol: 1, rate: 1, voice: "",
     count: true, explain: "auto", asym: true, musicTheme: "auto", prepSecs: 7,
-    wakeTime: "07:00", dayTime: "12:30", nightTime: "21:45", theme: "auto"
+    wakeTime: "07:00", dayTime: "12:30", nightTime: "21:45", theme: "auto", figStyle: "anatomy"
   };
   function load() {
     var s = null;
@@ -32,6 +32,7 @@
   applySound();
   function applyTheme() { if (S().theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", S().theme); }
   applyTheme();
+  if (window.Figure && Figure.setStyle) Figure.setStyle(S().figStyle || "anatomy");
 
   // ───────── 工具 ─────────
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -453,7 +454,8 @@
       '<h2 class="sec">练习</h2><div class="card">' +
       sw("asym", "左右不对称加量", "右肩、右前臂神经滑动、右足底多做；左脚踝平衡多做") +
       '<div class="field"><div><label for="prep">动作之间准备时间</label><small>秒</small></div><input type="number" id="prep" min="4" max="20" value="' + s.prepSecs + '"></div>' +
-      '<div class="field"><label for="thm">外观</label><select id="thm"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div></div>' +
+      '<div class="field"><label for="thm">外观</label><select id="thm"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div>' +
+      '<div class="field"><div><label for="fst">示范画风</label><small>肌肉：显示肌肉纹理，正在拉伸的肌肉标红；简笔：简洁线条小人</small></div><select id="fst"><option value="anatomy">肌肉</option><option value="line">简笔</option></select></div></div>' +
       '<h2 class="sec">提醒</h2><div class="card">' +
       '<div class="field"><label for="wt">起床足底唤醒</label><input type="time" id="wt" value="' + s.wakeTime + '"></div>' +
       '<div class="field"><label for="dt">白天拉伸</label><input type="time" id="dt" value="' + s.dayTime + '"></div>' +
@@ -471,6 +473,7 @@
     function sw(key, label, sub) { return '<div class="field"><div><label for="s_' + key + '">' + label + "</label><small>" + sub + '</small></div><label class="switch"><input type="checkbox" id="s_' + key + '"' + (s[key] ? " checked" : "") + "><span></span></label></div>"; }
     ["voiceOn", "count", "musicOn", "asym"].forEach(function (k) { q("#s_" + k).onchange = function () { s[k] = this.checked; save(); applySound(); }; });
     q("#exp").value = s.explain; q("#exp").onchange = function () { s.explain = this.value; save(); };
+    q("#fst").value = s.figStyle || "anatomy"; q("#fst").onchange = function () { s.figStyle = this.value; save(); Figure.setStyle(s.figStyle); toast(s.figStyle === "line" ? "已切换为简笔小人" : "已切换为肌肉人"); };
     q("#thm").value = s.theme; q("#thm").onchange = function () { s.theme = this.value; save(); applyTheme(); };
     q("#vsel").onchange = function () { s.voice = this.value; save(); applySound(); Sound.unlock(); Sound.say(L.test); };
     Sound.packVoices().then(function (vs) {
