@@ -403,13 +403,12 @@
       function dot(x, y, r, c) { var q = P2(x, y); return '<circle class="' + c + '" cx="' + f1(q[0]) + '" cy="' + f1(q[1]) + '" r="' + r + '"/>'; }
       if (back) {
         s += '<path class="ahair" d="' + smooth([[-8.6, 1], [-8.2, 6.4], [-4.4, 10.2], [0, 10.9], [4.4, 10.2], [8.2, 6.4], [8.6, 1], [7.4, -5], [3, -9.4], [-3, -9.4], [-7.4, -5]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
-        var bb = P2(0, 1.5);
-        s += '<circle class="ahair" cx="' + f1(bb[0]) + '" cy="' + f1(bb[1]) + '" r="4.6" style="stroke:#2E2019;stroke-width:.6"/>';
+        s += '<path class="ahair" d="' + smooth([[-2.4, -4], [2.4, -4], [3.2, -12], [2.2, -22], [0, -26], [-2.2, -22], [-3.2, -12]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
+        s += '<path class="htie" d="' + ptsPath([P2(-3, -3.6), P2(3, -3.6)]) + '"/>';
         return s;
       }
       if (front) {
-        var bun = P2(0, 12.2);
-        s += '<circle class="ahair" cx="' + f1(bun[0]) + '" cy="' + f1(bun[1]) + '" r="4.4"/>';
+        s += '<path class="ahair" d="' + smooth([[6.2, 3], [9.4, 0], [11.2, -6], [11.6, -13], [10.4, -18], [8.6, -14], [8, -8], [7.2, -3]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
         s += '<path class="ahair" d="' + smooth([[-8.6, 1], [-8.2, 6.4], [-4.4, 10.2], [0, 10.9], [4.4, 10.2], [8.2, 6.4], [8.6, 1], [6.4, 5.6], [2, 7], [-2, 7.2], [-6.4, 5.6]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
         s += dot(-3.1, .2, .95, "eye") + dot(3.1, .2, .95, "eye");
         s += '<path class="brow" d="' + ptsPath([P2(-4.6, 2.4), P2(-1.8, 2.8)]) + " " + ptsPath([P2(1.8, 2.8), P2(4.6, 2.4)]) + '"/>';
@@ -422,9 +421,14 @@
       s += '<path class="eye" d="' + smooth([P2(5.4, 1.1), P2(7, .6), P2(5.6, -.2)]) + '"/>';
       s += '<path class="brow" d="' + ptsPath([P2(4.6, 2.9), P2(7.8, 2.6)]) + '"/>';
       s += '<path class="lip" d="' + ptsPath([P2(8.6, -6), P2(7.4, -6.1)]) + '"/>';
-      s += '<path class="ahair" d="' + smooth([[8.2, 4.4], [6.8, 8.8], [1.4, 11.2], [-5.2, 10.2], [-9.9, 4.2], [-10.1, -1.6], [-7.6, -5], [-4.6, -3.4], [-3.4, 1.6], [.4, 4.8], [4.6, 5.2]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
-      var bn = P2(-9.4, 7.4);
-      s += '<circle class="ahair" cx="' + f1(bn[0]) + '" cy="' + f1(bn[1]) + '" r="4.4"/>';
+      // 马尾：从后脑勺扎起，顺着重力垂下
+      var root = hp(-9.2, .6), bk = [-hf[0], -hf[1]], g = [0, 1];
+      function tp(b, d) { var q = T([root[0] + bk[0] * b + g[0] * d, root[1] + bk[1] * b + g[1] * d]); if (!ex.free) q[1] = Math.min(q[1], GROUND - 1.5); return q; }
+      var tail = [tp(-1, -2.5), tp(3.2, -1), tp(5.6, 4), tp(5.8, 11), tp(4.6, 18), tp(2.4, 20.5), tp(.6, 16), tp(-.4, 8), tp(-2.2, 2)];
+      s += '<path class="ahair" d="' + smooth(tail) + '"/>';
+      s += '<path class="ahair" d="' + smooth([[8.2, 4.4], [6.8, 8.8], [1.4, 11.2], [-5.2, 10.2], [-9.9, 4.2], [-10.3, -2.4], [-8.6, -7.2], [-5.6, -9.6], [-3.6, -6.8], [-3.4, 1.6], [.4, 4.8], [4.6, 5.2]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
+      var tie = P2(-8.6, 1);
+      s += '<circle class="htie" cx="' + f1(tie[0]) + '" cy="' + f1(tie[1]) + '" r="1.5"/>';
       return s;
     }
 
