@@ -88,6 +88,20 @@ p{margin:.4rem 0}
 .fig .limb.hl{stroke:var(--hl)} .fig .limb.far.hl{stroke:color-mix(in srgb,var(--hl) 55%,var(--fig-far))}
 .fig .hand{fill:var(--fig);stroke:none} .fig .hand.far{fill:var(--fig-far)}
 .fig .head{fill:var(--fig)} .fig .head.hl{fill:var(--hl)} .fig .hair{fill:var(--fig-hair)}
+/* 解剖肌肉人 */
+.fig .base{fill:#B4603C;stroke:#7E3B22;stroke-width:.6}
+.fig .base.far{fill:#8E4A30;stroke:#5E2C19}
+.fig .m{fill:#DC8A57;stroke:#9A4A2A;stroke-width:.5}
+.fig .m.far{fill:#A9623F;stroke:#6D3520}
+.fig .m.tgt{fill:#E5392B;stroke:#9E1B12;stroke-width:.7;animation:mpulse 1.8s ease-in-out infinite}
+.fig .m.tgt.far{fill:#C2342A}
+.fig .fib{fill:none;stroke:rgba(255,232,206,.5);stroke-width:.55;stroke-linecap:round}
+.fig .fib.tgtl{stroke:rgba(255,255,255,.75)}
+.fig .tend{stroke:#F1E1C2;stroke-linecap:round}
+.fig .skull{fill:#E3A27A;stroke:#9A4A2A;stroke-width:.6}
+.fig .hairl{fill:none;stroke:#3A2A22;stroke-width:2.2;stroke-linecap:round}
+@keyframes mpulse{0%,100%{opacity:1}50%{opacity:.72}}
+.fig .ahair{fill:#3A2A22;stroke:#1E140F;stroke-width:.5}
 .fig .vnote{font-size:13px;fill:var(--muted);font-family:var(--f-ui)} .pfig .fig .vnote{fill:rgba(255,255,255,.6)}
 .fig .mat line{stroke:var(--mat);stroke-width:4;stroke-linecap:round}
 .fig .prop-wall{fill:var(--prop);opacity:.7} .fig .prop-chair{stroke:var(--prop);stroke-width:5;fill:none;stroke-linecap:round}

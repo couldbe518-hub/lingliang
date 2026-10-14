@@ -34,6 +34,7 @@ Kevin 补充的：真人感语音指导 + 应景背景音乐（晨光、林间�
 - `voice/` —— 语音包：`manifest.json` + 每个声音一个文件夹的 mp3（见下）
 - `tools/make_voice.py`、`tools/voice_lines.js` —— 生成语音包
 - `version.json` —— 每次改动后把 `v` 改成新值，Grace 的手机会在 5 分钟内或下次打开时提示刷新
+- `data.js` 每个动作的 `mus` 列出要标红的肌肉（编号见 `figure.js` 解剖肌肉人注释，如 `calf1`、`ham2`、`rotator1`）；设置里「示范画风」可切回简笔小人
 - `tools/validate.js` —— `node stretch/tools/validate.js` 检查数据；`tools/gallery.html` 文字与示范关键帧对照
 - `tools/posecheck.js` —— 姿势体检：逐帧列出哪些部位着地、膝/髋/肘/肩角度。改姿势后用它核对「该贴地的贴地、该踩平的踩平」
 
