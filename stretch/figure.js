@@ -168,9 +168,9 @@
     var view = ex.view || "side", front = view === "front";
     var j = joints(pose, view);
     var tg = {}; (ex.mus || []).forEach(function (k) { tg[k] = 1; });
-    var out = { back: "", body: "", front: "" };
     function isT(name, n) { return tg[name] || (n != null && tg[name + n]); }
     function cls(name, n, far) { return "m" + (far ? " far" : "") + (isT(name, n) ? " tgt" : ""); }
+    function unit(v) { var l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; }
     // 肌腹：沿骨段 a→b，在 side 侧（±1，相对 nrm）鼓起
     function belly(a, b, nrm, side, t0, t1, base0, base1, thick, c, inner, lines) {
       var N = 10, outer = [], inn = [], fib = [];
@@ -183,8 +183,7 @@
         inn.push([p[0] + nrm[0] * side * ii, p[1] + nrm[1] * side * ii]);
       }
       var poly = outer.concat(inn.reverse()).map(T);
-      var s1 = '<path class="' + c + '" d="' + ptsPath(poly, true) + '"/>';
-      // 肌纤维纹理
+      var s1 = '<path class="' + c + '" d="' + smooth(poly) + '"/>';
       if (lines !== 0) {
         var L = lines || 3;
         for (var k = 1; k <= L; k++) {
@@ -194,214 +193,224 @@
             var pp = along(a, b, tt), ins = (inner == null ? bb * .15 : inner), oo = ins + ((bb * .85 + thick) * ss) * fr;
             fl.push(T([pp[0] + nrm[0] * side * oo, pp[1] + nrm[1] * side * oo]));
           }
-          fib.push('<path class="fib" d="' + ptsPath(fl) + '"/>');
+          fib.push('<path class="fib' + (c.indexOf("tgt") >= 0 ? " tgtl" : "") + '" d="' + ptsPath(fl) + '"/>');
         }
       }
       return s1 + fib.join("");
     }
-    // 肢体基底（深色"肌外膜"轮廓）
-    function capsule(a, b, w0, w1, c) {
-      var u = sub(b, a), L = Math.hypot(u[0], u[1]) || 1, n = [-u[1] / L, u[0] / L], pts = [];
-      var ends = 6;
-      for (var i = 0; i <= ends; i++) { var ang = Math.PI * i / ends; pts.push([b[0] + n[0] * w1 * Math.cos(ang) + u[0] / L * w1 * Math.sin(ang), b[1] + n[1] * w1 * Math.cos(ang) + u[1] / L * w1 * Math.sin(ang)]); }
-      for (i = 0; i <= ends; i++) { ang = Math.PI * i / ends; pts.push([a[0] - n[0] * w0 * Math.cos(ang) - u[0] / L * w0 * Math.sin(ang), a[1] - n[1] * w0 * Math.cos(ang) - u[1] / L * w0 * Math.sin(ang)]); }
-      return '<path class="' + c + '" d="' + smooth(pts.map(T)) + '"/>';
-    }
     function tendon(a, b, nrm, side, t0, t1, off, w) {
-      var p0 = along(a, b, t0), p1 = along(a, b, t1);
-      return '<line class="tend" x1="' + f1(T([p0[0] + nrm[0] * side * off, 0])[0]) + '" y1="' + f1(T([0, p0[1] + nrm[1] * side * off])[1]) + '" x2="' + f1(T([p1[0] + nrm[0] * side * off, 0])[0]) + '" y2="' + f1(T([0, p1[1] + nrm[1] * side * off])[1]) + '" stroke-width="' + w + '"/>';
+      var p0 = along(a, b, t0), p1 = along(a, b, t1), q0 = T([p0[0] + nrm[0] * side * off, p0[1] + nrm[1] * side * off]), q1 = T([p1[0] + nrm[0] * side * off, p1[1] + nrm[1] * side * off]);
+      return '<line class="tend" x1="' + f1(q0[0]) + '" y1="' + f1(q0[1]) + '" x2="' + f1(q1[0]) + '" y2="' + f1(q1[1]) + '" stroke-width="' + w + '"/>';
     }
     function antOfLimb(a, b) { return vec(deg(sub(b, a)) + 90, 1); }
+    // 皮肤轮廓：沿骨段 a→b 的剖面，rows = [t, 前侧半宽, 后侧半宽]，两端圆滑收口
+    function prof(a, b, rows, nrm) {
+      var u = unit(sub(b, a)), A = [], B = [];
+      function w(r) { return front ? [(r[1] + r[2]) / 2, (r[1] + r[2]) / 2] : [r[1], r[2]]; }
+      rows.forEach(function (r) { var p = along(a, b, r[0]), ww = w(r); A.push([p[0] + nrm[0] * ww[0], p[1] + nrm[1] * ww[0]]); B.push([p[0] - nrm[0] * ww[1], p[1] - nrm[1] * ww[1]]); });
+      function cap(r, dir) { var p = along(a, b, r[0]), ww = w(r), k = (ww[0] + ww[1]) / 2 * .8; return [p[0] + nrm[0] * (ww[0] - ww[1]) / 2 + u[0] * k * dir, p[1] + nrm[1] * (ww[0] - ww[1]) / 2 + u[1] * k * dir]; }
+      return smooth(A.concat([cap(rows[rows.length - 1], 1)], B.reverse(), [cap(rows[0], -1)]).map(T));
+    }
+    // 同一组皮肤先画一圈描边再填色，关节处自然连成一体
+    function skin(ds, far) {
+      var c = far ? " far" : "";
+      return ds.map(function (d) { return '<path class="sko' + c + '" d="' + d + '"/>'; }).join("") + ds.map(function (d) { return '<path class="sk' + c + '" d="' + d + '"/>'; }).join("");
+    }
+    // 梭形（三角肌等）：沿 a→b，两侧对称
+    function lens(a, b, t0, t1, wd, nrm, c) {
+      var N = 10, L = [], R = [];
+      for (var i = 0; i <= N; i++) { var s = Math.pow(Math.sin(Math.PI * i / N), .7), p = along(a, b, t0 + (t1 - t0) * i / N); L.push([p[0] + nrm[0] * wd * s, p[1] + nrm[1] * wd * s]); R.push([p[0] - nrm[0] * wd * s, p[1] - nrm[1] * wd * s]); }
+      var out = '<path class="' + c + '" d="' + smooth(L.concat(R.reverse().slice(1, -1)).map(T)) + '"/>';
+      [-.45, 0, .45].forEach(function (k) { var q0 = along(a, b, t0 + (t1 - t0) * .15), q1 = along(a, b, t0 + (t1 - t0) * .85); out += '<path class="fib' + (c.indexOf("tgt") >= 0 ? " tgtl" : "") + '" d="' + ptsPath([T([q0[0] + nrm[0] * wd * k * .7, q0[1] + nrm[1] * wd * k * .7]), T([q1[0] + nrm[0] * wd * k * .4, q1[1] + nrm[1] * wd * k * .4])]) + '"/>'; });
+      return out;
+    }
 
     // ── 腿 ──
     function leg(L, n, far) {
-      var s = "", H = L.H, K = L.K, A = L.A, ant = antOfLimb(H, K), antS = antOfLimb(K, A), f = far ? " far" : "";
-      s += capsule(H, K, 8.5, 5.6, "base" + f) + capsule(K, A, 5.4, 3.2, "base" + f);
+      var H = L.H, K = L.K, A = L.A, ant = antOfLimb(H, K), antS = antOfLimb(K, A), ds = [], m = "";
       if (!front) {
-        s += belly(H, K, ant, -1, .1, .9, 8.5, 5.6, 2.6, cls("ham", n, far));
-        s += belly(H, K, ant, 1, .04, .93, 8.5, 5.6, 3.4, cls("quad", n, far), null, 4);
-        s += belly(H, K, ant, 1, -.02, .32, 8.5, 6.5, 1.2, cls("hipflex", n, far), 1.5, 2);
-        s += belly(H, K, ant, -1, -.02, .5, 4, 3, 1.4, cls("adductor", n, far), 0, 2);
-        s += belly(H, K, ant, 1, .0, .36, 4.5, 4, 1.5, cls("tfl", n, far), 3.2, 0);
-        s += tendon(K, A, antS, 1, -.06, .14, 4.6, 2.4);
-        s += belly(K, A, antS, -1, .3, .82, 4.8, 3.4, 2.2, cls("soleus", n, far), null, 2);
-        s += belly(K, A, antS, -1, .02, .62, 5.2, 3.8, 4.2, cls("calf", n, far));
-        s += belly(K, A, antS, 1, .08, .74, 5, 3.6, 1.4, cls("tib", n, far), null, 2);
-        s += tendon(K, A, antS, -1, .72, 1, 2.6, 2);
+        ds.push(prof(H, K, [[-.1, 8.5, 10], [.12, 10, 11], [.45, 9.2, 9], [.8, 7, 6.6], [1.04, 5.8, 5.6]], ant));
+        ds.push(prof(K, A, [[-.05, 5.8, 5.8], [.25, 5.3, 7.4], [.5, 4.6, 6.6], [.8, 3.3, 3.8], [1.04, 3, 3.2]], antS));
       } else {
-        // 正面：股四头肌在中间，内收肌在内侧，阔筋膜张肌在外上
-        var med = (j.P[0] - H[0]) >= 0 ? 1 : -1, mn = [med, 0];
-        var axisN = [-sub(K, H)[1], sub(K, H)[0]], al = Math.hypot(axisN[0], axisN[1]) || 1; axisN = [axisN[0] / al, axisN[1] / al];
+        ds.push(prof(H, K, [[-.1, 7.4, 7.4], [.12, 8, 8], [.45, 7, 7], [.8, 5.6, 5.6], [1.04, 4.8, 4.8]], ant));
+        ds.push(prof(K, A, [[-.05, 4.8, 4.8], [.25, 5.2, 5.2], [.5, 4.6, 4.6], [.8, 3.2, 3.2], [1.04, 2.8, 2.8]], antS));
+      }
+      if (!front) {
+        m += belly(H, K, ant, -1, .12, .9, 8, 5.4, 1.6, cls("ham", n, far));
+        m += belly(H, K, ant, 1, .06, .92, 8, 5.4, 2.4, cls("quad", n, far), null, 4);
+        m += belly(H, K, ant, 1, -.02, .3, 8, 6.5, .8, cls("hipflex", n, far), 1.5, 2);
+        m += belly(H, K, ant, -1, -.02, .48, 4, 3, 1, cls("adductor", n, far), 0, 2);
+        m += belly(H, K, ant, 1, .0, .34, 4.2, 4, 1.1, cls("tfl", n, far), 3, 0);
+        m += tendon(K, A, antS, 1, -.04, .14, 4.2, 2);
+        m += belly(K, A, antS, -1, .3, .8, 4.6, 3.4, 1.4, cls("soleus", n, far), null, 2);
+        m += belly(K, A, antS, -1, .04, .6, 5, 3.8, 2.6, cls("calf", n, far));
+        m += belly(K, A, antS, 1, .1, .72, 4.6, 3.4, .9, cls("tib", n, far), null, 2);
+        m += tendon(K, A, antS, -1, .72, 1, 2.6, 1.6);
+      } else {
+        var med = (j.P[0] - H[0]) >= 0 ? 1 : -1;
+        var axisN = unit([-sub(K, H)[1], sub(K, H)[0]]);
         var sideMed = (axisN[0] * med) >= 0 ? 1 : -1;
-        s += belly(H, K, axisN, sideMed, .0, .62, 7, 5, 1.6, cls("adductor", n, far), 0, 2);
-        s += belly(H, K, axisN, -sideMed, .02, .4, 7.5, 6, 1.4, cls("tfl", n, far), 1, 2);
-        s += belly(H, K, axisN, sideMed, .1, .95, 4, 3, 1.6, cls("quad", n, far), -3, 3);
-        s += belly(H, K, axisN, -sideMed, .1, .95, 4, 3, 1.6, cls("quad", n, far), -3, 2);
-        var axS = [-sub(A, K)[1], sub(A, K)[0]], aS = Math.hypot(axS[0], axS[1]) || 1; axS = [axS[0] / aS, axS[1] / aS];
-        s += belly(K, A, axS, sideMed, .05, .6, 4.6, 3.4, 1.8, cls("calf", n, far), null, 2);
-        s += belly(K, A, axS, -sideMed, .05, .7, 4.4, 3.2, 1.2, cls("tib", n, far), null, 2);
-        void mn;
+        m += belly(H, K, axisN, sideMed, .02, .62, 5.4, 4, 1, cls("adductor", n, far), 0, 2);
+        m += belly(H, K, axisN, -sideMed, .02, .4, 5.6, 5, .9, cls("tfl", n, far), 1, 2);
+        m += belly(H, K, axisN, sideMed, .12, .94, 4, 3, 1.2, cls("quad", n, far), -3, 3);
+        m += belly(H, K, axisN, -sideMed, .12, .94, 4, 3, 1.2, cls("quad", n, far), -3, 2);
+        var axS = unit([-sub(A, K)[1], sub(A, K)[0]]);
+        m += belly(K, A, axS, sideMed, .06, .6, 4.4, 3.4, 1.2, cls("calf", n, far), null, 2);
+        m += belly(K, A, axS, -sideMed, .06, .7, 4.2, 3.2, .8, cls("tib", n, far), null, 2);
       }
       // 脚
       var Tt = L.T, Hl = L.Hl, fv = sub(Tt, Hl), fl = Math.hypot(fv[0], fv[1]) || 1, fn = [-fv[1] / fl, fv[0] / fl];
-      // 脚背在小腿前侧方向
       var up = (fn[0] * antS[0] + fn[1] * antS[1]) < 0 ? 1 : -1;
       if (front) up = 1;
-      var footPts = [along(Hl, Tt, -.1), [Hl[0] - fn[0] * up * 3.5, Hl[1] - fn[1] * up * 3.5], [A[0] - fn[0] * up * 4.5 + fv[0] / fl * 2, A[1] - fn[1] * up * 4.5 + fv[1] / fl * 2], [Tt[0] - fn[0] * up * 1.6, Tt[1] - fn[1] * up * 1.6], [Tt[0] + fn[0] * up * .8, Tt[1] + fn[1] * up * .8], along(Hl, Tt, .5)];
-      s += '<path class="' + (isT("sole", n) ? "m tgt" : "base" + f) + '" d="' + smooth(footPts.map(T)) + '"/>';
-      return s;
+      var footPts = [along(Hl, Tt, -.12), [Hl[0] - fn[0] * up * 3.6, Hl[1] - fn[1] * up * 3.6], [A[0] - fn[0] * up * 4.2 + fv[0] / fl * 2, A[1] - fn[1] * up * 4.2 + fv[1] / fl * 2], [Tt[0] - fn[0] * up * 1.8, Tt[1] - fn[1] * up * 1.8], [Tt[0] + fn[0] * up * .9, Tt[1] + fn[1] * up * .9], along(Hl, Tt, .5)];
+      var fd = smooth(footPts.map(T));
+      ds.push(fd);
+      if (isT("sole", n)) m += '<path class="m tgt" d="' + smooth([along(Hl, Tt, -.05), along(Hl, Tt, .5), along(Tt, Hl, .02), [Tt[0] - fn[0] * up * 1.4, Tt[1] - fn[1] * up * 1.4], [along(Hl, Tt, .5)[0] - fn[0] * up * 2.2, along(Hl, Tt, .5)[1] - fn[1] * up * 2.2], [Hl[0] - fn[0] * up * 2.4, Hl[1] - fn[1] * up * 2.4]].map(T)) + '"/>';
+      return { skin: ds, mus: m };
     }
     // ── 手臂 ──
     function arm(Ar, n, far) {
-      var s = "", S0 = Ar.S, E = Ar.E, Wr = Ar.W, ant = antOfLimb(S0, E), antF = antOfLimb(E, Wr), f = far ? " far" : "";
-      s += capsule(S0, E, 4.6, 3.6, "base" + f) + capsule(E, Wr, 3.6, 2.3, "base" + f);
+      var S0 = Ar.S, E = Ar.E, Wr = Ar.W, ant = antOfLimb(S0, E), antF = antOfLimb(E, Wr), ds = [], m = "";
+      var hv = sub(Wr, E), hl = Math.hypot(hv[0], hv[1]) || 1, hd = Ar.F ? Ar.F : [Wr[0] + hv[0] / hl * 7.5, Wr[1] + hv[1] / hl * 7.5];
+      ds.push(prof(S0, E, [[-.14, 5.6, 5.6], [.15, 5.4, 5.4], [.55, 4.5, 4.4], [.9, 3.7, 3.5], [1.05, 3.3, 3.3]], ant));
+      ds.push(prof(E, Wr, [[-.05, 3.4, 3.4], [.25, 3.9, 3.6], [.7, 2.8, 2.5], [1.04, 2.2, 2.1]], antF));
+      ds.push(prof(Wr, hd, [[-.05, 2.2, 2.1], [.45, 2.9, 2.6], [.95, 2, 1.8]], antOfLimb(Wr, hd)));
       if (!front) {
-        s += belly(S0, E, ant, -1, .14, .9, 4.6, 3.6, 2.4, cls("triceps", n, far));
-        s += belly(S0, E, ant, 1, .24, .88, 4.6, 3.6, 2.2, cls("biceps", n, far));
-        s += belly(E, Wr, antF, 1, .02, .62, 3.6, 2.4, 1.6, cls("forearmF", n, far), null, 2);
-        s += belly(E, Wr, antF, -1, .02, .6, 3.6, 2.4, 1.5, cls("forearmE", n, far), null, 2);
+        m += belly(S0, E, ant, -1, .16, .9, 4.2, 3.4, 1.3, cls("triceps", n, far));
+        m += belly(S0, E, ant, 1, .26, .88, 4.2, 3.4, 1.2, cls("biceps", n, far));
+        m += belly(E, Wr, antF, 1, .03, .62, 3.4, 2.3, .9, cls("forearmF", n, far), null, 2);
+        m += belly(E, Wr, antF, -1, .03, .6, 3.4, 2.3, .8, cls("forearmE", n, far), null, 2);
       } else {
-        var axN = [-sub(E, S0)[1], sub(E, S0)[0]], al = Math.hypot(axN[0], axN[1]) || 1; axN = [axN[0] / al, axN[1] / al];
-        s += belly(S0, E, axN, 1, .2, .9, 3.8, 3, 1.8, cls("biceps", n, far), -1, 2);
-        s += belly(S0, E, axN, -1, .15, .9, 3.8, 3, 1.8, cls("triceps", n, far), -1, 2);
-        var axF = [-sub(Wr, E)[1], sub(Wr, E)[0]], af = Math.hypot(axF[0], axF[1]) || 1; axF = [axF[0] / af, axF[1] / af];
-        s += belly(E, Wr, axF, 1, .02, .62, 3.2, 2.2, 1.2, cls("forearmF", n, far), null, 2);
-        s += belly(E, Wr, axF, -1, .02, .6, 3.2, 2.2, 1.2, cls("forearmE", n, far), null, 2);
+        var axN = unit([-sub(E, S0)[1], sub(E, S0)[0]]);
+        m += belly(S0, E, axN, 1, .22, .9, 3.6, 3, 1, cls("biceps", n, far), -1, 2);
+        m += belly(S0, E, axN, -1, .17, .9, 3.6, 3, 1, cls("triceps", n, far), -1, 2);
+        var axF = unit([-sub(Wr, E)[1], sub(Wr, E)[0]]);
+        m += belly(E, Wr, axF, 1, .03, .62, 3, 2.2, .8, cls("forearmF", n, far), null, 2);
+        m += belly(E, Wr, axF, -1, .03, .6, 3, 2.2, .8, cls("forearmE", n, far), null, 2);
       }
-      // 三角肌：肩头的帽子
-      var dv = sub(E, S0), dl = Math.hypot(dv[0], dv[1]) || 1, dn = [-dv[1] / dl, dv[0] / dl];
-      var cap = [];
-      for (var i = 0; i < 10; i++) {
-        var a = Math.PI * 2 * i / 10, r = 6.6, sx = Math.cos(a) * r, sy = Math.sin(a) * r * 1.25;
-        var p = [S0[0] + dv[0] / dl * (sy * .9 + 6) + dn[0] * sx, S0[1] + dv[1] / dl * (sy * .9 + 6) + dn[1] * sx];
-        cap.push(p);
-      }
-      s += '<path class="' + cls("delt", n, far) + '" d="' + smooth(cap.map(T)) + '"/>';
-      for (var k = -1; k <= 1; k++) {
-        var q0 = [S0[0] + dn[0] * k * 3.2 - dv[0] / dl * 1, S0[1] + dn[1] * k * 3.2 - dv[1] / dl * 1], q1 = [S0[0] + dn[0] * k * 2 + dv[0] / dl * 12, S0[1] + dn[1] * k * 2 + dv[1] / dl * 12];
-        s += '<path class="fib" d="' + ptsPath([T(q0), T(q1)]) + '"/>';
-      }
-      if (front && isT("rotator", n)) { var rb = [S0[0] - dv[0] / dl * 2, S0[1] - dv[1] / dl * 2]; s += '<path class="m tgt" d="' + smooth([[rb[0] - 5, rb[1] - 2], [rb[0], rb[1] - 4], [rb[0] + 5, rb[1] - 2], [rb[0], rb[1] + 2]].map(T)) + '"/>'; }
-      // 手
-      var hv = sub(Wr, E), hl = Math.hypot(hv[0], hv[1]) || 1, hd = Ar.F ? Ar.F : [Wr[0] + hv[0] / hl * 7, Wr[1] + hv[1] / hl * 7];
-      s += capsule(Wr, hd, 2.6, 2.2, "base" + f);
-      return s;
+      // 三角肌：从肩头包到上臂外侧三分之一
+      m += lens(S0, E, -.16, .46, 5.4, ant, cls("delt", n, far));
+      if (front && isT("rotator", n)) { var dv = unit(sub(E, S0)), rb = [S0[0] - dv[0] * 2, S0[1] - dv[1] * 2]; m += '<path class="m tgt" d="' + smooth([[rb[0] - 5, rb[1] - 2], [rb[0], rb[1] - 4], [rb[0] + 5, rb[1] - 2], [rb[0], rb[1] + 2]].map(T)) + '"/>'; }
+      return { skin: ds, mus: m };
     }
     // ── 躯干 ──
-    function trunk() {
-      var s = "", P = j.P, Sh = j.S, u = sub(Sh, P), L = Math.hypot(u[0], u[1]) || 1, ud = [u[0] / L, u[1] / L];
-      var ant = front ? [-ud[1], ud[0]] : vec(deg(u) - 90, 1);
-      var prof = front ? [[0, 11, 11], [.3, 10, 10], [.55, 10.5, 10.5], [.85, 13, 13], [1.05, 11, 11]]
-        : [[-.12, 8, 9], [0, 10, 12], [.25, 8, 9], [.5, 8.5, 8.5], [.78, 11.5, 9.5], [1.0, 9, 9], [1.08, 5.5, 5.5]];
+    var P = j.P, Sh = j.S, tu = sub(Sh, P), tud = unit(tu);
+    var tant = front ? [-tud[1], tud[0]] : vec(deg(tu) - 90, 1);
+    var cv = j.c ? vec(j.t + 90, j.c * 2) : [0, 0];
+    function bend(t) { var w = Math.sin(Math.PI * Math.max(0, Math.min(1, t))); return [cv[0] * w, cv[1] * w]; }
+    function bl(side, t0, t1, b0, b1, th, c, inner, lines) {
+      var o0 = bend(t0), o1 = bend(t1), mo = [(o0[0] + o1[0]) / 2, (o0[1] + o1[1]) / 2], a = along(P, Sh, t0), b = along(P, Sh, t1);
+      return belly([a[0] + mo[0], a[1] + mo[1]], [b[0] + mo[0], b[1] + mo[1]], tant, side, 0, 1, b0, b1, th, c, inner, lines);
+    }
+    function trunkSkin() {
+      // 侧面：臀部后凸、腰收、胸廓；正面：肩宽、腰细、髋宽
+      var pr = front ? [[-.16, 8, 8], [-.02, 11.8, 11.8], [.25, 10, 10], [.45, 9.6, 9.6], [.7, 11.5, 11.5], [.92, 13.5, 13.5], [1.06, 9, 9]]
+        : [[-.16, 8, 9], [0, 9.5, 12.5], [.22, 8.5, 9.5], [.45, 8, 7.4], [.7, 10.8, 8.6], [.92, 9, 9], [1.06, 5.6, 5.6]];
       var A = [], B = [];
-      prof.forEach(function (r) {
-        var p = along(P, Sh, r[0]); A.push([p[0] + ant[0] * r[1], p[1] + ant[1] * r[1]]); B.push([p[0] - ant[0] * r[2], p[1] - ant[1] * r[2]]);
-      });
-      // 侧视脊柱弯曲（猫牛式等）
-      if (j.c) { var bk = vec(j.t + 90, j.c * 2); [A, B].forEach(function (arr) { arr.forEach(function (q, i) { var w = Math.sin(Math.PI * i / (arr.length - 1)); q[0] += bk[0] * w; q[1] += bk[1] * w; }); }); }
-      s += '<path class="base" d="' + smooth(A.concat(B.reverse()).map(T)) + '"/>';
-      var cv = j.c ? vec(j.t + 90, j.c * 2) : [0, 0];
-      function bend(t) { var w = Math.sin(Math.PI * Math.max(0, Math.min(1, t))); return [cv[0] * w, cv[1] * w]; }
-      function bl(side, t0, t1, b0, b1, th, c, inner, lines) {
-        var off0 = bend(t0), off1 = bend(t1), a = along(P, Sh, t0), b = along(P, Sh, t1);
-        var ta = (t0), tb = (t1);
-        var aa = [P[0] + cv[0] * 0, P[1]], bb = [Sh[0], Sh[1]];
-        void aa; void bb; void ta; void tb;
-        // 把弯曲的平均偏移加到整个肌腹上（足够逼真）
-        var mo = [(off0[0] + off1[0]) / 2, (off0[1] + off1[1]) / 2];
-        var a2 = [a[0] + mo[0], a[1] + mo[1]], b2 = [b[0] + mo[0], b[1] + mo[1]];
-        var tt = function (t) { return t; };
-        void tt;
-        return belly(a2, b2, ant, side, 0, 1, b0, b1, th, c, inner, lines);
-      }
+      pr.forEach(function (r) { var p = along(P, Sh, r[0]), o = bend(r[0]); A.push([p[0] + o[0] + tant[0] * r[1], p[1] + o[1] + tant[1] * r[1]]); B.push([p[0] + o[0] - tant[0] * r[2], p[1] + o[1] - tant[1] * r[2]]); });
+      return smooth(A.concat(B.reverse()).map(T));
+    }
+    function trunkMus() {
+      var s = "";
       if (!front) {
-        s += bl(-1, .05, .75, 5, 5, 1.2, cls("erector"), 3.5, 2);
-        s += bl(-1, .42, .86, 7, 8, 2.2, cls("lat"));
-        s += bl(-1, .8, 1.12, 7, 5, 2, cls("trap"), null, 2);
-        s += bl(1, .08, .62, 6, 6.5, 1.2, cls("abs"), 3.5, 0);
-        s += bl(1, .12, .58, 4, 4, 1.4, cls("oblique"), 0, 3);
-        s += bl(1, .58, .98, 8.5, 8, 2.8, cls("pec"));
-        if (isT("pecmin")) s += bl(1, .7, .92, 6, 6, 1.6, "m tgt", 2.5, 2);
-        if (isT("hipflex1") || isT("hipflex2") || isT("hipflex")) s += bl(1, -.08, .18, 8, 8, 1.4, "m tgt", 3, 2);
-        // 腹直肌分节线
+        s += bl(-1, .05, .74, 4.6, 4.6, .8, cls("erector"), 3.4, 2);
+        s += bl(-1, .42, .86, 6.4, 7.2, 1.2, cls("lat"));
+        s += bl(-1, .8, 1.1, 6.4, 4.6, 1.2, cls("trap"), null, 2);
+        s += bl(1, .08, .6, 5.6, 6, .8, cls("abs"), 3.2, 0);
+        s += bl(1, .12, .56, 3.8, 3.8, 1, cls("oblique"), 0, 3);
+        s += bl(1, .58, .96, 7.8, 7.4, 1.6, cls("pec"));
+        if (isT("pecmin")) s += bl(1, .7, .92, 6, 6, 1.4, "m tgt", 2.5, 2);
+        if (isT("hipflex1") || isT("hipflex2") || isT("hipflex")) s += bl(1, -.08, .18, 7.6, 7.6, 1, "m tgt", 3, 2);
         for (var i = 1; i <= 3; i++) {
           var p = along(P, Sh, .12 + i * .12), mo = bend(.12 + i * .12);
-          var a1 = [p[0] + mo[0] + ant[0] * 4.2, p[1] + mo[1] + ant[1] * 4.2], a2 = [p[0] + mo[0] + ant[0] * 7, p[1] + mo[1] + ant[1] * 7];
-          s += '<path class="fib' + (isT("abs") ? " tgtl" : "") + '" d="' + ptsPath([T(a1), T(a2)]) + '"/>';
+          s += '<path class="fib' + (isT("abs") ? " tgtl" : "") + '" d="' + ptsPath([T([p[0] + mo[0] + tant[0] * 4, p[1] + mo[1] + tant[1] * 4]), T([p[0] + mo[0] + tant[0] * 6.6, p[1] + mo[1] + tant[1] * 6.6])]) + '"/>';
         }
       } else {
-        var midN = ant;
-        s += bl(1, .62, .98, 6, 6, 3.2, cls("pec"), 0.5, 3);
-        s += bl(-1, .62, .98, 6, 6, 3.2, cls("pec"), 0.5, 3);
-        s += bl(1, .1, .6, 3.5, 3.5, 1.2, cls("abs"), 0, 0);
-        s += bl(-1, .1, .6, 3.5, 3.5, 1.2, cls("abs"), 0, 0);
-        s += bl(1, .1, .62, 7.5, 7.5, 1.2, cls("oblique"), 5, 2);
-        s += bl(-1, .1, .62, 7.5, 7.5, 1.2, cls("oblique"), 5, 2);
-        s += bl(1, .45, .85, 9, 10, 1.2, cls("lat"), 8.5, 2);
-        s += bl(-1, .45, .85, 9, 10, 1.2, cls("lat"), 8.5, 2);
-        s += bl(1, .86, 1.1, 9, 4, 1.6, cls("trap"), 3, 2);
-        s += bl(-1, .86, 1.1, 9, 4, 1.6, cls("trap"), 3, 2);
-        for (var k2 = 1; k2 <= 3; k2++) { var pk = along(P, Sh, .12 + k2 * .12); s += '<path class="fib" d="' + ptsPath([T([pk[0] - midN[0] * 4, pk[1] - midN[1] * 4]), T([pk[0] + midN[0] * 4, pk[1] + midN[1] * 4])]) + '"/>'; }
+        [1, -1].forEach(function (sd) {
+          s += bl(sd, .62, .96, 6, 6, 2.6, cls("pec"), .5, 3);
+          s += bl(sd, .1, .6, 3.4, 3.4, .9, cls("abs"), 0, 0);
+          s += bl(sd, .1, .6, 7, 7, .9, cls("oblique"), 4.8, 2);
+          s += bl(sd, .45, .84, 8.6, 9.4, .9, cls("lat"), 8.2, 2);
+          s += bl(sd, .88, 1.1, 8.6, 4, 1.2, cls("trap"), 3, 2);
+        });
+        for (var k2 = 1; k2 <= 3; k2++) { var pk = along(P, Sh, .12 + k2 * .12); s += '<path class="fib' + (isT("abs") ? " tgtl" : "") + '" d="' + ptsPath([T([pk[0] - tant[0] * 4, pk[1] - tant[1] * 4]), T([pk[0] + tant[0] * 4, pk[1] + tant[1] * 4])]) + '"/>'; }
       }
       return s;
     }
-    // 侧视臀部（画在近侧大腿之上，臀桥等动作才看得见）
+    // 侧视臀部（画在近侧大腿之上）
     function hips() {
-      var P = j.P, Sh = j.S, u = sub(Sh, P), ant = vec(deg(u) - 90, 1);
-      var cv = j.c ? vec(j.t + 90, j.c * 2) : [0, 0];
-      function bl2(side, t0, t1, b0, b1, th, c, inner, lines) {
-        var a = along(P, Sh, t0), b = along(P, Sh, t1), w = Math.sin(Math.PI * Math.max(0, Math.min(1, (t0 + t1) / 2)));
-        return belly([a[0] + cv[0] * w, a[1] + cv[1] * w], [b[0] + cv[0] * w, b[1] + cv[1] * w], ant, side, 0, 1, b0, b1, th, c, inner, lines);
-      }
-      return bl2(-1, -.04, .2, 6.5, 6.5, 1.8, cls("gmed"), 5, 2) + bl2(-1, -.2, .3, 8, 8.5, 4, cls("glute"), 2, 4);
+      return bl(-1, -.04, .2, 6.2, 6.2, 1.2, cls("gmed"), 5, 2) + bl(-1, -.2, .3, 7.6, 8, 3, cls("glute"), 2, 4);
     }
-    // 正面臀外侧（臀中肌/臀大肌），画在双腿之上
     function hipsFront() {
       if (!(isT("gmed") || isT("glute"))) return "";
-      var P = j.P, Sh = j.S, u = sub(Sh, P), L = Math.hypot(u[0], u[1]) || 1, ant = [-u[1] / L, u[0] / L], r = "";
-      [1, -1].forEach(function (sd) { r += belly(along(P, Sh, -.14), along(P, Sh, .16), ant, sd, 0, 1, 9, 9, 2.4, "m tgt", 6.5, 2); });
+      var r = "";
+      [1, -1].forEach(function (sd) { r += belly(along(P, Sh, -.14), along(P, Sh, .16), tant, sd, 0, 1, 9, 9, 2, "m tgt", 6.5, 2); });
       return r;
     }
-    // 后肩肩袖（冈下肌/小圆肌）：肩胛骨外缘的一条梭形
-    function rotator(n) {
-      var P = j.P, Sh = j.S, u = sub(Sh, P), ant = vec(deg(u) - 90, 1);
+    function rotator() {
       if (front) return "";
-      return belly(along(P, Sh, .66), along(P, Sh, .98), ant, -1, 0, 1, 6, 6, 2.6, "m" + (isT("rotator", 1) || isT("rotator", 2) ? " tgt" : ""), 2.5, 3);
+      return belly(along(P, Sh, .66), along(P, Sh, .98), tant, -1, 0, 1, 6, 6, 2, "m" + (isT("rotator", 1) || isT("rotator", 2) ? " tgt" : ""), 2.5, 3);
     }
     // ── 头颈 ──
-    function headNeck() {
-      var s = "", Sh = j.S, Nk = j.N, Hd = j.Hd;
-      var nv = sub(Hd, Sh), nl = Math.hypot(nv[0], nv[1]) || 1, nn = [-nv[1] / nl, nv[0] / nl];
-      var neckPts = [[Sh[0] + nn[0] * 4.2, Sh[1] + nn[1] * 4.2], [Sh[0] - nn[0] * 4.2, Sh[1] - nn[1] * 4.2], [Hd[0] - nn[0] * 3.4, Hd[1] - nn[1] * 3.4], [Hd[0] + nn[0] * 3.4, Hd[1] + nn[1] * 3.4]];
-      s += '<path class="' + cls("neck") + '" d="' + ptsPath(neckPts.map(T), true) + '"/>';
-      s += '<path class="fib' + (isT("neck") ? " tgtl" : "") + '" d="' + ptsPath([T(along(Sh, Hd, .1)), T(along(Sh, Hd, .7))]) + '"/>';
-      void Nk;
-      var hd = T(Hd), hb = vec(j.h + 90 + 25, LEN.head + 2.5), up = vec(j.h, LEN.head + 3);
-      var bun = front ? [hd[0] + up[0], hd[1] + up[1]] : [hd[0] + hb[0], hd[1] + hb[1]];
-      s += '<circle class="ahair" cx="' + f1(bun[0]) + '" cy="' + f1(bun[1]) + '" r="5.6"/>';
-      s += '<circle class="skull" cx="' + f1(hd[0]) + '" cy="' + f1(hd[1]) + '" r="' + LEN.head + '"/>';
-      if (!front) {
-        // 侧脸：小鼻尖 + 耳朵，显示朝向
-        var fwd = vec(j.h - 90, 1), dn = vec(j.h, 1), R = LEN.head;
-        var nb = [[hd[0] + fwd[0] * (R - 1) + dn[0] * 1.5, hd[1] + fwd[1] * (R - 1) + dn[1] * 1.5], [hd[0] + fwd[0] * (R + 2.6) - dn[0] * 1.2, hd[1] + fwd[1] * (R + 2.6) - dn[1] * 1.2], [hd[0] + fwd[0] * (R - 1) - dn[0] * 3, hd[1] + fwd[1] * (R - 1) - dn[1] * 3]];
-        s += '<path class="skull" d="' + ptsPath(nb, true) + '"/>';
-        s += '<ellipse class="base" cx="' + f1(hd[0] - fwd[0] * 1.5 - dn[0] * 0.5) + '" cy="' + f1(hd[1] - fwd[1] * 1.5 - dn[1] * 0.5) + '" rx="1.9" ry="2.6"/>';
-        s += '<path class="hairl" d="' + ptsPath([[hd[0] + fwd[0] * 4 + dn[0] * 9, hd[1] + fwd[1] * 4 + dn[1] * 9], [hd[0] - fwd[0] * 6 + dn[0] * 7, hd[1] - fwd[1] * 6 + dn[1] * 7], [hd[0] - fwd[0] * 9, hd[1] - fwd[1] * 9]].map(function (q) { return q; })) + '"/>';
+    var Hd = j.Hd, hu = vec(j.h, 1), hf = vec(j.h - 90, 1);
+    function hp(x, y) { return [Hd[0] + hf[0] * x + hu[0] * y, Hd[1] + hf[1] * x + hu[1] * y]; }
+    function neckSkin() {
+      var nb = along(Sh, Hd, -.05), nt = hp(front ? 0 : -1.5, -6), nn = unit([-(nt[1] - nb[1]), nt[0] - nb[0]]);
+      return prof(nb, nt, [[0, 5.2, 5.2], [.55, 3.9, 3.9], [1, 3.8, 3.8]], nn);
+    }
+    function neckMus() {
+      if (front) return belly(along(Sh, Hd, 0), hp(0, -7), unit([-(hp(0, -7)[1] - Sh[1]), hp(0, -7)[0] - Sh[0]]), 1, .05, .95, 2.6, 2, .6, cls("neck"), -1, 2) + belly(along(Sh, Hd, 0), hp(0, -7), unit([-(hp(0, -7)[1] - Sh[1]), hp(0, -7)[0] - Sh[0]]), -1, .05, .95, 2.6, 2, .6, cls("neck"), -1, 2);
+      // 胸锁乳突肌：从耳后斜向锁骨
+      var a = hp(-2, -3), b = along(Sh, Hd, .02), nn = unit([-(b[1] - a[1]), b[0] - a[0]]);
+      return belly(a, b, nn, 1, .02, .98, 2.2, 2.2, .9, cls("neck"), -1.6, 2);
+    }
+    function headSkin() {
+      if (front) {
+        var o = [];
+        for (var i = 0; i < 16; i++) { var a = Math.PI * 2 * i / 16, x = Math.sin(a) * 8.3, y = Math.cos(a) * 10; if (y < 0) x *= 1 - .25 * Math.pow(-y / 10, 2); o.push(hp(x, y)); }
+        return smooth(o.map(T));
       }
+      // 侧脸轮廓：后脑 → 头顶 → 额头 → 鼻 → 唇 → 下巴 → 下颌角
+      var pts = [[-9.6, .5], [-8.4, 6.6], [-3.4, 10.4], [2.8, 10.2], [7.2, 6.6], [8.6, 2.4], [8.5, .2], [10.6, -2.4], [8.8, -3.8], [9.2, -5.4], [8.5, -6.6], [8.2, -8.6], [5.8, -10], [2.2, -8.6], [-1.6, -6.4], [-5.4, -6.6], [-8.4, -4]];
+      return smooth(pts.map(function (q) { return T(hp(q[0], q[1])); }));
+    }
+    function headDetail() {
+      var s = "";
+      function P2(x, y) { return T(hp(x, y)); }
+      function dot(x, y, r, c) { var q = P2(x, y); return '<circle class="' + c + '" cx="' + f1(q[0]) + '" cy="' + f1(q[1]) + '" r="' + r + '"/>'; }
+      if (front) {
+        var bun = P2(0, 12.2);
+        s += '<circle class="ahair" cx="' + f1(bun[0]) + '" cy="' + f1(bun[1]) + '" r="4.4"/>';
+        s += '<path class="ahair" d="' + smooth([[-8.6, 1], [-8.2, 6.4], [-4.4, 10.2], [0, 10.9], [4.4, 10.2], [8.2, 6.4], [8.6, 1], [6.4, 5.6], [2, 7], [-2, 7.2], [-6.4, 5.6]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
+        s += dot(-3.1, .2, .95, "eye") + dot(3.1, .2, .95, "eye");
+        s += '<path class="brow" d="' + ptsPath([P2(-4.6, 2.4), P2(-1.8, 2.8)]) + " " + ptsPath([P2(1.8, 2.8), P2(4.6, 2.4)]) + '"/>';
+        s += '<path class="lip" d="' + ptsPath([P2(-1.8, -5.2), P2(0, -5.6), P2(1.8, -5.2)]) + '"/>';
+        return s;
+      }
+      // 耳、眼、眉、唇、头发与发髻
+      var ear = P2(-1.6, -.8);
+      s += '<ellipse class="ear" cx="' + f1(ear[0]) + '" cy="' + f1(ear[1]) + '" rx="1.9" ry="2.7" transform="rotate(' + f1(-j.h + 180) + " " + f1(ear[0]) + " " + f1(ear[1]) + ')"/>';
+      s += '<path class="eye" d="' + smooth([P2(5.4, 1.1), P2(7, .6), P2(5.6, -.2)]) + '"/>';
+      s += '<path class="brow" d="' + ptsPath([P2(4.6, 2.9), P2(7.8, 2.6)]) + '"/>';
+      s += '<path class="lip" d="' + ptsPath([P2(8.6, -6), P2(7.4, -6.1)]) + '"/>';
+      s += '<path class="ahair" d="' + smooth([[8.2, 4.4], [6.8, 8.8], [1.4, 11.2], [-5.2, 10.2], [-9.9, 4.2], [-10.1, -1.6], [-7.6, -5], [-4.6, -3.4], [-3.4, 1.6], [.4, 4.8], [4.6, 5.2]].map(function (q) { return P2(q[0], q[1]); })) + '"/>';
+      var bn = P2(-9.4, 7.4);
+      s += '<circle class="ahair" cx="' + f1(bn[0]) + '" cy="' + f1(bn[1]) + '" r="4.4"/>';
       return s;
     }
-    var sv = !front;
+
     var b = "";
-    if (sv) {
-      b += arm(j.A2, 2, true) + leg(j.L2, 2, true);
-      b += trunk() + rotator() + headNeck();
-      b += leg(j.L1, 1, false) + hips();
-      b += arm(j.A1, 1, false);
+    if (!front) {
+      var fa = arm(j.A2, 2, true), fl2 = leg(j.L2, 2, true), nl = leg(j.L1, 1, false), na = arm(j.A1, 1, false);
+      b += skin(fa.skin.concat(fl2.skin), true) + fl2.mus + fa.mus;
+      b += skin([trunkSkin(), neckSkin(), headSkin()].concat(nl.skin)) + trunkMus() + rotator() + neckMus() + headDetail();
+      b += nl.mus + hips();
+      b += skin(na.skin) + na.mus;
     } else {
-      b += trunk();
-      b += leg(j.L1, 1, false) + leg(j.L2, 2, false) + hipsFront();
-      b += headNeck();
-      b += arm(j.A1, 1, false) + arm(j.A2, 2, false);
+      var l1 = leg(j.L1, 1, false), l2 = leg(j.L2, 2, false), a1 = arm(j.A1, 1, false), a2 = arm(j.A2, 2, false);
+      b += skin(l1.skin.concat(l2.skin, [trunkSkin(), neckSkin(), headSkin()])) + l1.mus + l2.mus;
+      b += trunkMus() + hipsFront() + neckMus() + headDetail();
+      b += skin(a1.skin) + a1.mus + skin(a2.skin) + a2.mus;
     }
     return b;
   }
