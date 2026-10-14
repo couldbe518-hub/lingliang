@@ -110,6 +110,13 @@
     var out = "", props = ex.props || {};
     function T(p) { return [p[0] + dx, p[1] + dy]; }
     if (stage === "back") {
+      if (props.mat) { // 俯视的瑜伽垫 + 枕头
+        var hd = T(j.Hd), ptsM = [j.Hd, j.S, j.P, j.A1.W, j.A2.W, j.A1.E, j.A2.E, j.L1.K, j.L2.K, j.L1.T, j.L2.T, j.L1.A, j.L2.A].map(T);
+        var mlo = Math.min.apply(null, ptsM.map(function (q) { return q[0]; })) - 16, mhi = Math.max.apply(null, ptsM.map(function (q) { return q[0]; })) + 16;
+        var mtop = Math.min.apply(null, ptsM.map(function (q) { return q[1]; })) - 22, mbot = Math.max.apply(null, ptsM.map(function (q) { return q[1]; })) + 18;
+        out += '<rect class="prop-mat" x="' + mlo.toFixed(1) + '" y="' + mtop.toFixed(1) + '" width="' + (mhi - mlo).toFixed(1) + '" height="' + (mbot - mtop).toFixed(1) + '" rx="8"/>';
+        out += '<rect class="prop-pillow" x="' + (hd[0] - 16).toFixed(1) + '" y="' + (hd[1] - 12).toFixed(1) + '" width="32" height="24" rx="8"/>';
+      }
       if (props.wall != null) {
         var wx = ex._wallX;
         out += '<rect class="prop-wall" x="' + wx.toFixed(1) + '" y="16" width="8" height="' + (GROUND - 15) + '" rx="2"/>';
@@ -264,6 +271,7 @@
       if (front) up = 1;
       var footPts = [along(Hl, Tt, -.12), [Hl[0] - fn[0] * up * 3.6, Hl[1] - fn[1] * up * 3.6], [A[0] - fn[0] * up * 4.2 + fv[0] / fl * 2, A[1] - fn[1] * up * 4.2 + fv[1] / fl * 2], [Tt[0] - fn[0] * up * 1.8, Tt[1] - fn[1] * up * 1.8], [Tt[0] + fn[0] * up * .9, Tt[1] + fn[1] * up * .9], along(Hl, Tt, .5)];
       var fd = smooth(footPts.map(T));
+      m += '<path class="crease" d="' + ptsPath([T(along(Hl, Tt, .78)), T([along(Hl, Tt, .8)[0] - fn[0] * up * 2.2, along(Hl, Tt, .8)[1] - fn[1] * up * 2.2])]) + '"/>';
       ds.push(fd);
       if (isT("sole", n)) m += '<path class="m tgt" d="' + smooth([along(Hl, Tt, -.05), along(Hl, Tt, .5), along(Tt, Hl, .02), [Tt[0] - fn[0] * up * 1.4, Tt[1] - fn[1] * up * 1.4], [along(Hl, Tt, .5)[0] - fn[0] * up * 2.2, along(Hl, Tt, .5)[1] - fn[1] * up * 2.2], [Hl[0] - fn[0] * up * 2.4, Hl[1] - fn[1] * up * 2.4]].map(T)) + '"/>';
       return { skin: ds, mus: m };
@@ -274,7 +282,14 @@
       var hv = sub(Wr, E), hl = Math.hypot(hv[0], hv[1]) || 1, hd = Ar.F ? Ar.F : [Wr[0] + hv[0] / hl * 7.5, Wr[1] + hv[1] / hl * 7.5];
       ds.push(prof(S0, E, [[-.14, 5.6, 5.6], [.15, 5.4, 5.4], [.55, 4.5, 4.4], [.9, 3.7, 3.5], [1.05, 3.3, 3.3]], ant));
       ds.push(prof(E, Wr, [[-.05, 3.4, 3.4], [.25, 3.9, 3.6], [.7, 2.8, 2.5], [1.04, 2.2, 2.1]], antF));
-      ds.push(prof(Wr, hd, [[-.05, 2.2, 2.1], [.45, 2.9, 2.6], [.95, 2, 1.8]], antOfLimb(Wr, hd)));
+      ds.push(prof(Wr, hd, [[-.05, 2.2, 2.1], [.45, 3, 2.7], [.95, 2.1, 1.9]], antOfLimb(Wr, hd)));
+      // 拇指 + 指缝
+      var ha = antOfLimb(Wr, hd), hu = unit(sub(hd, Wr)), tb = along(Wr, hd, .18), tside = front ? (n === 1 ? -1 : 1) : 1;
+      var tt = [tb[0] + ha[0] * tside * 3.6 + hu[0] * 3.2, tb[1] + ha[1] * tside * 3.6 + hu[1] * 3.2];
+      ds.push(prof(tb, tt, [[0, 1.3, 1.3], [1, .9, .9]], antOfLimb(tb, tt)));
+      var fc = "";
+      [-.35, .35].forEach(function (k) { var q0 = along(Wr, hd, .55), q1 = along(Wr, hd, .98); fc += '<path class="crease" d="' + ptsPath([T([q0[0] + ha[0] * k * 2.4, q0[1] + ha[1] * k * 2.4]), T([q1[0] + ha[0] * k * 2, q1[1] + ha[1] * k * 2])]) + '"/>'; });
+      m += fc;
       if (!front) {
         m += belly(S0, E, ant, -1, .16, .9, 4.2, 3.4, 1.3, cls("triceps", n, far));
         m += belly(S0, E, ant, 1, .26, .88, 4.2, 3.4, 1.2, cls("biceps", n, far));
@@ -305,7 +320,7 @@
     function trunkSkin() {
       // 侧面：臀部后凸、腰收、胸廓；正面：肩宽、腰细、髋宽
       var pr = front ? [[-.16, 8, 8], [-.02, 11.8, 11.8], [.25, 10, 10], [.45, 9.6, 9.6], [.7, 11.5, 11.5], [.92, 13.5, 13.5], [1.06, 9, 9]]
-        : [[-.16, 8, 9], [0, 9.5, 12.5], [.22, 8.5, 9.5], [.45, 8, 7.4], [.7, 10.8, 8.6], [.92, 9, 9], [1.06, 5.6, 5.6]];
+        : [[-.16, 8, 9], [0, 9.5, 12.5], [.22, 8.5, 9.5], [.45, 8, 7.4], [.64, 9.6, 8.2], [.76, 12.4, 8.8], [.88, 11, 9], [1.06, 5.6, 5.6]];
       var A = [], B = [];
       pr.forEach(function (r) { var p = along(P, Sh, r[0]), o = bend(r[0]); A.push([p[0] + o[0] + tant[0] * r[1], p[1] + o[1] + tant[1] * r[1]]); B.push([p[0] + o[0] - tant[0] * r[2], p[1] + o[1] - tant[1] * r[2]]); });
       return smooth(A.concat(B.reverse()).map(T));
@@ -428,6 +443,7 @@
     function seg(a, b, name, w, base) { return line(T(a), T(b), base + (hl[name] ? " hl" : ""), w); }
     var s = "";
     s += drawProps(ex, j, dx, dy, "back");
+    if (STYLE === "anatomy" && !ex.free) { var bx = bbox(j); s += '<ellipse class="shadow" cx="' + ((bx[0] + bx[1]) / 2 + dx).toFixed(1) + '" cy="' + (GROUND + 2) + '" rx="' + ((bx[1] - bx[0]) / 2 + 6).toFixed(1) + '" ry="3.2"/>'; }
     if (STYLE === "anatomy") return s + anatomySvg(ex, pose, T) + drawProps(ex, j, dx, dy, "front");
     // 远侧肢体先画（侧视颜色更浅）
     var farCls = view === "side" ? "limb far" : "limb";
@@ -538,7 +554,11 @@
   }
 
   function shell(label, inner, free, note) {
-    return '<svg class="fig" viewBox="0 0 ' + W + " " + H + '"' + (label ? ' role="img" aria-label="' + label + '"' : ' aria-hidden="true"') + '>' +
+    var defs = '<defs><linearGradient id="skG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDEBDF"/><stop offset=".55" stop-color="#F6D5C3"/><stop offset="1" stop-color="#E7B9A3"/></linearGradient>' +
+      '<linearGradient id="skGf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F1D2C1"/><stop offset="1" stop-color="#DBAE98"/></linearGradient>' +
+      '<linearGradient id="muG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7CDBB"/><stop offset="1" stop-color="#E7AF9A"/></linearGradient>' +
+      '<linearGradient id="tgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F26A5A"/><stop offset="1" stop-color="#D4281C"/></linearGradient></defs>';
+    return '<svg class="fig" viewBox="0 0 ' + W + " " + H + '"' + (label ? ' role="img" aria-label="' + label + '"' : ' aria-hidden="true"') + '>' + defs +
       (free ? "" : '<g class="mat"><line x1="14" y1="' + (GROUND + 1) + '" x2="' + (W - 14) + '" y2="' + (GROUND + 1) + '"/></g>') +
       (note ? '<text class="vnote" x="14" y="20">' + note + "</text>" : "") + inner + "</svg>";
   }
