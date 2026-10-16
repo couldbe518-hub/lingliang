@@ -184,6 +184,9 @@ h3{font-size:1.02rem}
 .progress i{display:block;height:100%;background:var(--gold)}
 details summary{cursor:pointer;list-style:none}
 details summary::-webkit-details-marker{display:none}
+.rd summary{line-height:1.5}
+.rd summary::after{content:"展开";float:right;font-size:.75rem;color:var(--muted)}
+.rd[open] summary::after{content:"收起"}
 .steps li{margin-bottom:6px}
 .loading{padding:40px 0;text-align:center;color:var(--muted)}
 </style>
@@ -341,7 +344,7 @@ V.book=async v=>{
  const nread=B.c.filter((_,i)=>isRead(b,i+1)).length;
  return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${BOOKS[b-1][0]}</div><span class="small muted">${BOOKS[b-1][2]}</span></div>
  <div class="stack"><details class="card intro" ${v.open?"open":""}><summary class="row between"><span><span class="eyebrow" style="color:${cat[3]}">${cat[0]} · ${B.c.length} 章 · 已读 ${nread}</span><br><b style="font-family:var(--f-scripture);font-size:1.1rem">书卷导论</b></span><span class="chip">展开</span></summary>
- <dl style="margin-top:12px"><dt>作者</dt><dd>${esc(I.author)}</dd><dt>年代</dt><dd>${esc(I.date)}</dd><dt>主题</dt><dd>${esc(I.theme)}</dd><dt>结构</dt><dd>${esc(I.outline)}</dd><dt>指向基督</dt><dd>${esc(I.christ)}</dd><dt>钥节</dt><dd>${esc(I.key)}</dd></dl></details>
+ <dl style="margin-top:12px"><dt>作者</dt><dd>${esc(I.author)}</dd><dt>年代</dt><dd>${esc(I.date)}</dd><dt>主题</dt><dd>${esc(I.theme)}</dd><dt>结构</dt><dd>${esc(I.outline)}</dd><dt>指向基督</dt><dd>${esc(I.christ)}</dd><dt>钥节</dt><dd><div class="row" style="gap:6px">${refChips(I.key)}</div></dd></dl></details>
  <div class="chlist">${rows}</div></div>`;
 };
 V.chapter=async v=>{
@@ -363,7 +366,7 @@ V.chapter=async v=>{
  <div class="navch">${prev?`<button class="btn sm" data-act="open" data-b="${prev[0]}" data-c="${prev[1]}">‹ ${ref(prev[0],prev[1])}</button>`:"<span></span>"}<span></span>${nxt?`<button class="btn sm" style="justify-self:end" data-act="open" data-b="${nxt[0]}" data-c="${nxt[1]}">${ref(nxt[0],nxt[1])} ›</button>`:"<span></span>"}</div>
  <p class="small muted" style="text-align:center">中文：和合本（1919，公共领域）· English: ${S.en==="bsb"?"Berean Standard Bible (public domain)":"King James Version"}</p></div>`;
 };
-after.chapter=v=>{if(v.v){const el=document.getElementById("v"+v.v);if(el){el.scrollIntoView({block:"center"});el.classList.add("sel");setTimeout(()=>el.classList.remove("sel"),2600)}}};
+after.chapter=v=>{if(v.v){const el=document.getElementById("v"+v.v);if(el){el.scrollIntoView({block:"center"});const ls=[];for(let n=v.v;n<=(v.ve||v.v);n++){const x=document.getElementById("v"+n);if(x){x.classList.add("sel");ls.push(x)}}setTimeout(()=>ls.forEach(x=>x.classList.remove("sel")),3200)}}};
 V.seek=async()=>`<div style="padding-top:6px" class="stack">
  <div class="ask"><div class="eyebrow" style="color:inherit;opacity:.8">寻求</div><h2>现在的你，怎么了？</h2><p class="small" style="margin:0;opacity:.9">用一句话说说你的状况，比如“妈妈住院了我很担心”，会为你找到最相关的经文和祷告。</p><form id="askf" class="row" style="flex-wrap:nowrap"><input id="askin" placeholder="说说你的状况……" autocomplete="off"><button class="btn gold" type="submit">寻找</button></form><div id="askres"></div></div>
  <div class="scgrid">${C.scen.map(s=>`<button class="sc" data-act="scen" data-id="${s.id}"><b>${esc(s.n)}</b><span>${esc(s.sub)}</span></button>`).join("")}</div></div>`;
@@ -408,12 +411,18 @@ after.search=v=>{
 
 /* ---------- 经文引用解析与搜索 ---------- */
 const NAMES={};BOOKS.forEach((x,i)=>{const b=i+1;[x[0],x[1],x[0].replace(/[书记]$/,""),x[2],x[3]].forEach(n=>{NAMES[n.toLowerCase().replace(/\s+/g,"")]=b})});
-Object.assign(NAMES,{"诗":19,"诗篇":19,"psalm":19,"psa":19,"ps":19,"jn":43,"jhn":43,"mt":40,"mk":41,"lk":42,"ge":1,"ex":2,"约翰":43,"马太":40,"马可":41,"路加":42,"罗马":45,"启示":66,"箴":20,"song of solomon":22,"songofsolomon":22,"cor":46,"1cor":46,"2cor":47,"1co":46,"2co":47,"rev":66,"revelations":66,"phil":50,"php":50,"eph":49,"heb":58});
-function parseRef(q){const m=q.replace(/\s+/g," ").trim().match(/^([1-3]?\s?[A-Za-z一-龥 ]+?)\s*(\d+)?(?:\s*[:：章\.\s]\s*(\d+)(?:\s*[-–~]\s*(\d+))?)?\s*节?$/);if(!m)return null;const key=m[1].toLowerCase().replace(/\s+/g,"").replace(/篇$/,"篇");let b=NAMES[key];if(!b){const k2=key.replace(/[书记]$/,"");b=NAMES[k2]}if(!b)return null;const c=m[2]?+m[2]:0;if(c>NCH[b-1])return null;return {b,c,v:m[3]?+m[3]:0}}
+Object.assign(NAMES,{"诗":19,"诗篇":19,"psalm":19,"psa":19,"约一":62,"约二":63,"约三":64,"约1":62,"jud":65,"phm":57,"tit":56,"1jn":62,"2jn":63,"3jn":64,"song":22,"sos":22,"ps":19,"jn":43,"jhn":43,"mt":40,"mk":41,"lk":42,"ge":1,"ex":2,"约翰":43,"马太":40,"马可":41,"路加":42,"罗马":45,"启示":66,"箴":20,"song of solomon":22,"songofsolomon":22,"cor":46,"1cor":46,"2cor":47,"1co":46,"2co":47,"rev":66,"revelations":66,"phil":50,"php":50,"eph":49,"heb":58});
+function parseRef(q){{const mm=String(q).trim().match(/^(\D+?)\s*(\d+)\s*[-–~]\s*(\d+)$/);if(mm){const k=mm[1].toLowerCase().replace(/\s+/g,"");const bb=NAMES[k]||NAMES[k.replace(/[书记]$/,"")];if(bb&&NCH[bb-1]===1)q=mm[1]+"1:"+mm[2]+"-"+mm[3]}}const m=q.replace(/\s+/g," ").trim().match(/^([1-3]?\s?[A-Za-z一-龥 ]+?)\s*(\d+)?(?:\s*[:：章\.\s]\s*(\d+)(?:\s*[-–~]\s*(\d+))?)?\s*节?$/);if(!m)return null;const key=m[1].toLowerCase().replace(/\s+/g,"");let b=NAMES[key];if(!b){const k2=key.replace(/[书记]$/,"");b=NAMES[k2]}if(!b)return null;let c=m[2]?+m[2]:0,v=m[3]?+m[3]:0,ve=m[4]?+m[4]:0;
+ if(NCH[b-1]===1&&c&&!v&&!/[:：章]/.test(q)){if(c>1||/[-–~]/.test(q)){const mm=q.match(/(\d+)\s*[-–~]\s*(\d+)\s*$/);v=c;ve=mm?+mm[2]:0;c=1}}
+ if(c>NCH[b-1])return null;return {b,c,v,ve:ve&&ve>=v?ve:v}}
+function parseRefs(str){const out=[];let lastB=0,lastC=0;for(let p of String(str).split(/[；;，,、]\s*/)){p=p.trim();if(!p)continue;let r=parseRef(p);
+ if(!r&&lastB){if(/^\d+[:：]\d+/.test(p))r=parseRef(BOOKS[lastB-1][1]+p);else if(/^\d+(\s*[-–~]\s*\d+)?$/.test(p)&&lastC)r=parseRef(BOOKS[lastB-1][1]+lastC+":"+p)}
+ if(r&&r.c){lastB=r.b;lastC=r.c;out.push(Object.assign(r,{label:ref(r.b,r.c,r.v,r.ve)}))}else out.push({label:p,bad:1})}return out}
+function refChips(str){return parseRefs(str).map(r=>r.bad?`<span class="chip" style="opacity:.6">${esc(r.label)}</span>`:`<button class="chip" data-act="refpv" data-b="${r.b}" data-c="${r.c}" data-v="${r.v}" data-ve="${r.ve}">${esc(r.label)}</button>`).join("")}
 let ALLLOADED=false;
 async function doSearch(q){const box=$("#sres");if(!q){box.innerHTML="";return}VIEW.q=q;
  const r=parseRef(q);
- if(r){if(r.c)return go({name:"chapter",b:r.b,c:r.c,v:r.v});return go({name:"book",b:r.b,open:true})}
+ if(r){if(r.c)return go({name:"chapter",b:r.b,c:r.c,v:r.v,ve:r.ve});return go({name:"book",b:r.b,open:true})}
  const ql=q.toLowerCase();
  const hb=BOOKS.map((x,i)=>i+1).filter(b=>BOOKS[b-1][0].includes(q)||BOOKS[b-1][2].toLowerCase().includes(ql));
  const hs=[];C.books.forEach((B,bi)=>B.c.forEach(([t,s],ci)=>{if(t.includes(q)||s.includes(q))hs.push([bi+1,ci+1,t,s])}));
@@ -437,9 +446,25 @@ async function kvSheet(i){const k=C.kv[i];const t=await verses(k[0],k[1],k[2],k[
  <div class="scripture">${t.map(x=>isMerged(x.zh)?"":`<span class="num" style="font-size:.7em;color:var(--gold);vertical-align:super">${x.v}</span>${fmtZh(x.zh)}`).join("")}</div><div class="en">${t.map(x=>esc(x.en)).join(" ")}</div>
  <div class="row"><button class="btn sm" data-act="speakKv" data-i="${i}">${IC.play} 朗读</button><button class="btn sm" data-act="copyKv" data-i="${i}">复制</button><button class="btn sm ghost" data-act="openClose" data-b="${k[0]}" data-c="${k[1]}" data-v="${k[2]}">读全章</button></div>
  <div class="sec"><h4>为什么经典</h4><p>${esc(k[5])}</p></div><div class="sec"><h4>解释</h4><p>${esc(k[6])}</p></div><div class="sec"><h4>背景</h4><p>${esc(k[7])}</p></div>
- ${k[8].length?`<div class="sec"><h4>对照经文</h4><div class="row">${k[8].map(x=>`<button class="chip" data-act="refgo" data-q="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>`:""}
- ${k[9].length?`<div class="sec"><h4>延伸阅读</h4><ul class="idx" style="margin:0;padding-left:1.2em">${k[9].map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
- <p class="small muted" style="margin:0">释义依循福音派新教的主流解经，有分歧处已注明。</p>`)}
+ ${k[8].length?`<div class="sec"><h4>对照经文</h4><div class="row">${k[8].map(refChips).join("")}</div><p class="small muted" style="margin:6px 0 0">点一下可直接看经文。</p></div>`:""}
+ <div class="sec"><h4>延伸阅读 · 经典原著</h4><div id="refbox" class="stack" style="gap:10px"><p class="small muted">正在载入……</p></div></div>
+ <p class="small muted" style="margin:0">释义依循福音派新教的主流解经，引用的经典注释多出自改革宗传统；有分歧处已注明。</p>`);
+ loadRefs().then(R=>{const box=$("#refbox");if(box)box.innerHTML=refCards(R[i]||[])}).catch(()=>{const box=$("#refbox");if(box)box.innerHTML='<p class="small muted">延伸阅读载入失败，请检查网络后再打开。</p>'})}
+let REFS=null;async function loadRefs(){if(REFS)return REFS;const r=await fetch("refs.json");if(!r.ok)throw 0;REFS=await r.json();return REFS}
+function refCards(list){if(!list.length)return '<p class="small muted">暂无。</p>';return list.map((e,j)=>{
+ if(e.k==="read")return `<details class="card rd" ${j===0?"open":""}><summary><span class="tag" style="background:var(--accent-soft);color:var(--accent)">可直接阅读</span> <b>${esc(e.n)}</b></summary>
+  <div class="stack" style="gap:8px;margin-top:8px"><div class="eyebrow" style="text-transform:none;letter-spacing:.02em">原著导读</div><p style="margin:0;line-height:1.75">${esc(e.z)}</p>
+  <blockquote class="en" style="margin:0;padding-left:10px;border-left:2px solid var(--gold);font-style:italic">“${esc(e.q)}”</blockquote>
+  <a class="btn sm primary" style="align-self:flex-start;text-decoration:none" href="${esc(e.u)}" target="_blank" rel="noopener">打开原著 · 直接跳到这段 ↗</a>
+  <p class="small muted" style="margin:0">原文为英文：${esc(e.s)}。在 Safari 打开后可点地址栏左侧「大小」图标 → 翻译成中文。</p></div></details>`;
+ if(e.k==="conf")return `<details class="card rd"><summary><span class="tag" style="background:var(--accent-soft);color:var(--accent)">信条全文</span> <b>${esc(e.n)}</b></summary>
+  <div class="stack" style="gap:10px;margin-top:8px">${e.units.map(u=>u.secs?`<div><b style="font-family:var(--f-scripture)">${esc(u.t)}</b>${u.secs.map(x=>`<p style="margin:6px 0 0;line-height:1.75"><span class="ref">${x[0]}.</span> ${esc(x[1])}</p><p class="en small" style="margin:2px 0 0">${esc(x[2])}</p>`).join("")}</div>`
+   :`<div><p style="margin:0;line-height:1.75"><span class="ref">${esc(u.t)}</span> 问：${esc(u.q)}</p><p style="margin:4px 0 0;line-height:1.75">答：${esc(u.a)}</p><p class="en small" style="margin:4px 0 0">Q. ${esc(u.qe)} A. ${esc(u.ae)}</p></div>`).join("")}
+  <a class="btn sm" style="align-self:flex-start;text-decoration:none" href="${esc(e.u)}" target="_blank" rel="noopener">查看英文原文网页 ↗</a><p class="small muted" style="margin:0">中文为本站据英文原文翻译。来源：${esc(e.s)}。</p></div></details>`;
+ return `<div class="card" style="padding:12px 14px"><span class="tag">现代著作</span> <b>${esc(e.n)}</b><p class="small muted" style="margin:4px 0 6px">${esc(e.a)}, <i>${esc(e.t)}</i>。仍受版权保护，无法在此免费全文阅读；可购买或在图书馆借阅。</p><a class="small" href="${esc(e.u)}" target="_blank" rel="noopener">在 Google 图书查找此书 ↗</a></div>`}).join("")}
+function rangeSheet(b,c,v,ve){book(b).then(d=>{const zh=d.zh[c-1]||[],en=d[S.en][c-1]||[];const a=v||1,z=v?(ve||v):zh.length;let h="";for(let n=a;n<=Math.min(z,zh.length);n++){if(isMerged(zh[n-1]))continue;h+=`<span class="num" style="font-size:.7em;color:var(--gold);vertical-align:super">${n}</span>${fmtZh(zh[n-1])}`}
+ const e=[];for(let n=a;n<=Math.min(z,en.length);n++)if(en[n-1])e.push(esc(en[n-1]));
+ openSheet(`<div class="ref">${refFull(b,c,v,ve)} · ${refEn(b,c,v,ve)}</div><div class="scripture">${h}</div><div class="en">${e.join(" ")}</div><div class="row"><button class="btn sm primary" data-act="openClose" data-b="${b}" data-c="${c}" data-v="${v}" data-ve="${ve}">读全章</button></div>`)})}
 function verseSheet(b,c,v){const d=BK[b];const z=d.zh[c-1][v-1],e=(d[S.en][c-1]||[])[v-1]||"";const isF=S.fav.some(f=>f[0]===b&&f[1]===c&&f[2]===v);
  openSheet(`<div class="ref">${refFull(b,c,v)}</div><div class="scripture">${fmtZh(z)}</div><div class="en">${esc(e)}</div>
  <div class="row"><button class="btn sm ${isF?"":"gold"}" data-act="fav" data-b="${b}" data-c="${c}" data-v="${v}">${isF?"取消收藏":"收藏"}</button><button class="btn sm" data-act="copyV" data-b="${b}" data-c="${c}" data-v="${v}">复制</button><button class="btn sm" data-act="playFrom" data-v="${v}">${IC.play} 从这里朗读</button></div>`)}
@@ -462,7 +487,7 @@ function settingsSheet(){const vs=voices();const zv=vs.filter(x=>/^zh/i.test(x.l
  <li><b>晚祷提醒：</b>同上，时间设为 21:30，链接末尾加 <code>#evening</code>。</li>
  <li>链接末尾加 <code>#seek</code> 直接打开“寻求”页。</li></ol></details>
  <details class="sec"><summary><h4>备份与恢复</h4></summary><p class="small muted">打卡、收藏、代祷都保存在这台手机的浏览器里。换手机或清除网站数据前，先复制备份保存到备忘录。</p><div class="row"><button class="btn sm" data-act="backup">复制备份</button></div><textarea id="restore" placeholder="把备份文字粘贴到这里" style="margin-top:8px"></textarea><button class="btn sm" data-act="restore" style="margin-top:6px">恢复备份</button></details>
- <div class="sec"><h4>关于译本</h4><p class="small muted">中文：和合本（1919，公共领域）。英文：Berean Standard Bible（2023 年起公共领域，忠实直译、现代英语）与 King James Version。章节概要、经文释义、情境推荐与祷告文为原创内容，依循福音派新教主流解经。</p></div>`);
+ <div class="sec"><h4>关于译本</h4><p class="small muted">中文：和合本（1919，公共领域）。英文：Berean Standard Bible（2023 年起公共领域，忠实直译、现代英语）与 King James Version。章节概要、经文释义、情境推荐与祷告文为原创内容，依循福音派新教主流解经。延伸阅读中的马太·亨利、加尔文、司布真、路德、赖尔、欧文等公有领域原著，附中文导读，可一键打开原文并跳到相关段落（需 iOS 16.1 以上）；信条与要理问答附中英全文；现代著作受版权保护，只列书目。</p></div>`);
  const a=$("#vzh"),b=$("#ven");a&&a.addEventListener("change",e=>{S.voiceZh=e.target.value;save()});b&&b.addEventListener("change",e=>{S.voiceEn=e.target.value;save()});}
 function readPrefsSheet(){openSheet(`<h3>阅读设置</h3><div class="sec"><h4>字号</h4><div class="seg">${[[.98,"小"],[1.12,"中"],[1.28,"大"],[1.45,"特大"]].map(([v,n])=>`<button data-act="fs" data-v="${v}" aria-pressed="${S.fs==v}">${n}</button>`).join("")}</div></div><div class="sec"><h4>英文译本</h4><div class="seg"><button data-act="en" data-v="bsb" aria-pressed="${S.en==="bsb"}">BSB 现代</button><button data-act="en" data-v="kjv" aria-pressed="${S.en==="kjv"}">KJV 钦定本</button></div></div><div class="sec"><h4>朗读语速</h4><div class="seg">${[[.8,"慢"],[.95,"适中"],[1.1,"快"]].map(([v,n])=>`<button data-act="rate" data-v="${v}" aria-pressed="${S.rate==v}">${n}</button>`).join("")}</div></div>`)}
 
@@ -512,8 +537,9 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
  case"testament":go({name:"bible",t:d.t},false);break;
  case"book":closeSheet();go({name:"book",b:+d.b});break;
  case"open":closeSheet();go({name:"chapter",b:+d.b,c:+d.c,v:d.v?+d.v:0});break;
- case"openClose":closeSheet();go({name:"chapter",b:+d.b,c:+d.c,v:+d.v});break;
- case"refgo":{const r=parseRef(d.q);if(r&&r.c){closeSheet();go({name:"chapter",b:r.b,c:r.c,v:r.v})}break}
+ case"openClose":closeSheet();go({name:"chapter",b:+d.b,c:+d.c,v:+d.v,ve:d.ve?+d.ve:0});break;
+ case"refgo":{const r=parseRef(d.q);if(r&&r.c){closeSheet();go({name:"chapter",b:r.b,c:r.c,v:r.v,ve:r.ve})}break}
+ case"refpv":rangeSheet(+d.b,+d.c,+d.v,+d.ve);break;
  case"scen":go({name:"scen",id:d.id});break;
  case"closeSheet":closeSheet();break;
  case"settings":settingsSheet();break;
