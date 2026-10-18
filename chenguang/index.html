@@ -116,6 +116,13 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:12px 0}
 .hero h2{color:var(--ink);font-size:1.45rem}
 .hero .progress{background:rgba(0,0,0,.08)}
 .hero .btn{background:var(--green);border-color:var(--green);color:var(--on-accent);font-weight:600}
+.greet{border-top:5px solid var(--sun)}
+.greet h2{font-size:1.6rem}
+.greet .dv{display:block;width:100%;text-align:left;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--sun-soft);border:1.5px solid var(--line)}
+.greet .dv .zh{font-family:var(--f-zh);font-size:1.15rem;line-height:1.75;margin-top:4px}
+.greet .dv .en{font-family:var(--f-en);font-size:1.02rem;line-height:1.55;color:#4A4036;margin-top:4px}
+:root[data-theme="dark"] .greet .dv .en{color:var(--muted)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .greet .dv .en{color:var(--muted)}}
 .todo{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .todo:first-child{border-top:0}
 .todo .box{width:34px;height:34px;border-radius:9px;border:2px solid var(--muted);display:grid;place-items:center;flex:none}
