@@ -13,7 +13,7 @@
   var DEFAULTS = {
     level: "basic", voiceOn: true, musicOn: true, musicVol: .55, voiceVol: 1, rate: 1, voice: "",
     count: true, explain: "auto", asym: true, musicTheme: "auto", prepSecs: 7,
-    wakeTime: "07:00", dayTime: "12:30", nightTime: "21:45", theme: "auto"
+    wakeTime: "07:00", dayTime: "12:30", nightTime: "21:45", theme: "auto", figStyle: "anatomy"
   };
   function load() {
     var s = null;
@@ -32,6 +32,7 @@
   applySound();
   function applyTheme() { if (S().theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", S().theme); }
   applyTheme();
+  if (window.Figure && Figure.setStyle) Figure.setStyle(S().figStyle || "anatomy");
 
   // ───────── 工具 ─────────
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -79,6 +80,8 @@
 
   // ───────── 计划与时间 ─────────
   function levelOf(id) { return state.levels[id] || S().level; }
+  // 进阶版姿势不同时有自己的动作要领
+  function cuesOf(ex, lv) { return lv === "adv" && ex.adv.cues ? ex.adv.cues : ex.cues; }
   function segsFor(item) {
     var ex = EXM[item[0]], o = item[1] || {};
     var sides = ex.side === "each" ? ["L", "R"] : [null];
@@ -332,14 +335,17 @@
       '<div class="stage"><div id="fig"></div><div class="legend"><i></i>主要拉伸 / 发力部位</div></div>' +
       '<div class="row"><div class="seg grow"><button data-lv="basic" aria-pressed="' + (lv === "basic") + '">基础：' + esc(ex.basic.name) + '</button><button data-lv="adv" aria-pressed="' + (lv === "adv") + '">进阶：' + esc(ex.adv.name) + "</button></div>" +
       (ex.side === "each" ? '<button class="iconbtn" id="mir" aria-label="看另一侧">' + icon("swap") + "</button>" : "") + "</div>" +
-      '<div class="kv card"><h3>怎么做</h3><p id="how"></p><h3>动作要领</h3><ol class="cues">' + ex.cues.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ol>" +
+      '<div class="kv card"><h3>怎么做</h3><p id="how"></p><h3>动作要领</h3><ol class="cues" id="cues"></ol>' +
       "<h3>普拉提要领</h3><p>" + esc(ex.pi) + "</p></div>" +
       '<div class="note acc"><b>为什么给你选这个：</b>' + esc(ex.why) + "</div>" +
       '<div class="note warn"><b>注意：</b>' + esc(ex.care) + "</div>" +
       '<div class="grid2" style="grid-template-columns:1fr 1fr;margin-top:12px"><a class="btn primary" href="#/r/ex:' + ex.id + '?play=1">' + icon("play") + '单独练这个</a><a class="btn" href="#/coach?mode=mirror&ex=' + ex.id + '">' + icon("mirror", "ic") + "镜子对照</a></div>";
     var fig = Figure.mount(q("#fig"), ex, { level: lv });
     onLeave(function () { fig.stop(); });
-    function how() { q("#how").textContent = (lv === "adv" ? ex.adv.how : ex.basic.how); }
+    function how() {
+      q("#how").textContent = (lv === "adv" ? ex.adv.how : ex.basic.how);
+      q("#cues").innerHTML = cuesOf(ex, lv).map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("");
+    }
     how();
     qa("[data-lv]").forEach(function (b) {
       b.onclick = function () {
@@ -448,7 +454,8 @@
       '<h2 class="sec">练习</h2><div class="card">' +
       sw("asym", "左右不对称加量", "右肩、右前臂神经滑动、右足底多做；左脚踝平衡多做") +
       '<div class="field"><div><label for="prep">动作之间准备时间</label><small>秒</small></div><input type="number" id="prep" min="4" max="20" value="' + s.prepSecs + '"></div>' +
-      '<div class="field"><label for="thm">外观</label><select id="thm"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div></div>' +
+      '<div class="field"><label for="thm">外观</label><select id="thm"><option value="auto">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div>' +
+      '<div class="field"><div><label for="fst">示范画风</label><small>肌肉：显示肌肉纹理，正在拉伸的肌肉标红；简笔：简洁线条小人</small></div><select id="fst"><option value="anatomy">肌肉</option><option value="line">简笔</option></select></div></div>' +
       '<h2 class="sec">提醒</h2><div class="card">' +
       '<div class="field"><label for="wt">起床足底唤醒</label><input type="time" id="wt" value="' + s.wakeTime + '"></div>' +
       '<div class="field"><label for="dt">白天拉伸</label><input type="time" id="dt" value="' + s.dayTime + '"></div>' +
@@ -466,6 +473,7 @@
     function sw(key, label, sub) { return '<div class="field"><div><label for="s_' + key + '">' + label + "</label><small>" + sub + '</small></div><label class="switch"><input type="checkbox" id="s_' + key + '"' + (s[key] ? " checked" : "") + "><span></span></label></div>"; }
     ["voiceOn", "count", "musicOn", "asym"].forEach(function (k) { q("#s_" + k).onchange = function () { s[k] = this.checked; save(); applySound(); }; });
     q("#exp").value = s.explain; q("#exp").onchange = function () { s.explain = this.value; save(); };
+    q("#fst").value = s.figStyle || "anatomy"; q("#fst").onchange = function () { s.figStyle = this.value; save(); Figure.setStyle(s.figStyle); toast(s.figStyle === "line" ? "已切换为简笔小人" : "已切换为肌肉人"); };
     q("#thm").value = s.theme; q("#thm").onchange = function () { s.theme = this.value; save(); applyTheme(); };
     q("#vsel").onchange = function () { s.voice = this.value; save(); applySound(); Sound.unlock(); Sound.say(L.test); };
     Sound.packVoices().then(function (vs) {
@@ -541,8 +549,8 @@
             intro = [idx === 0 ? L.first : idx === routine.items.length - 1 ? L.last : L.next, ex.name];
             if (sg.side === "L") intro.push(L.leftFirst);
             if (detailed) intro.push(sp(how));
-            else { if (lv === "adv") intro.push(L.advPrefix, ex.adv.name); intro.push(ex.cues[0]); }
-          } else intro = [L.switchR, ex.cues[0]];
+            else { if (lv === "adv") intro.push(L.advPrefix, ex.adv.name); intro.push(cuesOf(ex, lv)[0]); }
+          } else intro = [L.switchR, cuesOf(ex, lv)[0]];
           var prep = k === 0 ? Math.max(idx === 0 ? 5 : S().prepSecs, Math.ceil(Sound.speechSecs(intro)) + 2) : Math.max(5, Math.ceil(Sound.speechSecs(intro)) + 1.5);
           out.push({ type: "prep", ex: ex, side: sg.side, secs: prep, idx: idx, k: k, intro: intro, how: how });
           out.push({ type: "work", ex: ex, side: sg.side, secs: sg.secs, reps: sg.reps, tempo: sg.tempo, idx: idx, k: k, last: k === segs.length - 1 });
@@ -610,6 +618,7 @@
       if (!s) return finish();
       var ex = s.ex, lv = levelOf(ex.id);
       if (lv === "adv") usedAdv = true;
+      s.cues = cuesOf(ex, lv);
       var key = ex.id + "|" + s.side + "|" + lv;
       if (key !== figKey) {
         if (fig) fig.stop();
@@ -626,11 +635,11 @@
       if (s.type === "prep") {
         q("#peb", el).textContent = (s.k ? "换边 · 准备" : s.idx === 0 ? "准备开始" : "下一个 · 准备") + (nx ? " · " + (nx.reps ? nx.reps + " 次" : nx.secs + " 秒") : "");
         Sound.say(s.intro);
-        Sound.prefetch(ex.cues.concat(nx && nx.reps ? [] : [L.ten]));
-        setCue(s.k ? ex.cues[0] : s.how);
+        Sound.prefetch(s.cues.concat(nx && nx.reps ? [] : [L.ten]));
+        setCue(s.k ? s.cues[0] : s.how);
       } else {
         q("#peb", el).textContent = s.reps ? "共 " + s.reps + " 次" : "保持 " + s.secs + " 秒";
-        setCue(ex.kind === "breath" ? "跟着圆圈呼吸" : ex.cues[0]);
+        setCue(ex.kind === "breath" ? "跟着圆圈呼吸" : s.cues[0]);
       }
       for (var n = i + 1; n < steps.length; n++) if (steps[n].type === "prep") { Sound.prefetch(steps[n].intro); break; }
       if (sheetOpen) fillSheet();
@@ -674,7 +683,7 @@
           Sound.say(rep === s.reps - 1 && s.reps >= 4 ? L.lastRep : rep <= 60 ? Sound.NUM.rep(rep) : null, { interrupt: false });
         }
         if (!canCount) cuesAt(s, [.3, .65]);
-        else if (rep === Math.floor(s.reps / 2) && once("midcue")) setCue(ex.cues[1 % ex.cues.length]);
+        else if (rep === Math.floor(s.reps / 2) && once("midcue")) setCue(s.cues[1 % s.cues.length]);
         if (s.reps > 1 && rep === s.reps - 1 && once("lastcue")) setCue("最后一次");
       } else {
         cuesAt(s, s.secs >= 40 ? [.15, .4, .65] : s.secs >= 20 ? [.25, .6] : [.4]);
@@ -685,7 +694,7 @@
     function cuesAt(s, fr) {
       fr.forEach(function (f, n) {
         if (t >= s.secs * f && once("cue" + n)) {
-          var cs = s.ex.cues, c = cs[(n + 1 + (s.k || 0)) % cs.length];
+          var cs = s.cues, c = cs[(n + 1 + (s.k || 0)) % cs.length];
           setCue(c); Sound.say(c, { interrupt: false });
         }
       });
@@ -697,7 +706,7 @@
       br.classList.toggle("in", inhale);
       if (once("b" + n + (inhale ? "i" : "o"))) {
         var txt = inhale ? L.inhale : L.exhale;
-        var extra = !inhale && n % 2 === 1 ? s.ex.cues[(Math.floor(n / 2) + 2) % s.ex.cues.length] : "";
+        var extra = !inhale && n % 2 === 1 ? s.cues[(Math.floor(n / 2) + 2) % s.cues.length] : "";
         setCue(inhale ? "吸气 · 4 秒" : "呼气 · 6 秒" + (extra ? " · " + extra : ""));
         if (n < 3 || extra) Sound.say(extra && !inhale ? extra : txt, { interrupt: false, slow: true });
       }
@@ -765,7 +774,7 @@
     function fillSheet() {
       var ex = cur().ex, lv = levelOf(ex.id);
       q("#psheet", el).innerHTML = '<div class="grab"></div><h2>' + esc(ex.name) + '</h2><div class="kv"><h3>怎么做（' + (lv === "adv" ? "进阶" : "基础") + "）</h3><p>" + esc(lv === "adv" ? ex.adv.how : ex.basic.how) + "</p><h3>动作要领</h3><ol class=\"cues\">" +
-        ex.cues.map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ol><h3>普拉提要领</h3><p>" + esc(ex.pi) + '</p></div><div class="note acc">' + esc(ex.why) + '</div><div class="note warn">' + esc(ex.care) + '</div><button class="btn block" id="shc">收起</button>';
+        cuesOf(ex, lv).map(function (c) { return "<li>" + esc(c) + "</li>"; }).join("") + "</ol><h3>普拉提要领</h3><p>" + esc(ex.pi) + '</p></div><div class="note acc">' + esc(ex.why) + '</div><div class="note warn">' + esc(ex.care) + '</div><button class="btn block" id="shc">收起</button>';
       q("#shc", el).onclick = function () { act("info"); };
     }
 

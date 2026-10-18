@@ -88,7 +88,28 @@ p{margin:.4rem 0}
 .fig .limb.hl{stroke:var(--hl)} .fig .limb.far.hl{stroke:color-mix(in srgb,var(--hl) 55%,var(--fig-far))}
 .fig .hand{fill:var(--fig);stroke:none} .fig .hand.far{fill:var(--fig-far)}
 .fig .head{fill:var(--fig)} .fig .head.hl{fill:var(--hl)} .fig .hair{fill:var(--fig-hair)}
+/* 解剖肌肉人 */
+.fig .sko{fill:#CF9880;stroke:#CF9880;stroke-width:1.7;stroke-linejoin:round}
+.fig .sko.far{fill:#BE8A72;stroke:#BE8A72}
+.fig .sk{fill:url(#skG)}
+.fig .sk.far{fill:url(#skGf)}
+.fig .m{fill:url(#muG);stroke:#D9A48F;stroke-width:.35}
+.fig .m.far{fill:#E3AC97;stroke:#CE937D}
+.fig .m.tgt{fill:url(#tgG);stroke:#A8241A;stroke-width:.6;animation:mpulse 1.8s ease-in-out infinite}
+.fig .m.tgt.far{fill:#D2382B}
+.fig .fib{fill:none;stroke:rgba(255,255,255,.42);stroke-width:.45;stroke-linecap:round}
+.fig .fib.tgtl{stroke:rgba(255,235,230,.75)}
+.fig .tend{stroke:#FFF4EA;stroke-linecap:round}
+.fig .crease{fill:none;stroke:#C98F78;stroke-width:.55;stroke-linecap:round;opacity:.8}
+.fig .shadow{fill:#000;opacity:.07}
+.fig .ahair{fill:#4B372D} .fig .htie{fill:#C9776A;stroke:#C9776A;stroke-width:1.6;stroke-linecap:round}
+.fig .ear{fill:#F0C9B4;stroke:#C98F78;stroke-width:.5}
+.fig .eye{fill:#4B372D}
+.fig .brow{fill:none;stroke:#6B4E40;stroke-width:.8;stroke-linecap:round}
+.fig .lip{fill:none;stroke:#C9776A;stroke-width:.9;stroke-linecap:round}
+@keyframes mpulse{0%,100%{opacity:1}50%{opacity:.72}}
 .fig .vnote{font-size:13px;fill:var(--muted);font-family:var(--f-ui)} .pfig .fig .vnote{fill:rgba(255,255,255,.6)}
+.fig .prop-mat{fill:var(--mat);opacity:.35} .fig .prop-pillow{fill:#fff;stroke:var(--mat);stroke-width:1.2}
 .fig .mat line{stroke:var(--mat);stroke-width:4;stroke-linecap:round}
 .fig .prop-wall{fill:var(--prop);opacity:.7} .fig .prop-chair{stroke:var(--prop);stroke-width:5;fill:none;stroke-linecap:round}
 .fig .prop-step{fill:var(--prop)} .fig .prop-strap{stroke:var(--gold);stroke-width:2.2;stroke-dasharray:4 3}
