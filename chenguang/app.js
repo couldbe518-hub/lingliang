@@ -96,7 +96,7 @@ function applyPrefs(){document.documentElement.style.setProperty("--fs",S.fs+"re
 
 /* ---------- 经文数据 ---------- */
 const BK={};
-async function book(b){if(BK[b])return BK[b];const r=await fetch("../data/"+pad2(b+1)+".json");if(!r.ok)throw new Error("经文文件读取失败（离线时需先下载全本）");BK[b]=await r.json();return BK[b]}
+async function book(b){if(BK[b])return BK[b];let r;try{r=await fetch("../data/"+pad2(b+1)+".json")}catch(e){throw new Error(navigator.onLine===false?"手机现在没有网络，这一章还没有存到手机里。请连上网络打开一次，应用会自动把全本经文存下来，之后就能离线读。":"经文读取失败，请检查网络后重试。")}if(!r.ok)throw new Error("经文读取失败");BK[b]=await r.json();return BK[b]}
 async function loadAll(prog){const out=[];for(let i=0;i<66;i++){out.push(await book(i));if(prog)prog(i+1)}return out}
 async function verseText(b,c,v,lang){const d=await book(b);const arr=lang==="zh"?d.zh:d[S.en];return (arr[c-1]||[])[v-1]||""}
 
@@ -116,7 +116,7 @@ function renderTabs(){$("#tabs").innerHTML=TABS.map(t=>`<button data-act="tab" d
 ACT.tab=el=>{V.tab=el.dataset.tab;S.tab=V.tab;saveS();window.scrollTo(0,0);render()};
 function topbar(title,sub,extra){return `<div class="topbar"><div class="t">${esc(title)}${sub?`<div class="sub">${esc(sub)}</div>`:""}</div>${extra||""}<button class="iconbtn" data-act="settings" aria-label="设置">${I.gear}</button></div>`}
 function render(){renderTabs();const app=$("#app");const fn={today:renderToday,bible:renderBible,plan:renderPlan,devo:renderDevo,study:renderStudy}[V.tab];Promise.resolve(fn()).then(h=>{if(typeof h==="string")app.innerHTML=h;afterRender()}).catch(e=>{app.innerHTML=topbar("晨光")+`<div class="card clay">出错了：${esc(e.message||e)}</div>`})}
-function afterRender(){if(R.target&&V.tab==="bible"&&V.bview==="read"){const el=document.getElementById("v-"+R.target);if(el){el.classList.add("target");setTimeout(()=>el.scrollIntoView({block:"center"}),80)}R.target=null}}
+function afterRender(){offStatus();if(R.target&&V.tab==="bible"&&V.bview==="read"){const el=document.getElementById("v-"+R.target);if(el){el.classList.add("target");setTimeout(()=>el.scrollIntoView({block:"center"}),80)}R.target=null}}
 
 /* ======================================================
    读经计划
@@ -165,7 +165,7 @@ async function renderToday(){const t=today();const st=todayState();const [gt,gs]
  const remind=S.remindOn&&!window.__remindShown&&st&&st.cur&&!dayDone(P.days[st.cur.idx])&&nowHM()>=S.remindTime?`<div class="card clay"><b>读经提醒</b><div class="small muted">今天的经文还没读完，花几分钟亲近神。</div></div>`:"";
  const last=S.last||{b:42,c:1};
  return topbar("晨光",fmtDate(t,true))+`<div class="stack">${greet}${hero}${missed}${remind}
- <div class="quick"><button data-act="newJournal">${I.devo}<span>写灵修</span></button><button data-act="newPrayer">${I.pray}<span>写祷告</span></button><button data-act="goCh" data-b="${last.b}" data-c="${last.c}">${I.book}<span>继续阅读<br><span class="tiny muted">${esc(refZh(last.b,last.c))}</span></span></button></div>
+ ${OFF.done?"":`<div class="small muted center" id="offStatus"></div>`}<div class="quick"><button data-act="newJournal">${I.devo}<span>写灵修</span></button><button data-act="newPrayer">${I.pray}<span>写祷告</span></button><button data-act="goCh" data-b="${last.b}" data-c="${last.c}">${I.book}<span>继续阅读<br><span class="tiny muted">${esc(refZh(last.b,last.c))}</span></span></button></div>
  ${jn.length?`<div class="card accent"><div class="eyebrow">今日灵修</div>${jn.map(j=>`<div style="margin-top:6px"><span class="ref">${esc(j.ref||"")}</span> ${esc((j.insight||j.light||j.apply||"").slice(0,80))}</div>`).join("")}<button class="btn sm ghost" data-act="devoSub" data-sub="journal" style="margin-top:6px">查看</button></div>`:""}
  ${cares.length?`<div class="card"><div class="row between"><div><b>代祷名单</b><div class="small muted">${cares.length} 项正在祷告或等候</div></div><button class="btn sm" data-act="devoSub" data-sub="care">打开</button></div></div>`:""}
  </div>`}
@@ -466,12 +466,12 @@ ACT.settings=async()=>{const vz=voices().filter(v=>/^zh/i.test(v.lang)),ve=voice
  ${setRow("打开时需要密码","4–8 位数字；忘记后无法找回",`<button class="btn sm" data-act="${PIN?"pinRemove":"pinSet"}">${PIN?"关闭密码":"设置密码"}</button>`)}
  ${PIN?setRow("离开多久后重新锁定","",`<select data-chg="setLockMin">${[0,1,5,15,60].map(m=>`<option value="${m}" ${S.lockMin===m?"selected":""}>${m===0?"立即":m+" 分钟"}</option>`).join("")}</select>`):""}
  <div class="eyebrow" style="margin-top:16px">离线与存储</div>
- ${setRow("离线经文","已下载 "+cached+" / 66 卷",`<button class="btn sm" data-act="downloadAll">${cached>=66?"重新下载":"下载全本"}</button>`)}
+ ${setRow("离线经文",`<span id="offStatus"></span>`,`<button class="btn sm" data-act="downloadAll">${cached>=66?"重新下载":"立即下载"}</button>`)}
  ${setRow("持久存储",persisted?"已获准，浏览器不会自动清理":"未获准；请把应用添加到主屏幕并常用，浏览器会更稳妥地保留数据",`<button class="btn sm" data-act="askPersist">申请</button>`)}
  ${est?`<div class="small muted">已用约 ${(est.usage/1048576).toFixed(1)} MB</div>`:""}
  <div class="eyebrow" style="margin-top:16px">关于</div>
  <div class="small muted">晨光 v${APP_VER}。经文：和合本（1919）、Berean Standard Bible、King James Version，均为公有领域。个人记录只保存在本机浏览器，不上传任何服务器；点按查词需要联网。</div>
- <div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn danger sm" data-act="wipeAll">清除全部数据</button></div>`)};
+ <div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn danger sm" data-act="wipeAll">清除全部数据</button></div>`);OFF.done=cached>=66;OFF.n=cached;offStatus();if(!OFF.done)ensureOffline(false)};
 ACT.setEn=async el=>{S.en=el.value;await saveS();render()};
 ACT.setName=async el=>{S.name=el.value.trim().slice(0,20);await saveS();if(V.tab==="today")render()};
 ACT.setTheme=async el=>{S.theme=el.value;await saveS();applyPrefs()};
@@ -511,13 +511,16 @@ function showLock(){if($("#lock"))return;pinBuf="";const el=document.createEleme
 function renderPinDots(){const box=$("#pinbox");if(!box)return;box.innerHTML=Array.from({length:Math.max(4,Math.min(8,Math.max(pinBuf.length,4)))},(_,i)=>`<i class="${i<pinBuf.length?"on":""}"></i>`).join("")}
 ACT.pinKey=async el=>{const k=el.dataset.k;if(k==="del")pinBuf=pinBuf.slice(0,-1);else if(k==="ok"){if(await sha(PIN.salt+pinBuf)===PIN.hash){$("#lock").remove();pinBuf=""}else{toast("密码不对");pinBuf="";}}else if(pinBuf.length<8)pinBuf+=k;renderPinDots();if(pinBuf.length>=4&&k!=="ok"&&k!=="del"&&await sha(PIN.salt+pinBuf)===PIN.hash){$("#lock")&&$("#lock").remove();pinBuf=""}};
 let hiddenAt=null;document.addEventListener("visibilitychange",()=>{if(document.hidden){hiddenAt=Date.now();if(TTS.on&&!TTS.paused){/* 后台继续朗读 */}}else if(PIN&&hiddenAt&&Date.now()-hiddenAt>=S.lockMin*60000)showLock()});
-/* 离线 */
+/* 离线：首次联网后自动把 66 卷经文存入手机 */
+const OFF={busy:false,n:0,total:66,done:false};
 async function cachedChapters(){try{const c=await caches.open("chenguang-data");const ks=await c.keys();return ks.filter(r=>/\/data\/\d\d\.json$/.test(r.url)).length}catch(e){return 0}}
-ACT.downloadAll=async()=>{toast("开始下载全本经文…");try{const c=await caches.open("chenguang-data");for(let i=1;i<=66;i++){const u=new URL("../data/"+pad2(i)+".json",location.href).href;const r=await fetch(u,{cache:"reload"});if(!r.ok)throw new Error("下载失败："+i);await c.put(u,r.clone())}toast("全本经文已保存，可离线阅读");ACT.settings()}catch(e){toast(e.message)}};
+async function ensureOffline(force){if(OFF.busy)return;if(!("caches"in window))return;if(navigator.onLine===false)return;const c=await caches.open("chenguang-data");const have=new Set((await c.keys()).map(r=>r.url));const todo=[];for(let i=1;i<=66;i++){const u=new URL("../data/"+pad2(i)+".json",location.href).href;if(force||!have.has(u))todo.push([i,u])}OFF.n=66-todo.length;OFF.done=!todo.length;if(OFF.done){offStatus();return}OFF.busy=true;offStatus();for(const [i,u] of todo){try{const r=await fetch(u,{cache:force?"reload":"default"});if(!r.ok)throw 0;await c.put(u,r.clone());OFF.n++;offStatus()}catch(e){OFF.busy=false;offStatus();return}}OFF.busy=false;OFF.done=true;offStatus();if(force)toast("全本经文已重新下载")}
+function offStatus(){const el=document.getElementById("offStatus");if(!el)return;if(OFF.done)el.innerHTML=`<span class="st answered">已可离线</span> 全本经文已存在手机里`;else if(OFF.busy)el.innerHTML=`正在为离线准备经文 ${OFF.n}/66…`;else el.innerHTML=`离线经文 ${OFF.n}/66，${navigator.onLine===false?"连上网络后会自动继续":"稍后自动继续"}`}
+ACT.downloadAll=async()=>{if(navigator.onLine===false){toast("现在没有网络，连上后再试");return}toast("开始下载全本经文…");await ensureOffline(true)};
 /* 提醒 */
 async function checkReminder(){if(!S.remindOn||!P)return;const t=today();const last=await kvGet("lastRemind","");if(last===t)return;if(nowHM()<S.remindTime)return;const st=todayState();if(!st||!st.cur||dayDone(P.days[st.cur.idx]))return;await kvSet("lastRemind",t);if("Notification"in window&&Notification.permission==="granted"){try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)reg.showNotification("读经时间",{body:P.days[st.cur.idx].map(([b,c])=>refZh(b,c)).join("、"),icon:"icon.png",tag:"chenguang-remind"});else new Notification("读经时间",{body:"今天的经文还没读"})}catch(e){}}if(V.tab==="today")render()}
 /* 启动 */
-async function boot(){await DB.open();S=Object.assign({},DEF,await kvGet("settings",{}));P=await kvGet("plan",null);READ=await kvGet("read",{});PIN=await kvGet("pin",null);(await DB.byType("mark")).forEach(m=>MARKS[m.id]=m);applyPrefs();V.tab=S.tab||"today";if(S.last){R.b=S.last.b;R.c=S.last.c}if(PIN)showLock();render();checkReminder();setInterval(checkReminder,60000);
+async function boot(){await DB.open();S=Object.assign({},DEF,await kvGet("settings",{}));P=await kvGet("plan",null);READ=await kvGet("read",{});PIN=await kvGet("pin",null);(await DB.byType("mark")).forEach(m=>MARKS[m.id]=m);applyPrefs();V.tab=S.tab||"today";if(S.last){R.b=S.last.b;R.c=S.last.c}if(PIN)showLock();render();checkReminder();setInterval(checkReminder,60000);setTimeout(()=>ensureOffline(false),1500);window.addEventListener("online",()=>ensureOffline(false));
  if("serviceWorker"in navigator){try{await navigator.serviceWorker.register("sw.js")}catch(e){}}
  document.addEventListener("click",async function once(){document.removeEventListener("click",once);try{if(navigator.storage&&navigator.storage.persist&&!(await navigator.storage.persisted()))await navigator.storage.persist()}catch(e){}},{once:true})}
 boot().catch(e=>{$("#app").innerHTML=`<div class="card clay" style="margin-top:20px"><b>无法启动</b><div class="small">${esc(e.message||e)}</div><div class="small muted" style="margin-top:6px">请用 Chrome 打开，并确认浏览器允许网站保存数据（非无痕模式）。</div></div>`});
