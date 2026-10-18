@@ -185,6 +185,11 @@ h3{font-size:1.02rem}
 details summary{cursor:pointer;list-style:none}
 details summary::-webkit-details-marker{display:none}
 .rd summary{line-height:1.5}
+.hv{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.hv:first-child{border-top:0}
+.hvn{font-family:var(--f-scripture);color:var(--gold);font-size:1.1rem;text-align:center}
+.hv.ref2{background:var(--gold-soft);border-radius:10px;padding:10px 8px;border-top:0;margin:4px 0}
+.hymnbody .en{font-size:calc(var(--fs)*1.0);line-height:1.75}
 .rd summary::after{content:"展开";float:right;font-size:.75rem;color:var(--muted)}
 .rd[open] summary::after{content:"收起"}
 .steps li{margin-bottom:6px}
@@ -302,7 +307,7 @@ let VIEW={name:"today"};const HIST=[];
 async function go(v,push=true){if(push)HIST.push(Object.assign({},VIEW,{y:window.scrollY,v:0}));VIEW=v;if(["today","bible","seek","pray","search"].includes(v.name)){S.tab=v.name;save()}await render();if(!v.v)window.scrollTo(0,v.y||0)}
 async function rerender(){const y=window.scrollY;VIEW.v=0;await render();window.scrollTo(0,y)}
 function back(){const v=HIST.pop()||{name:S.tab};go(v,false)}
-function renderTabs(){const T=[["today","今日"],["bible","圣经"],["seek","寻求"],["pray","祷告"],["search","查找"]];const cur={chapter:"bible",book:"bible",scen:"seek"}[VIEW.name]||VIEW.name;$("#tabs").innerHTML=T.map(([k,n])=>`<button data-act="tab" data-k="${k}" ${cur===k?'aria-current="page"':""}>${IC[k]}<span>${n}</span></button>`).join("")}
+function renderTabs(){const T=[["today","今日"],["bible","圣经"],["seek","寻求"],["pray","祷告"],["search","查找"]];const cur={chapter:"bible",book:"bible",scen:"seek",hymns:"pray",hymn:"pray"}[VIEW.name]||VIEW.name;$("#tabs").innerHTML=T.map(([k,n])=>`<button data-act="tab" data-k="${k}" ${cur===k?'aria-current="page"':""}>${IC[k]}<span>${n}</span></button>`).join("")}
 async function render(){renderTabs();const f=V[VIEW.name];const app=$("#app");try{app.innerHTML=`<div class="wrap">${await f(VIEW)}</div>`}catch(e){app.innerHTML=`<div class="wrap"><div class="card">页面打开失败：${esc(e.message)}。请检查网络后刷新。</div></div>`}after[VIEW.name]&&after[VIEW.name](VIEW)}
 const after={};
 
@@ -379,9 +384,10 @@ V.scen=async v=>{
  return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${esc(s.n)}</div></div>
  <div class="stack"><p class="word">${esc(s.w)}</p>${s.care?`<div class="care">${esc(s.care)}</div>`:""}
  <section class="card"><div class="eyebrow">推荐经文 · ${ps.length} 段</div>${ps.map((p,i)=>`<div class="psg"><div class="row between"><span class="ref">${refFull(p.b,p.c,p.vs,p.ve)}</span><span class="row" style="gap:6px"><button class="btn sm" data-act="speakPs" data-i="${i}">${IC.play}</button><button class="btn sm ghost" data-act="open" data-b="${p.b}" data-c="${p.c}" data-v="${p.vs}">全章</button></span></div><div class="small" style="color:var(--gold)">${esc(p.note)}</div><div class="scripture">${p.t.map(x=>isMerged(x.zh)?"":fmtZh(x.zh)).join("")}</div>${S.mode!=="zh"?`<div class="en">${p.t.map(x=>esc(x.en)).join(" ")}</div>`:""}</div>`).join("")}</section>
+ <div id="scenhymns"></div>
  <section class="card ribbon"><div class="eyebrow">可以这样祷告</div><p class="prayer" style="margin:8px 0">${esc(s.pr).replace(/______/g,'<span class="hl">（说出名字或事情）</span>')}</p><div class="row"><button class="btn sm" data-act="speakPr">${IC.play} 朗读祷告</button><button class="btn sm" data-act="addPrayerFrom" data-id="${s.id}">加入代祷清单</button></div></section></div>`;
 };
-after.scen=v=>{window._scenPs=null};
+after.scen=async v=>{try{const H=await loadHymns();const L=H.map((h,i)=>[h,i]).filter(([h])=>(h.tags||[]).includes(v.id)).slice(0,3);const box=$("#scenhymns");if(box&&L.length)box.innerHTML=`<section class="card"><div class="row between"><div class="eyebrow">可以唱的诗歌</div><button class="btn sm ghost" data-act="hymns" data-tag="${v.id}">更多 ›</button></div><div class="stack" style="gap:8px;margin-top:8px">${L.map(([h,i])=>hymnCard(h,i)).join("")}</div></section>`}catch(e){}};
 V.pray=async()=>{
  const pr=S.prayers.slice().sort((a,b)=>(a.ans?1:0)-(b.ans?1:0)||b.id-a.id);
  return `<div style="padding-top:6px" class="stack"><h1>祷告</h1>
@@ -392,17 +398,19 @@ V.pray=async()=>{
  <section class="card"><h3>我的家人</h3><p class="small muted" style="margin:4px 0 8px">早晚祷“为家人祷告”一步会逐一提到这些名字。用顿号或逗号分开。</p><form id="famf" class="row" style="flex-wrap:nowrap"><input id="famin" value="${esc(S.family.join("、"))}"><button class="btn sm" type="submit">保存</button></form></section>
  <section class="card"><div class="row between"><h3>交托清单</h3><span class="small muted">晚祷「交托」一步写下的事</span></div><div class="list" style="margin-top:6px">${S.cares.filter(c=>!c.done).map(c=>`<div class="li"><button class="check" data-act="careDone" data-id="${c.id}" aria-label="已有答复"></button><div class="body">${esc(c.text)}<div class="small muted">${c.date} 交托</div></div></div>`).join("")||`<p class="small muted">还没有。晚祷时把未解决的事和明天的担心写下来，会一件一件记在这里；有了答复就打勾。</p>`}</div></section>
  <section class="card"><h3>感恩记录</h3><div class="list" style="margin-top:6px">${S.thanks.slice(-30).reverse().map(t=>`<div class="li"><div class="body"><span class="small muted">${t.date}</span><br>${esc(t.text)}</div></div>`).join("")||`<p class="small muted">晚祷时写下的感恩会留在这里。日后回头看，会看见神一路的带领。</p>`}</div></section>
+ <section class="card"><div class="row between"><h3>赞美诗</h3><button class="btn sm" data-act="hymns">全部 ›</button></div><div id="hymnbox" class="stack" style="gap:8px;margin-top:8px"><p class="small muted">载入中……</p></div></section>
  <section class="card"><h3>主祷文</h3><p class="small muted" style="margin:2px 0 6px">马太福音 6:9-13</p><div id="lordsp" class="scripture">…</div><button class="btn sm" style="margin-top:8px" data-act="speakLP">${IC.play} 朗读</button></section></div>`;
 };
 after.pray=async()=>{
  $("#prf").addEventListener("submit",e=>{e.preventDefault();const who=$("#prwho").value.trim(),what=$("#prwhat").value.trim();if(!what&&!who)return;S.prayers.push({id:Date.now(),who:who||"我",what:what||"",date:dstr(),ans:null});save();render()});
  $("#famf").addEventListener("submit",e=>{e.preventDefault();S.family=$("#famin").value.split(/[、,，\s]+/).map(x=>x.trim()).filter(Boolean);save();toast("已保存")});
  const lp=await verses(40,6,9,13);$("#lordsp").innerHTML=lp.map(x=>fmtZh(x.zh)).join("");
+ try{const H=await loadHymns();const h=hymnOfDay(H);const i=H.indexOf(h);const box=$("#hymnbox");if(box)box.innerHTML=h?`<div class="eyebrow">今日诗歌</div>${hymnCard(h,i,{intro:true})}`:'<p class="small muted">赞美诗整理中，稍后上线。</p>'}catch(e){const box=$("#hymnbox");if(box)box.innerHTML='<p class="small muted">赞美诗载入失败。</p>'}
 };
 V.search=async v=>`<div style="padding-top:6px" class="stack"><h1>查找</h1>
  <form id="sf" class="row" style="flex-wrap:nowrap"><input id="sq" value="${esc(v.q||"")}" placeholder="例：约3:16、诗23、John 3、平安、牧者" autocomplete="off"><button class="btn primary" type="submit">查找</button></form>
  <div id="sres"></div>
- <section class="card"><h3>我的收藏</h3><div class="list" style="margin-top:6px">${S.fav.slice().reverse().map(([b,c,vv])=>`<div class="li"><button class="body" style="text-align:left" data-act="open" data-b="${b}" data-c="${c}" data-v="${vv}"><span class="ref">${ref(b,c,vv)}</span> <span class="muted small">${BOOKS[b-1][0]}</span></button></div>`).join("")||`<p class="small muted">读经时点一节经文，选“收藏”，会出现在这里。</p>`}</div></section>
+ <section class="card"><h3>我的收藏</h3><div class="list" style="margin-top:6px">${S.fav.slice().reverse().map(([b,c,vv])=>b==="h"?`<div class="li"><button class="body" style="text-align:left" data-act="hymn" data-i="${c}"><span class="ref">赞美诗</span> <span class="small">${HY&&HY[c]?esc(HY[c].zh+" · "+HY[c].title):"（点开查看）"}</span></button></div>`:`<div class="li"><button class="body" style="text-align:left" data-act="open" data-b="${b}" data-c="${c}" data-v="${vv}"><span class="ref">${ref(b,c,vv)}</span> <span class="muted small">${BOOKS[b-1][0]}</span></button></div>`).join("")||`<p class="small muted">读经时点一节经文，选“收藏”，会出现在这里。</p>`}</div></section>
  <section class="card"><div class="row between"><h3>经典经文索引</h3><span class="small muted">${C.kv.length} 处</span></div><p class="small muted" style="margin:4px 0 8px">教会最常引用、背诵、讲道的经文，每处附释义、背景和延伸阅读。</p><select id="kvbook"><option value="">选择书卷……</option>${BOOKS.map((x,i)=>(KVcount(i+1)?`<option value="${i+1}">${x[0]}（${KVcount(i+1)}）</option>`:"")).join("")}</select><div id="kvlist" class="list" style="margin-top:8px"></div></section></div>`;
 function KVcount(b){return C.kv.filter(k=>k[0]===b).length}
 after.search=v=>{
@@ -452,6 +460,24 @@ async function kvSheet(i){const k=C.kv[i];const t=await verses(k[0],k[1],k[2],k[
  <div class="sec"><h4>延伸阅读 · 经典原著</h4><div id="refbox" class="stack" style="gap:10px"><p class="small muted">正在载入……</p></div></div>
  <p class="small muted" style="margin:0">释义依循福音派新教的主流解经，引用的经典注释多出自改革宗传统；有分歧处已注明。</p>`);
  loadRefs().then(R=>{const box=$("#refbox");if(box)box.innerHTML=refCards(R[i]||[])}).catch(()=>{const box=$("#refbox");if(box)box.innerHTML='<p class="small muted">延伸阅读载入失败，请检查网络后再打开。</p>'})}
+let HY=null;async function loadHymns(){if(HY)return HY;const r=await fetch("hymns.json");if(!r.ok)throw 0;HY=await r.json();return HY}
+function hymnOfDay(H){if(!H.length)return null;const n=daysBetween("2026-01-01",dstr());return H[((n*7919)>>>0)%H.length]}
+function hymnCard(h,i,opts={}){return `<button class="card" style="text-align:left;width:100%;padding:12px 14px" data-act="hymn" data-i="${i}"><div class="row between"><b style="font-family:var(--f-scripture);font-size:1.05rem">${esc(h.zh)}</b><span class="small muted">${esc(h.pub||"")}</span></div><div class="en" style="font-size:.95rem">${esc(h.title)}</div>${opts.intro?`<div class="small muted" style="margin-top:4px">${esc(h.intro)}</div>`:""}</button>`}
+function ytUrl(h){return "https://www.youtube.com/results?search_query="+encodeURIComponent(h.title+" hymn")}
+V.hymns=async v=>{const H=await loadHymns();const tag=v.tag||"";const list=H.map((h,i)=>[h,i]).filter(([h])=>!tag||(h.tags||[]).includes(tag));
+ const TAGS=[["","全部"],["thanks","赞美感恩"],["sorry","悔改救恩"],["anx","忧虑交托"],["fear","惧怕"],["low","低落"],["sick","病痛"],["grief","哀伤"],["wait","等候"],["wisdom","引导奉献"],["doubt","信心"],["night","夜晚"],["christmas","圣诞"],["easter","复活节"]];
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">赞美诗</div><span class="small muted">${H.length} 首</span></div>
+ <div class="stack"><div class="row" style="gap:6px">${TAGS.map(([k,n])=>`<button class="chip" style="${tag===k?"background:var(--accent);color:var(--paper)":""}" data-act="hymnTag" data-tag="${k}">${n}</button>`).join("")}</div>
+ <p class="small muted" style="margin:0">这些都是教会传唱百年以上的经典圣诗。英文原作保留英文原词；中文名只作标题。点开可看全部歌词、创作背景，并可在 YouTube 听。</p>
+ ${list.map(([h,i])=>hymnCard(h,i,{intro:true})).join("")}</div>`};
+V.hymn=async v=>{const H=await loadHymns();const h=H[v.i];const isF=S.fav.some(f=>f[0]==="h"&&f[1]===v.i);
+ const vs=h.verses.map((vv,k)=>`<div class="hv"><div class="hvn">${k+1}</div><div class="en" style="color:var(--ink)">${vv.map(esc).join("<br>")}</div></div>${h.refrain&&h.refrain.length&&k<h.verses.length?`<div class="hv ref2"><div class="hvn"><i>R</i></div><div class="en" style="font-style:italic">${h.refrain.map(esc).join("<br>")}</div></div>`:""}`).join("");
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${esc(h.zh)}</div><button class="iconbtn" data-act="readprefs" aria-label="阅读设置">${IC.aa}</button></div>
+ <div class="stack"><div><h1 style="font-family:var(--f-en);font-weight:600">${esc(h.title)}</h1><div class="small muted">${esc(h.author||"")}${h.years?`（${esc(h.years)}）`:""}${h.pub?` · ${esc(String(h.pub))}`:""}${h.translator?` · 英译 ${esc(h.translator)}`:""}${h.tune?` · 曲调 ${esc(h.tune)}`:""}</div></div>
+ <div class="row"><a class="btn sm primary" style="text-decoration:none" href="${ytUrl(h)}" target="_blank" rel="noopener">${IC.play} 在 YouTube 听</a><button class="btn sm" data-act="speakHymn" data-i="${v.i}">朗读歌词</button><button class="btn sm ${isF?"":"ghost"}" data-act="favHymn" data-i="${v.i}">${isF?"已收藏":"收藏"}</button></div>
+ <div class="sum"><b>背景</b> — ${esc(h.intro||"")}${h.scripture?`<div class="row" style="margin-top:6px;gap:6px"><span class="small muted">所据经文</span>${refChips(h.scripture)}</div>`:""}</div>
+ <div class="hymnbody">${vs}</div>
+ <p class="small muted">歌词为公有领域原文，录自 <a href="${esc(h.src)}" target="_blank" rel="noopener">${esc((h.src||"").split("/")[2]||"来源")}</a>。${esc(h.note||"")}</p></div>`};
 let REFS=null;async function loadRefs(){if(REFS)return REFS;const r=await fetch("refs.json");if(!r.ok)throw 0;REFS=await r.json();return REFS}
 function refCards(list){if(!list.length)return '<p class="small muted">暂无。</p>';return list.map((e,j)=>{
  if(e.k==="read")return `<details class="card rd" ${j===0?"open":""}><summary><span class="tag" style="background:var(--accent-soft);color:var(--accent)">可直接阅读</span> <b>${esc(e.n)}</b></summary>
@@ -504,10 +530,10 @@ async function startComp(kind){
  const lp=await V2(40,6,9,13);
  const ki=dailyIdx(),k=C.kv[ki];const dv=await V2(k[0],k[1],k[2],k[3]);
  if(kind==="morning"){
-  const s1=await V2(19,46,10,10),s2=await V2(25,3,22,23),s3=await V2(19,5,3,3),s4=await V2(4,6,24,26);
+  const s1=await V2(19,46,10,10),s2=await V2(25,3,22,23),s3=await V2(19,5,3,3),s4=await V2(4,6,24,26);let hd=null,hdi=-1;try{const H=await loadHymns();hd=hymnOfDay(H);hdi=H.indexOf(hd)}catch(e){}
   COMP={kind,title:"早祷",steps:[
    {n:"安静",html:`<div class="breath">吸气 · 呼气</div><p class="guide">先停一下。放下手机以外的事，深深吸一口气，再慢慢呼出来。</p><p class="scripture">${fmtZh(s1)}</p><p class="ref">诗篇 46:10</p>`,say:"先停一下，深深吸一口气，再慢慢呼出来。"+s1},
-   {n:"赞美",html:`<p class="scripture">${fmtZh(s2)}</p><p class="ref">耶利米哀歌 3:22-23</p><p class="guide">为新的一天感谢神。可以出声说：“主啊，谢谢你今天早晨又赐我新的怜悯。”</p>`,say:s2+"主啊，谢谢你今天早晨又赐我新的怜悯。"},
+   {n:"赞美",html:`<p class="scripture">${fmtZh(s2)}</p><p class="ref">耶利米哀歌 3:22-23</p><p class="guide">为新的一天感谢神。可以出声说：“主啊，谢谢你今天早晨又赐我新的怜悯。”</p>${hd?`<div class="card" style="padding:12px 14px"><div class="eyebrow">今日诗歌 · ${esc(hd.zh)}</div><div class="en" style="color:var(--ink);margin:6px 0">${hd.verses[0].map(esc).join("<br>")}</div><div class="row"><a class="btn sm" style="text-decoration:none" href="${ytUrl(hd)}" target="_blank" rel="noopener">${IC.play} 听</a><button class="btn sm ghost" data-act="hymn" data-i="${hdi}">全部歌词</button></div></div>`:""}`,say:s2+"主啊，谢谢你今天早晨又赐我新的怜悯。"+(hd?"今日诗歌："+hd.zh+"。":"")},
    {n:"今日经文",html:`<p class="ref">${ref(k[0],k[1],k[2],k[3])} · ${esc(k[4])}</p><p class="scripture">${fmtZh(dv)}</p><p class="guide small muted">${esc(k[6].slice(0,110))}…</p><p class="guide">把这节经文带进今天。读第二遍时，留意哪个词最触动你。</p>`,say:dv},
    {n:"献上今天",html:`<p class="scripture">${fmtZh(s3)}</p><p class="ref">诗篇 5:3</p><p class="guide">告诉神今天要做的事、要见的人、心里的担心。写下来也可以：</p>${careListHtml("昨晚交托的事")}<textarea id="cmpnote" placeholder="主啊，今天我把这些交给你……"></textarea>`,say:s3+"告诉神今天要做的事、要见的人、和心里的担心。"},
    {n:"为家人祷告",html:famHtml,say:famSpeak},
@@ -556,6 +582,11 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
  case"refgo":{const r=parseRef(d.q);if(r&&r.c){closeSheet();go({name:"chapter",b:r.b,c:r.c,v:r.v,ve:r.ve})}break}
  case"refpv":rangeSheet(+d.b,+d.c,+d.v,+d.ve);break;
  case"scen":go({name:"scen",id:d.id});break;
+ case"hymns":closeSheet();if(COMP){stopTTS();COMP=null;renderComp()}go({name:"hymns",tag:d.tag||""});break;
+ case"hymnTag":go({name:"hymns",tag:d.tag},false);break;
+ case"hymn":closeSheet();if(COMP){stopTTS();COMP=null;renderComp()}go({name:"hymn",i:+d.i});break;
+ case"speakHymn":{const h=HY[+d.i];const q=[];h.verses.forEach(vv=>{q.push({lang:"en",text:vv.join(" ")});if(h.refrain&&h.refrain.length)q.push({lang:"en",text:h.refrain.join(" ")})});speak(q,h.title);break}
+ case"favHymn":{const i=+d.i;const k=S.fav.findIndex(f=>f[0]==="h"&&f[1]===i);if(k>=0)S.fav.splice(k,1);else S.fav.push(["h",i]);save();rerender();break}
  case"closeSheet":closeSheet();break;
  case"settings":settingsSheet();break;
  case"readprefs":readPrefsSheet();break;
