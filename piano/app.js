@@ -572,6 +572,7 @@
       '<p class="legend"><span><i class="lg-t"></i>橙色 = 现在该弹的键</span><span><i class="lg-ok"></i>绿色 = 弹对了</span><span><i class="lg-bad"></i>红色 = 弹错的键</span></p>' +
       '<div id="result"></div>' +
       '<div class="opts"><label>谱上标注 <select id="labels"><option value="none">不标</option><option value="name">音名 C D E</option><option value="jianpu">简谱 1 2 3</option><option value="solfege">唱名 do re mi</option></select></label>' +
+      (s.lyrics ? '<label class="chk"><input type="checkbox" id="showlyr"' + (state.settings.lyrics !== false ? " checked" : "") + '> 显示歌词</label>' : "") +
       '<button class="btn ghost small" id="setcur">' + (state.settings.current === s.id ? "✓ 正在练这首" : "设为\"在练\"") + "</button></div>" +
       '<section class="card"><h2 class="h2">我的录音</h2><div id="myrecs" class="recs"></div></section>';
     $("#labels").value = state.settings.labels;
@@ -579,7 +580,7 @@
     function flashKeys(midis, cls) { kbMark(kb, midis, cls); clearTimeout(flashKeys["t" + cls]); flashKeys["t" + cls] = setTimeout(function () { kbMark(kb, [], cls); }, 700); }
 
     function drawScore() {
-      var b = M.buildAbc(s, hand, { labels: state.settings.labels });
+      var b = M.buildAbc(s, hand, { labels: state.settings.labels, lyrics: state.settings.lyrics !== false });
       renderScore($("#score"), b.abc);
       els = { rh: [], rh2: [], lh: [], lh2: [] };
       b.voices.forEach(function (v, i) {
@@ -859,6 +860,7 @@
       b.onclick = function () { mode = b.getAttribute("data-m"); $$("#modes button").forEach(function (x) { x.setAttribute("aria-selected", x === b); }); setupMode(); };
     });
     $("#labels").onchange = function () { state.settings.labels = this.value; save(); drawScore(); };
+    if ($("#showlyr")) $("#showlyr").onchange = function () { state.settings.lyrics = this.checked; save(); drawScore(); };
     $("#setcur").onclick = function () { state.settings.current = s.id; save(); this.textContent = "✓ 正在练这首"; toast("已设为\"在练\"，会出现在今天的练习里"); };
     var rz; var onRz = function () { clearTimeout(rz); rz = setTimeout(function () { if (!Player.playing && !(practice && practice.running)) drawScore(); }, 250); };
     window.addEventListener("resize", onRz); onLeave(function () { window.removeEventListener("resize", onRz); if (practice) practice.stop(); });

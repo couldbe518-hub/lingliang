@@ -169,6 +169,7 @@
       st.parts.forEach(function (k, i) {
         head.push("V:" + k.toUpperCase() + " clef=" + st.clef + (st.parts.length > 1 ? (i ? " stem=down" : " stem=up") : ""));
         lines.push("[V:" + k.toUpperCase() + "] " + handToAbc(P[k], song, opts, k.charAt(0) === "l"));
+        if (k === "rh" && song.lyrics && opts.lyrics !== false) lines.push("w: " + song.lyrics);
         voices.push(k);
       });
     });

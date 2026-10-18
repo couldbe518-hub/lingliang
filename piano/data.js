@@ -8,6 +8,8 @@
  * - r = 休止符（r:2 = 两拍休止）；C3+G3 = 同时按下（和音）；~ = 连到下一个同音（延音线）；
  *   @3 = 指法（3 指）。小节之间用 | 分开；第一小节可以是弱起（不满一小节）。
  * - 能用的时值：0.25 0.5 0.75 1 1.5 2 3 4（以及 6/8 拍里的 3）。其他长度请拆成两个音并用 ~ 连起来。
+ * - lyrics = 右手旋律下的英文歌词（ABC 的 w: 写法）：每个音一个字，词内音节用 - 连接，_ = 这个音延续上一个字。
+ *   延音线后半段和休止符自动跳过。可用 tools/lyrics_eog.py 让 LilyPond 帮忙对齐。
  * - 改完后把 version.json 里的 v 改一下，Grace 那边会自动刷新。
  * - 可在仓库里运行 node piano/tools/validate.js 检查每小节拍数是否正确。
  */
@@ -83,6 +85,7 @@ window.PIANO_DATA = {
       id: "jesus-loves-me", cat: "hymn", level: 1, title: "耶稣爱我", en: "Jesus Loves Me",
       key: "C", meter: "4/4", tempo: 84,
       tip: "布拉德伯里 1862 年作曲。旋律只用到几个音，最适合作第一首赞美诗。前 8 小节是主歌，后 8 小节是副歌\"主爱我\"。右手先弹熟；左手只有 C、F、G 三个音。",
+      lyrics: "Je- sus loves me! this I know, For the Bi- ble tells me so; Lit- tle ones to Him be- long; They are weak, but He is strong. Yes, Je- sus loves me! Yes, Je- sus loves me! Yes, Je- sus loves me! The Bi- ble tells me so.",
       rh: "G4 E4 E4 D4 | E4 G4 G4:2 | A4 A4 C5 A4 | A4 G4 G4:2 | G4 E4 E4 D4 | E4 G4 G4:2 | A4 A4 G4 C4 | E4 D4 C4:2 | G4:2 E4 G4 | A4 C5:3 | G4:2 E4 C4 | E4 D4:3 | G4:2 E4 G4 | A4 C5:2 A4 | G4 C4 E4:1.5 D4:0.5 | C4:4",
       lh: "C3:4 | C3:4 | F3:4 | C3:4 | C3:4 | C3:4 | F3:2 C3:2 | G3:2 C3:2 | C3:4 | F3:4 | C3:4 | G3:4 | C3:4 | F3:4 | C3:2 G3:2 | C3:4"
     },
@@ -90,6 +93,7 @@ window.PIANO_DATA = {
       id: "joyful", cat: "hymn", level: 1, title: "欢欣歌颂（欢乐颂）", en: "Joyful, Joyful, We Adore Thee",
       key: "C", meter: "4/4", tempo: 96,
       tip: "旋律来自贝多芬第九交响曲，1907 年配上赞美的歌词。右手几乎都在 C 到 G 五个音里，一个手位就能弹完。",
+      lyrics: "Joy- ful, joy- ful, we a- dore Thee, God of glo- ry, Lord of love; Hearts un- fold like flow'rs be- fore Thee, O- p'ning to the sun a- bove. Melt the clouds of sin and _ sad- ness; Drive the _ dark of doubt a- way; Giv- er of im- mor- tal glad- ness, Fill us with the light of day!",
       rh: "E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | E4:1.5 D4:0.5 D4:2 | E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | D4:1.5 C4:0.5 C4:2 | D4 D4 E4 C4 | D4 E4:0.5 F4:0.5 E4 C4 | D4 E4:0.5 F4:0.5 E4 D4 | C4 D4 G3:2 | E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | D4:1.5 C4:0.5 C4:2",
       lh: "C3:4 | G3:4 | C3:4 | C3:2 G3:2 | C3:4 | G3:4 | C3:4 | G3:2 C3:2 | G3:2 C3:2 | G3:2 C3:2 | G3:4 | C3:4 | C3:4 | G3:4 | C3:4 | G3:2 C3:2"
     },
@@ -97,6 +101,7 @@ window.PIANO_DATA = {
       id: "doxology", cat: "hymn", level: 2, title: "三一颂", en: "Doxology (Old Hundredth)",
       key: "G", meter: "4/4", tempo: 76,
       tip: "《日内瓦诗篇》1551 年的古调，教会最常唱的颂赞。G 大调，有一个升号：所有的 F 都要弹成 F#（F 右边的黑键）。",
+      lyrics: "Praise God, from whom all bless- ings flow; Praise Him, all crea- tures here be- low; Praise Him a- bove, ye heav'n- ly host; Praise Fa- ther, Son, and Ho- ly Ghost.",
       rh: "G4:2 G4 F#4 | E4 D4 G4 A4 | B4:4 | B4:2 B4 A4 | G4 C5 B4 A4 | G4:4 | G4:2 A4 B4 | A4 G4 E4 F#4 | G4:4 | D5:2 B4 G4 | A4 C5 B4 A4 | G4:4",
       lh: "G2:4 | C3:2 D3:2 | G2:4 | G2:4 | E3:2 D3:2 | G2:4 | G2:4 | C3:2 D3:2 | G2:4 | G2:4 | D3:4 | G2:4"
     },
@@ -104,6 +109,7 @@ window.PIANO_DATA = {
       id: "amazing-grace", cat: "hymn", level: 2, title: "奇异恩典", en: "Amazing Grace",
       key: "G", meter: "3/4", tempo: 80,
       tip: "约翰·牛顿作词，三拍子，\"强-弱-弱\"。第一个音是弱起，从第三拍进来。连线上的长音不要重新按键，按住数满拍子。",
+      lyrics: "A- maz- ing _ grace! how sweet the sound That saved a _ wretch like me! I once was _ lost, but now am found; Was blind, but _ now I see.",
       rh: "D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | D5:3~ | D5:2 B4 | D5:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:3",
       lh: "r | G2:3 | G2:3 | C3:3 | G2:3 | G2:3 | G2:3 | D3:3 | D3:3 | G2:3 | G2:3 | C3:3 | G2:3 | G2:3 | D3:3 | G2:3"
     },
@@ -111,6 +117,7 @@ window.PIANO_DATA = {
       id: "silent-night", cat: "hymn", level: 2, title: "平安夜", en: "Silent Night",
       key: "C", meter: "6/8", tempo: 78,
       tip: "格鲁伯 1818 年作曲。6/8 拍要数成\"1-2-3、4-5-6\"两大拍，像摇篮一样轻轻摇。左手每小节只有一个长音。",
+      lyrics: "Si- lent night, _ ho- ly night, _ All is calm, all is bright Round yon vir- gin moth- er and child. _ Ho- ly in- fant so ten- der and mild, Sleep in heav- en- ly peace, _ Sleep in heav- en- ly peace. _",
       rh: "G4:1.5 A4:0.5 G4 | E4:3 | G4:1.5 A4:0.5 G4 | E4:3 | D5:2 D5 | B4:3 | C5:2 C5 | G4:3 | A4:2 A4 | C5:1.5 B4:0.5 A4 | G4:1.5 A4:0.5 G4 | E4:3 | A4:2 A4 | C5:1.5 B4:0.5 A4 | G4:1.5 A4:0.5 G4 | E4:3 | D5:2 D5 | F5:1.5 D5:0.5 B4 | C5:3 | E5:3 | C5:1.5 G4:0.5 E4 | G4:1.5 F4:0.5 D4 | C4:3",
       lh: "C3:3 | C3:3 | C3:3 | C3:3 | G2:3 | G2:3 | C3:3 | C3:3 | F2:3 | F2:3 | C3:3 | C3:3 | F2:3 | F2:3 | C3:3 | C3:3 | G2:3 | G2:3 | C3:3 | C3:3 | C3:3 | G2:3 | C3:3"
     },
@@ -118,6 +125,7 @@ window.PIANO_DATA = {
       id: "joy-to-the-world", cat: "hymn", level: 3, title: "普世欢腾", en: "Joy to the World",
       key: "C", meter: "2/4", tempo: 80,
       tip: "以撒·华兹作词，曲调 Antioch。开头是从高 C 一路走到低 C 的完整音阶。附点和十六分音符多，先放慢到 60% 练熟。",
+      lyrics: "Joy to the world! the Lord is come; Let earth re- ceive her King; Let ev- _ 'ry _ heart _ _ pre- pare _ Him _ room, _ _ And heav'n and na- ture _ sing, And _ heav'n and na- ture _ sing, And _ heav'n, _ and heav'n, _ _ and na- ture sing.",
       rh: "C5 B4:0.75 A4:0.25 | G4:1.5 F4:0.5 | E4 D4 | C4:1.5 G4:0.5 | A4:1.5 A4:0.5 | B4:1.5 B4:0.5 | C5:1.5 C5:0.5 | C5:0.5 B4:0.5 A4:0.5 G4:0.5 | G4:0.75 F4:0.25 E4:0.5 C5:0.5 | C5:0.5 B4:0.5 A4:0.5 G4:0.5 | G4:0.75 F4:0.25 E4:0.5 E4:0.5 | E4:0.5 E4:0.5 E4:0.5 E4:0.25 F4:0.25 | G4:1.5 F4:0.25 E4:0.25 | D4:0.5 D4:0.5 D4:0.5 D4:0.25 E4:0.25 | F4:1.5 E4:0.25 D4:0.25 | C4:0.5 C5 A4:0.5 | G4:0.75 F4:0.25 E4:0.5 F4:0.5 | E4 D4 | C4:2",
       lh: "C3:2 | C3:2 | G2:2 | C3:2 | F2:2 | G2:2 | C3:2 | C3:2 | C3:2 | C3:2 | C3:2 | C3:2 | C3:2 | G2:2 | G2:2 | F2:2 | C3:2 | G2:2 | C3:2"
     },
@@ -126,6 +134,7 @@ window.PIANO_DATA = {
       key: "F", meter: "4/4", tempo: 84,
       tip: "康维斯 1868 年作曲，司克文作词。这是诗本上的四部和声：右手弹女高音和女中音，左手弹男高音和男低音。先只弹每个和音最上面的旋律音，熟了再加内声部。",
       source: "乐谱来源：Echoes of Grace 诗本四部和声（github.com/kulp/eog，维护者声明放弃版权）",
+      lyrics: "What a friend we have in Je- sus, All our sins and griefs to bear! What a priv- i- lege to car- ry Ev- 'ry- thing to God in prayer! O what peace we of- ten for- feit, O what need- less pain we bear, All be- cause we do not car- ry Ev- 'ry- thing to God in prayer!",
       rh: "F4+C5:1.5 F4+C5:0.5 F4+D5:0.5 F4+C5:0.5 F4+A4:0.5 C4+F4:0.5 | D4+F4:2 Bb3+D4 r | C4:1.5 C4+F4:0.5 C4+A4:0.5 C4+F4:0.5 F4+C5:0.5 F4+A4:0.5 | E4+G4:3 r | F4+C5:1.5 F4+C5:0.5 F4+D5:0.5 F4+C5:0.5 F4+A4:0.5 C4+F4:0.5 | D4+F4:2 Bb3+D4 r | A3+C4:1.5 C4+F4:0.5 F4+A4:0.5 C4+G4:0.5 C4+F4:0.5 C4+E4:0.5 | C4+F4:3 r | E4+G4:1.5 Eb4+Gb4:0.5 E4+G4:0.5 F4+A4:0.5 G4+Bb4:0.5 E4+G4:0.5 | F4+A4:2 F4+C5 r | F4+D5:1.5 F4+D5:0.5 F4+C5:0.5 F4+A4:0.5 G4+Bb4:0.5 F4+A4:0.5 | E4+G4:3 r | F4+C5:1.5 F4+C5:0.5 F4+D5:0.5 F4+C5:0.5 F4+A4:0.5 C4+F4:0.5 | D4+F4:2 Bb3+D4 r | A3+C4:1.5 C4+F4:0.5 F4+A4:0.5 C4+G4:0.5 C4+F4:0.5 C4+E4:0.5 | C4+F4:3",
       lh: "F3+A3:1.5 F3+A3:0.5 F3+Bb3:0.5 F3+A3:0.5 F3+C4:0.5 F3+A3:0.5 | Bb2+Bb3:2 Bb2+F3 r | F3+A3:1.5 F3+A3:0.5 F3+A3:0.5 F3+A3:0.5 F3+A3:0.5 F3+C4:0.5 | C3+C4:3 r | F3+A3:1.5 F3+A3:0.5 F3+Bb3:0.5 F3+A3:0.5 F3+C4:0.5 F3+A3:0.5 | Bb2+Bb3:2 Bb2+F3 r | C3+F3:1.5 C3+A3:0.5 C3+C4:0.5 C3+Bb3:0.5 C3+A3:0.5 C3+G3:0.5 | F3+A3:3 r | C3+C4:1.5 C3+C4:0.5 C3+C4:0.5 C3+C4:0.5 C3+C4:0.5 C3+C4:0.5 | F3+C4:2 F3+A3 r | Bb3:1.5 Bb3:0.5 A3+C4:0.5 F3+C4:0.5 E3+C4:0.5 F3+C4:0.5 | C3+C4:3 r | F3+A3:1.5 F3+A3:0.5 F3+Bb3:0.5 F3+A3:0.5 F3+C4:0.5 F3+A3:0.5 | Bb2+Bb3:2 Bb2+F3 r | C3+F3:1.5 C3+A3:0.5 C3+C4:0.5 C3+Bb3:0.5 C3+A3:0.5 C3+G3:0.5 | F3+A3:3"
     },
@@ -134,22 +143,25 @@ window.PIANO_DATA = {
       key: "D", meter: "9/8", tempo: 75,
       tip: "纳普夫人 1873 年作曲，芬妮·克罗斯比作词。9/8 拍：每小节三大拍，每大拍三个八分音符，数\"1-2-3、2-2-3、3-2-3\"。弱起从一个大拍开始。",
       source: "乐谱来源：Echoes of Grace 诗本四部和声（github.com/kulp/eog，维护者声明放弃版权）",
+      lyrics: "Bless- ed as- sur- ance, Je- sus is mine! O what a fore- taste of glo- ry di- vine! Heir of sal- va- tion, pur- chase of God, Born of His Spir- it, washed in His blood. This is my sto- ry, this is my song, Prais- ing my Sav- ior all the day long; This is my sto- ry, this is my song, Prais- ing my Sav- ior all the day long.",
       rh: "D4+F#4:0.5 D4+E4:0.5 D4:0.5 | D4+A4:1.5 F#4+A4:1.5 D4+G4:0.5 D4+A4:0.5 D4+B4:0.5 | D4+A4:3 F#4+A4:0.5 D4+F#4:0.5 F#4+A4:0.5 | F#4+D5:1.5 E4+C#5 E4+C#5:0.5 E4+B4:0.5 E4+A4:0.5 E4+G#4:0.5 | E4+A4:3 D4+F#4:0.5 D4+E4:0.5 D4:0.5 | D4+A4:1.5 F#4+A4:1.5 D4+G4:0.5 D4+A4:0.5 D4+B4:0.5 | D4+A4:3 D4:0.5 D4+E4:0.5 D4+F#4:0.5 | D4+G4:1.5 B3+E4:1.5 D4:0.5 C#4+E4:0.5 A3+C#4:0.5 | A3+D4:3 F#4+A4:0.5 F#4+A4:0.5 F#4+A4:0.5 | F#4+D5:1.5 F#4+A4:1.5 G4+B4:0.5 G4+B4:0.5 G4+B4:0.5 | F#4+A4:3 F#4+A4:0.5 F#4+A4:0.5 F#4+A4:0.5 | G4+B4:1.5 A4+D5:1.5 A4+C#5:0.5 A4+C#5:0.5 G#4+B4:0.5 | A4+C#5:3 G4+C#5:0.5 G4+D5:0.5 G4+E5:0.5 | F#4+D5:1.5 F#4+A4:1.5 G4+B4:0.5 F#4+A4:0.5 G4+B4:0.5 | F#4+A4:3 D4:0.5 C#4+E4:0.5 D4+F#4:0.5 | D4+G4:1.5 B3+E4:1.5 D4:0.75 C#4+E4:0.25 A3+C#4:0.5 | A3+D4:3",
       lh: "D3+A3:0.5 D3+G3:0.5 D3+F#3:0.5 | D3+F#3:1.5 D3+A3:1.5 D3+B3:0.5 D3+F#3:0.5 D3+G3:0.5 | D3+F#3:3 D3+A3:0.5 D3+A3:0.5 D3+A3:0.5 | D3+A3:1.5 E3+A3 E3+A3:0.5 E3+D4:0.5 E3+C#4:0.5 E3+B3:0.5 | A2+C#4:3 D3+A3:0.5 D3+G3:0.5 D3+F#3:0.5 | D3+F#3:1.5 D3+A3:1.5 D3+B3:0.5 D3+F#3:0.5 D3+G3:0.5 | D3+F#3:3 D3+F#3:0.5 D3+G3:0.5 D3+A3:0.5 | G2+B3:1.5 G2+G3:1.5 A2+F#3:0.5 A2+G3:0.5 A2+E3:0.5 | D3+F#3:3 D3+D4:0.5 D3+D4:0.5 D3+D4:0.5 | D3+A3:1.5 D3+D4:1.5 G3+D4:0.5 G3+D4:0.5 G3+D4:0.5 | D3+D4:3 D3+D4:0.5 D3+D4:0.5 D3+D4:0.5 | G3+D4:1.5 F#3+D4:1.5 E3+E4:0.5 E3+E4:0.5 E3+E4:0.5 | A3+E4:3 A3:0.5 A3+B3:0.5 A3+C#4:0.5 | D3+D4:1.5 D3+D4:1.5 D3+D4:0.5 D3+D4:0.5 D3+D4:0.5 | D3+D4:3 F#3+A3:0.5 E3+A3:0.5 D3+A3:0.5 | G2+B3:1.5 G2+G3:1.5 A2+F#3:0.75 A2+G3:0.25 A2+E3:0.5 | D3+F#3:3"
     },
     {
-      id: "adeste", cat: "hymn", level: 4, title: "齐来崇拜", en: "O Come, All Ye Faithful",
+      id: "hark-herald", cat: "hymn", level: 4, title: "听啊，天使高声唱", en: "Hark! The Herald Angels Sing",
       key: "G", meter: "4/4", tempo: 92,
-      tip: "18 世纪的拉丁圣诞诗歌 Adeste Fideles。诗本原为 A 大调，这里移到 G 大调，只有一个升号。副歌\"齐来崇拜\"连唱三次、一次比一次高，要一次比一次饱满。",
+      tip: "孟德尔颂 1840 年的曲调，查理·卫斯理作词，圣诞节最常唱的诗歌之一。四部和声：右手女高音和女中音，左手男高音和男低音。两拍弱起；后半段\"Joyful, all ye nations, rise\"旋律升高，要唱得明亮。",
       source: "乐谱来源：Echoes of Grace 诗本四部和声（github.com/kulp/eog，维护者声明放弃版权）",
-      rh: "D4+G4 | D4+G4:2 B3+D4 D4+G4 | D4+A4:2 D4 D4+B4 | D4+B4 D4+A4 D4+B4 E4+C5 | D4+B4:2 D4+A4 B3+G4 | C#4+G4:2 D4+F#4 C#4+E4 | D4+F#4 C#4+G4 D4+A4 D4+B4 | D4+F#4:2 C#4+E4 C#4+E4:0.5 D4:0.5 | D4:3 G4+D5 | G4+D5:2 F#4+C5 G4+B4 | A4+C5:2 G4+B4 G4+B4 | E4+A4 D#4+B4 E4+G4 E4+A4 | D4+F#4:1.5 D4+E4:0.5 D4 D4+G4 | D4+G4 D4+F#4 D4+G4 D4+A4 | D4+G4:2 D4 G4+B4 | G4+B4 F#4+A4 G4+B4 A4+C5 | G4+B4:2 F#4+A4 G4+B4 | F#4+C5 G4+B4 A4 C#4+G4 | D4+F#4:2 D4+G4 G4+C5 | G4+B4:2 F#4+A4 F#4+A4:0.5 G4:0.5 | G4:3",
-      lh: "G3+B3 | G3+B3:2 G2+G3 B2+G3 | D3+F#3:2 D3+F#3 G3 | G3 D3+F#3 G3 C3+G3 | D3+G3:2 D3+F#3 E3+G3 | A2+E3:2 A3 G3+A3 | F#3+A3 E3+G3 D3+F#3 G2+D3 | A2+A3:2 A2+G3 A2+G3:0.5 D3+F#3:0.5 | D3+F#3:3 B3 | B3:2 A3+C4 G3+D4 | F#3+D4:2 G3+D4 G3+D4 | C3+C4 B2+F#3 E3+G3 A2+C#4 | D3+D4:1.5 D3+G3:0.5 D3+F#3 G3+B3 | D3+B3 D3+A3 D3+B3 D3+C4 | G2+B3:2 G2+B3 G3+D4 | G3+D4 D3+D4 G3+D4 C3+E4 | D3+D4:3 G3+B3 | A3 G3+B3:0.5 G3+C#4:0.5 F#3+D4 E3+A3 | D3+A3 C3+A3 B2+B3 A2+E4 | D3+D4:2 D3+D4 D3+C4:0.5 G2+B3:0.5 | G2+B3:3"
+      lyrics: "Hark! the her- ald an- gels sing, _ \"Glo- ry to _ the new- born King; Peace on earth, _ and mer- cy mild, _ God and sin- ners re- con- ciled!\" Joy- ful, all ye na- tions, rise, _ Join the tri- umph of the skies; _ With _ th'an- gel- ic host pro- claim, \"Christ is _ born in Beth- le- hem!\"",
+      rh: "D4 D4+G4 | D4+G4:1.5 D4+F#4:0.5 D4+G4 G4+B4 | G4+B4 F#4+A4 G4+D5 F#4+D5 | E4+D5 A4+D5:0.5 A4+C5:0.5 G4+B4 F#4+A4 | G4+B4:2 D4 D4+G4 | D4+G4 D4+G4:0.5 D4+F#4:0.5 B3+G4 G4+B4 | G4+B4 G4+A4 F#4+D5 E4+A4 | F#4+A4:1.5 D4+F#4:0.5 D4+F#4 C#4+E4 | D4:2 D4+D5 D4+D5 | D4+D5 G4 A4+C5 G4+B4 | G4+B4 F#4+A4 D4+D5 D4+D5 | D4+D5 G4 A4+C5 G4+B4 | G4+B4 F#4+A4 C5+E5 C5+E5:0.5 C5+E5:0.5 | C5+E5 B4+D5 A4+C5 G#4+B4 | A4+C5:2 D4+A4 F#4+B4:0.5 F#4+C5:0.5 | G4+D5:1.5 D4+G4:0.5 D4+G4 D4+F#4+A4 | D4+G4:2",
+      lh: "G3+B3 G3+B3 | G3+B3 D3+B3:0.5 D3+A3:0.5 B2+G3 G2+D4 | D3+D4:2 B2+D4 B2+D4 | C3+E4 C3+E4 D3+D4 D3+D4 | G2+D4:2 G3+B3 G3+B3 | G3+B3 D3+B3:0.5 D3+A3:0.5 E3+G3 D3+D4 | C#3+E4:2 B2+B3 C#3+A3 | D3+A3 F#2+A3:0.5 F#2+A3:0.5 G2+B3 A2+G3 | D3+F#3:2 D4 D4 | D4 B3+D4 F#3+D4 G3+D4 | D3+D4:2 D4 D4 | D4 B3+D4 F#3+D4 G3+D4 | D3+D4:2 C4+E4 C4+E4 | C4+E4 B3+D4 A3+C4 G#3+B3 | A3+C4 G3+C4 F#3+D4 C4+D4 | B3+D4 G3+D4:0.5 G3+B3:0.5 D3+B3 D3+C4 | G3+B3:2"
     },
     {
       id: "abide", cat: "hymn", level: 4, title: "求主同住", en: "Abide with Me",
       key: "D", meter: "4/4", tempo: 60,
       tip: "孟克 1861 年作曲，莱特作词。诗本原为 E 大调，这里移到 D 大调。速度很慢，四个声部要连起来，换和弦时手指尽量不要同时抬起。",
       source: "乐谱来源：Echoes of Grace 诗本四部和声（github.com/kulp/eog，维护者声明放弃版权）",
+      lyrics: "A- bide with me; fast falls the e- ven- tide; The dark- ness deep- ens; Lord, with me a- bide; When oth- er help- ers fail and com- forts flee, Help of the help- less, O a- bide with me.",
       rh: "D4+F#4:2 C#4+F#4 C#4+E4 | D4:2 D4+A4:2 | D4+B4 C#4+A4 D4+A4 E4+G4 | D4+F#4:4 | D4+F#4:2 D4+G4 D4+A4 | D4+B4:2 D4+A4:2 | D4+G4 E4 D4+F#4 D4+G#4 | C#4+A4:4 | D4+F#4:2 C#4+F#4 C#4+E4 | D4:2 D4+A4:2 | D4+A4 D4+G4 D#4+G4 D#4+F#4 | E4:4 | C#4+E4:2 D4+F#4 C#4+G4 | D4+F#4 C#4+E4 D4 E4+G4 | D4+F#4:2 C#4+E4:2 | D4:4",
       lh: "D3+A3:2 A2+A3 A2+G3 | B2+F#3:2 F#2+D3:2 | G2+D3 A2+A3 B2+A3 C#3+A3 | D3+A3:4 | D3+A3 C#3+A3 B2+G3 A2+F#3 | G2+G3:2 D3+F#3:2 | E3+B3 C#3+A3 D3+A3 B2+D3 | A2+E3:4 | D3+F#3 D3+G3 A2+A3 A2+G3 | B2+F#3:2 F#2+D4 F#2+C#4 | G2+B3 G2+B3:0.5 A2+B3:0.5 B2+B3 B2+A3 | E3+G3:4 | G3+A3:2 F#3+A3 E3+A3 | D3+A3 A2+G3 B2+F#3 G2+B3 | A2+A3:2 A2+A3 A2+G3 | D3+F#3:4"
     },
@@ -158,6 +170,7 @@ window.PIANO_DATA = {
       key: "F", meter: "4/4", tempo: 72,
       tip: "旋律取自西贝柳斯交响诗《芬兰颂》（1899）。三拍弱起，左手有很多保持音，按住数满拍子；第 9 小节起旋律升高，是全曲最宽广的地方。",
       source: "乐谱来源：Echoes of Grace 诗本四部和声（github.com/kulp/eog，维护者声明放弃版权）",
+      lyrics: "Be still, my soul: _ the Lord is on thy side; _ Bear pa- tient- ly _ the cross of grief or pain; _ Leave to thy God _ to or- der and pro- vide; In ev- 'ry change He _ faith- ful will re- main. Be _ still, my soul: thy _ best, thy heav'n- ly Friend Through thorn- y ways leads to _ a joy- ful end. _ _ _",
       rh: "F4+A4 E4+G4 F4+A4 | E4+Bb4 E4+Bb4:2 F4+A4 | E4+G4 F4+A4 D4+F4:1.5 E4+G4:0.5 | E4+G4 F4+A4:3~ | F4+A4 F4+A4 E4+G4 F4+A4 | E4+Bb4 E4+Bb4:2 F4+A4 | E4+G4 F4+A4 D4+F4:1.5 E4+G4:0.5 | F4+A4 F4+A4:3~ | F4+A4 F4+C5 F4+C5 F4+C5 | F4+D5 F4+D5:2 F4+A4 | F4+A4 F4+C5 F4+C5:1.5 E4+G4:0.5 | E4+G4 G4+Bb4:3~ | G4+Bb4 G4+Bb4 Gb4+A4 G4 | F4+A4 F4+A4:2 F4 | F4 F4+G4 E4+G4:1.5 E4+A4:0.5 | E4+A4 E4+A4:3~ | E4+A4 A4+C5 F4+C5 F4+C5 | F4+D5 F4+D5:2 F4+A4 | F4+A4 F4+C5 F4+C5:1.5 E4+G4:0.5 | E4+G4 G4+Bb4:3~ | G4+Bb4 G4+Bb4 Gb4+A4 G4 | F4+A4 F4+A4:2 C4+F4 | F4 F4+G4 E4+G4:1.5 F4:0.5 | F4 F4:3~ | F4",
       lh: "F3+C4 Bb3+C4 A3+C4 | G3+C4 G3+C4:2 F3+C4 | Bb3+C4 A3+C4 Bb3:1.5 G3+Bb3:0.5 | G3+C4 F3+C4:3~ | F3+C4 F3+C4 Bb3+C4 A3+C4 | G3+C4 G3+C4:2 F3+C4 | Bb3+C4 A3+C4 Bb3:1.5 G3+Bb3:0.5 | F3+C4 F3+C4:3~ | F3+C4 F3+A3 F3+A3 E3+A3 | D3+A3 D3+A3:2 D3+D4 | D3+D4 A2+C4 A2+C4:1.5 C3+C4:0.5 | C3+C4 G2+D4:3~ | G2+D4 G2+D4 A2+C4 Bb2+D4 | C3+C4 C3+C4:2 A3+C4 | Bb3+D4 Bb3+D4 Bb3+D4:1.5 A3+Db4:0.5 | A3+Db4 A3+Db4:3~ | A3+Db4 F3+C4 F3+A3 E3+A3 | D3+A3 D3+A3:2 D3+D4 | D3+D4 A3+C4 A3+C4:1.5 C4:0.5 | C4 G3+D4:3~ | G3+D4 G2+D4 A2+C4 Bb2+D4 | C3+C4 C3+C4:2 C3+A3 | C3+A3 C3+Bb3 C3+Bb3:1.5 F3+A3:0.5 | F3+A3 F3+A3:3~ | F3+A3"
     },
