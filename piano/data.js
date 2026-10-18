@@ -84,8 +84,8 @@ window.PIANO_DATA = {
     {
       id: "jesus-loves-me", cat: "hymn", level: 1, title: "耶稣爱我", en: "Jesus Loves Me",
       key: "C", meter: "4/4", tempo: 84,
-      tip: "布拉德伯里 1862 年作曲。旋律只用到几个音，最适合作第一首赞美诗。前 8 小节是主歌，后 8 小节是副歌\"主爱我\"。右手先弹熟；左手只有 C、F、G 三个音。",
-      lyrics: "Je- sus loves me! this I know, For the Bi- ble tells me so; Lit- tle ones to Him be- long; They are weak, but He is strong. Yes, Je- sus loves me! Yes, Je- sus loves me! Yes, Je- sus loves me! The Bi- ble tells me so.",
+      tip: "布拉德伯里 1862 年作曲。旋律只用到几个音，最适合作第一首赞美诗。前 8 小节是主歌，后 8 小节是副歌\"主耶稣爱我\"。歌词用的是中文教会通用的译词。右手先弹熟；左手只有 C、F、G 三个音。",
+      lyrics: "耶 稣 爱 我 我 知 道 因 有 圣 书 告 诉 我 凡 小 孩 子 主 牧 养 我 虽 软 弱 主 强 壮 主 耶 稣 爱 我 主 耶 稣 爱 我 主 耶 稣 爱 我 有 圣 书 告 诉 我",
       rh: "G4 E4 E4 D4 | E4 G4 G4:2 | A4 A4 C5 A4 | A4 G4 G4:2 | G4 E4 E4 D4 | E4 G4 G4:2 | A4 A4 G4 C4 | E4 D4 C4:2 | G4:2 E4 G4 | A4 C5:3 | G4:2 E4 C4 | E4 D4:3 | G4:2 E4 G4 | A4 C5:2 A4 | G4 C4 E4:1.5 D4:0.5 | C4:4",
       lh: "C3:4 | C3:4 | F3:4 | C3:4 | C3:4 | C3:4 | F3:2 C3:2 | G3:2 C3:2 | C3:4 | F3:4 | C3:4 | G3:4 | C3:4 | F3:4 | C3:2 G3:2 | C3:4"
     },
