@@ -1,4 +1,4 @@
-/* 青草地 — 单页应用。所有个人数据保存在本机 IndexedDB，不上传。 */
+/* 晨光 — 单页应用。所有个人数据保存在本机 IndexedDB，不上传。 */
 "use strict";
 const APP_VER="1.0.0";
 const $=s=>document.querySelector(s);
@@ -15,7 +15,7 @@ function fmtTs(ts){const d=new Date(ts);return dstr(d)+" "+pad2(d.getHours())+":
 function uid(p){return p+":"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
 function download(name,text,mime){const b=new Blob([text],{type:mime||"application/octet-stream"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
-async function shareText(text,title){if(navigator.share){try{await navigator.share({title:title||"青草地",text});return}catch(e){if(e&&e.name==="AbortError")return}}copyText(text)}
+async function shareText(text,title){if(navigator.share){try{await navigator.share({title:title||"晨光",text});return}catch(e){if(e&&e.name==="AbortError")return}}copyText(text)}
 function copyText(t){try{navigator.clipboard.writeText(t).then(()=>toast("已复制"),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}}
 function fallbackCopy(t){openSheet(`<h3>长按选择并复制</h3><textarea id="cpy" readonly style="min-height:9rem">${esc(t)}</textarea>`);setTimeout(()=>{const a=$("#cpy");if(a){a.focus();a.select()}},50)}
 const isCJK=s=>/[㐀-鿿]/.test(s);
@@ -70,7 +70,7 @@ const I={
 
 /* ---------- 本机数据库 ---------- */
 const DB={_db:null,
- open(){return new Promise((res,rej)=>{const r=indexedDB.open("meadow",1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains("kv"))db.createObjectStore("kv",{keyPath:"k"});if(!db.objectStoreNames.contains("docs")){const d=db.createObjectStore("docs",{keyPath:"id"});d.createIndex("type","type")}};r.onsuccess=()=>{DB._db=r.result;res()};r.onerror=()=>rej(r.error)})},
+ open(){return new Promise((res,rej)=>{const r=indexedDB.open("chenguang",1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains("kv"))db.createObjectStore("kv",{keyPath:"k"});if(!db.objectStoreNames.contains("docs")){const d=db.createObjectStore("docs",{keyPath:"id"});d.createIndex("type","type")}};r.onsuccess=()=>{DB._db=r.result;res()};r.onerror=()=>rej(r.error)})},
  st(store,mode){return DB._db.transaction(store,mode||"readonly").objectStore(store)},
  req(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})},
  get(store,k){return DB.req(DB.st(store).get(k))},
@@ -85,7 +85,7 @@ async function kvSet(k,v){return DB.put("kv",{k,v})}
 async function saveDoc(d){d.updated=Date.now();if(!d.created)d.created=d.updated;await DB.put("docs",d);return d}
 
 /* ---------- 状态 ---------- */
-const DEF={mode:"both",en:"bsb",fs:1.1,theme:"auto",rate:1,voiceZh:"",voiceEn:"",ttsLang:"follow",autoNext:true,remindOn:false,remindTime:"07:00",lockMin:5,last:{b:42,c:1},tab:"today",lineH:1.9};
+const DEF={mode:"both",en:"bsb",fs:1.3,theme:"auto",rate:1,voiceZh:"",voiceEn:"",ttsLang:"follow",autoNext:true,remindOn:false,remindTime:"07:00",lockMin:5,last:{b:42,c:1},tab:"today",lineH:1.9};
 let S={...DEF}, P=null, READ={}, MARKS={}, PIN=null;
 const V={tab:"today",bview:"read",pickB:null,sub:{devo:"journal",study:"all",plan:"today"},q:"",calM:null,filters:{}};
 const R={b:42,c:1,target:null};
@@ -115,7 +115,7 @@ const TABS=[["today","今日",I.today],["bible","圣经",I.bible],["plan","计�
 function renderTabs(){$("#tabs").innerHTML=TABS.map(t=>`<button data-act="tab" data-tab="${t[0]}" ${V.tab===t[0]?'aria-current="page"':""}>${t[2]}<span>${t[1]}</span></button>`).join("")}
 ACT.tab=el=>{V.tab=el.dataset.tab;S.tab=V.tab;saveS();window.scrollTo(0,0);render()};
 function topbar(title,sub,extra){return `<div class="topbar"><div class="t">${esc(title)}${sub?`<div class="sub">${esc(sub)}</div>`:""}</div>${extra||""}<button class="iconbtn" data-act="settings" aria-label="设置">${I.gear}</button></div>`}
-function render(){renderTabs();const app=$("#app");const fn={today:renderToday,bible:renderBible,plan:renderPlan,devo:renderDevo,study:renderStudy}[V.tab];Promise.resolve(fn()).then(h=>{if(typeof h==="string")app.innerHTML=h;afterRender()}).catch(e=>{app.innerHTML=topbar("青草地")+`<div class="card clay">出错了：${esc(e.message||e)}</div>`})}
+function render(){renderTabs();const app=$("#app");const fn={today:renderToday,bible:renderBible,plan:renderPlan,devo:renderDevo,study:renderStudy}[V.tab];Promise.resolve(fn()).then(h=>{if(typeof h==="string")app.innerHTML=h;afterRender()}).catch(e=>{app.innerHTML=topbar("晨光")+`<div class="card clay">出错了：${esc(e.message||e)}</div>`})}
 function afterRender(){if(R.target&&V.tab==="bible"&&V.bview==="read"){const el=document.getElementById("v-"+R.target);if(el){el.classList.add("target");setTimeout(()=>el.scrollIntoView({block:"center"}),80)}R.target=null}}
 
 /* ======================================================
@@ -141,18 +141,18 @@ const PRESETS={all:{name:"一年读完整本圣经",kind:"all",dpw:7,days:365},n
 /* ---------- 今日 ---------- */
 function todoList(chs,withBox){return chs.map(([b,c])=>{const on=P&&P.done[key(b,c)];return `<div class="todo ${on?"done":""}">${withBox?`<button class="box ${on?"on":""}" data-act="toggleCh" data-b="${b}" data-c="${c}" aria-label="完成">${on?I.tick:""}</button>`:""}<button class="n" style="text-align:left" data-act="goCh" data-b="${b}" data-c="${c}">${esc(BOOKS[b][0])} ${c} 章</button><span class="muted small">${esc(BOOKS[b][2])} ${c}</span></div>`}).join("")}
 async function renderToday(){const t=today();const st=todayState();const jn=(await DB.byType("journal")).filter(x=>x.date===t);const cares=(await DB.byType("care")).filter(x=>x.status!=="answered");let hero="";
- if(!P){hero=`<div class="hero"><div class="eyebrow" style="color:#fff;opacity:.8">${fmtDate(t,true)}</div><h2 style="margin-top:6px">还没有读经计划</h2><p class="small" style="opacity:.9">选一个一年计划，或自己设定进度，每天打开就能看到当天该读的经文。</p><button class="btn" data-act="tab" data-tab="plan">设定读经计划</button></div>`}
+ if(!P){hero=`<div class="hero"><div class="eyebrow">${fmtDate(t,true)}</div><h2 style="margin-top:6px">还没有读经计划</h2><p class="small" style="opacity:.9">选一个一年计划，或自己设定进度，每天打开就能看到当天该读的经文。</p><button class="btn" data-act="tab" data-tab="plan">设定读经计划</button></div>`}
  else{const total=planTotal(),done=planDone(),pct=total?Math.round(done/total*100):0;let body="";
   if(P.paused)body=`<p class="small">计划已暂停。<button class="btn sm" data-act="resumePlan">继续计划</button></p>`;
   else if(st.finished)body=`<p>🎉 计划已全部读完，感谢神的带领！</p><button class="btn" data-act="tab" data-tab="plan">开始新的计划</button>`;
   else if(st.cur){const chs=P.days[st.cur.idx];body=`<div class="small" style="opacity:.9;margin-bottom:6px">第 ${st.cur.idx+1} 天 · 今日 ${chs.length} 章</div><div class="card" style="padding:4px 12px;color:var(--ink)">${todoList(chs,true)}</div>`}
   else if(t<P.start)body=`<p class="small">计划将于 ${fmtDate(P.start,true)} 开始。</p>`;
   else body=`<p class="small">今天是休息日，可以补读或自由阅读。</p>`;
-  hero=`<div class="hero"><div class="row between"><div class="eyebrow" style="color:#fff;opacity:.8">${fmtDate(t,true)}</div><span class="small" style="opacity:.9">连续 ${streak()} 天</span></div><h2 style="margin-top:4px">${esc(P.name)}</h2><div class="row between small" style="margin:8px 0 4px;opacity:.95"><span>已完成 ${done} / ${total} 章</span><b>${pct}%</b></div><div class="progress"><i style="width:${pct}%"></i></div><div style="margin-top:12px">${body}</div></div>`}
+  hero=`<div class="hero"><div class="row between"><div class="eyebrow">${fmtDate(t,true)}</div><span class="small" style="opacity:.9">连续 ${streak()} 天</span></div><h2 style="margin-top:4px">${esc(P.name)}</h2><div class="row between small" style="margin:8px 0 4px;opacity:.95"><span>已完成 ${done} / ${total} 章</span><b>${pct}%</b></div><div class="progress"><i style="width:${pct}%"></i></div><div style="margin-top:12px">${body}</div></div>`}
  const missed=st&&st.missed.length?`<div class="card sun"><div class="row between"><div><b>有 ${st.missed.length} 天未读完</b><div class="small muted">可以补读，进度照常计算</div></div><button class="btn sm" data-act="planSub" data-sub="catchup">去补读</button></div></div>`:"";
  const remind=S.remindOn&&!window.__remindShown&&st&&st.cur&&!dayDone(P.days[st.cur.idx])&&nowHM()>=S.remindTime?`<div class="card clay"><b>读经提醒</b><div class="small muted">今天的经文还没读完，花几分钟亲近神。</div></div>`:"";
  const last=S.last||{b:42,c:1};
- return topbar("青草地",fmtDate(t,true))+`<div class="stack">${hero}${missed}${remind}
+ return topbar("晨光",fmtDate(t,true))+`<div class="stack">${hero}${missed}${remind}
  <div class="quick"><button data-act="newJournal">${I.devo}<span>写灵修</span></button><button data-act="newPrayer">${I.pray}<span>写祷告</span></button><button data-act="goCh" data-b="${last.b}" data-c="${last.c}">${I.book}<span>继续阅读<br><span class="tiny muted">${esc(refZh(last.b,last.c))}</span></span></button></div>
  ${jn.length?`<div class="card accent"><div class="eyebrow">今日灵修</div>${jn.map(j=>`<div style="margin-top:6px"><span class="ref">${esc(j.ref||"")}</span> ${esc((j.insight||j.light||j.apply||"").slice(0,80))}</div>`).join("")}<button class="btn sm ghost" data-act="devoSub" data-sub="journal" style="margin-top:6px">查看</button></div>`:""}
  ${cares.length?`<div class="card"><div class="row between"><div><b>代祷名单</b><div class="small muted">${cares.length} 项正在祷告或等候</div></div><button class="btn sm" data-act="devoSub" data-sub="care">打开</button></div></div>`:""}
@@ -224,7 +224,7 @@ function planCalendar(){const m=V.calM||today().slice(0,7);const [y,mo]=m.split(
 ACT.calM=el=>{V.calM=el.dataset.m;render()};
 ACT.toggleRemind=async()=>{S.remindOn=!S.remindOn;if(S.remindOn&&"Notification"in window&&Notification.permission==="default"){try{await Notification.requestPermission()}catch(e){}}await saveS();render()};
 ACT.remindTime=async el=>{S.remindTime=el.value||"07:00";await saveS()};
-ACT.icsDownload=()=>{const [h,m]=(S.remindTime||"07:00").split(":");const t=today().replace(/-/g,"");const dt=t+"T"+h+m+"00";const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//meadow//reading//CN","BEGIN:VEVENT","UID:meadow-remind-"+Date.now()+"@local","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+dt,"DURATION:PT15M","RRULE:FREQ=DAILY","SUMMARY:读经时间","DESCRIPTION:打开青草地，读今天的经文。","BEGIN:VALARM","TRIGGER:PT0S","ACTION:DISPLAY","DESCRIPTION:读经时间","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");download("meadow-reminder.ics",ics,"text/calendar");toast("已生成日历文件，打开后选择添加到日历")};
+ACT.icsDownload=()=>{const [h,m]=(S.remindTime||"07:00").split(":");const t=today().replace(/-/g,"");const dt=t+"T"+h+m+"00";const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//chenguang//reading//CN","BEGIN:VEVENT","UID:chenguang-remind-"+Date.now()+"@local","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+dt,"DURATION:PT15M","RRULE:FREQ=DAILY","SUMMARY:读经时间","DESCRIPTION:打开晨光，读今天的经文。","BEGIN:VALARM","TRIGGER:PT0S","ACTION:DISPLAY","DESCRIPTION:读经时间","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");download("chenguang-reminder.ics",ics,"text/calendar");toast("已生成日历文件，打开后选择添加到日历")};
 function planHistory(){const entries=Object.entries(READ).filter(([k,v])=>v).sort((a,b)=>b[1]<a[1]?-1:b[1]>a[1]?1:0);const byDate={};entries.forEach(([k,d])=>{(byDate[d]=byDate[d]||[]).push(k)});const dates=Object.keys(byDate).sort().reverse().slice(0,60);const grid=BOOKS.map((B,b)=>{let n=0;for(let c=1;c<=B[4];c++)if(READ[key(b,c)])n++;return `<button data-act="histBook" data-b="${b}" class="${n===B[4]?"cur":n?"read":""}" title="${n}/${B[4]}">${esc(B[1])}</button>`}).join("");const total=entries.length;
  return `<div class="stack"><div class="card"><div class="row between"><h3>已读章节</h3><span class="small muted">${total} / 1189 章</span></div><div class="progress" style="margin:8px 0 12px"><i style="width:${Math.round(total/1189*100)}%"></i></div><div class="grid-books">${grid}</div><div class="small muted" style="margin-top:8px">绿色＝部分读过，深绿＝整卷读完；点书卷看各章。</div></div>
  ${V.histB!=null?`<div class="card accent"><h3>${esc(BOOKS[V.histB][0])}</h3><div class="grid-ch" style="margin-top:8px">${Array.from({length:BOOKS[V.histB][4]},(_,i)=>i+1).map(c=>`<button data-act="goCh" data-b="${V.histB}" data-c="${c}" class="${READ[key(V.histB,c)]?"read":""}" title="${READ[key(V.histB,c)]||""}">${c}</button>`).join("")}</div></div>`:""}
@@ -235,10 +235,10 @@ ACT.histBook=el=>{V.histB=+el.dataset.b;render()};
    圣经阅读
    ====================================================== */
 async function renderBible(){if(V.bview==="pick")return renderPicker();if(V.bview==="search")return renderSearch();return renderReader()}
-function modeSeg(){return `<div class="seg">${[["zh","中"],["en","英"],["both","对照"]].map(m=>`<button data-act="setMode" data-v="${m[0]}" aria-pressed="${S.mode===m[0]}">${m[1]}</button>`).join("")}</div>`}
+function modeSeg(full){return `<div class="seg ${full?"full":""}">${[["zh","只看中文"],["en","只看英文"],["both","中英对照"]].map(m=>`<button data-act="setMode" data-v="${m[0]}" aria-pressed="${S.mode===m[0]}">${m[1]}</button>`).join("")}</div>`}
 ACT.setMode=async el=>{S.mode=el.dataset.v;await saveS();render()};
-ACT.fontUp=async()=>{S.fs=Math.min(1.6,+(S.fs+0.08).toFixed(2));await saveS();applyPrefs()};
-ACT.fontDown=async()=>{S.fs=Math.max(0.85,+(S.fs-0.08).toFixed(2));await saveS();applyPrefs()};
+ACT.fontUp=async()=>{S.fs=Math.min(2.2,+(S.fs+0.1).toFixed(2));await saveS();applyPrefs()};
+ACT.fontDown=async()=>{S.fs=Math.max(1,+(S.fs-0.1).toFixed(2));await saveS();applyPrefs()};
 ACT.openPick=()=>{V.bview="pick";V.pickB=R.b;render()};
 ACT.openSearch=()=>{V.bview="search";render()};
 ACT.backRead=()=>{V.bview="read";render()};
@@ -250,7 +250,7 @@ async function renderReader(){const b=R.b,c=R.c;const d=await book(b);const zh=d
   const note=mk&&mk.note?`<div class="mynote" data-act="verseTap" data-v="${v}">${esc(mk.note)}</div>`:"";
   return head+`<div class="${cls}" id="v-${v}" data-v="${v}">${flags}${zhHtml}${enHtml}${note}</div>`}).join("");
  const read=!!READ[key(b,c)];const inPlan=chapterInPlan(b,c);
- const tools=`<div class="reader-tools"><button class="btn sm" data-act="openPick">${esc(B[0])} ${c} ${I.fwd.replace('stroke-width="2"','stroke-width="2" width="14" height="14"')}</button>${modeSeg()}<span class="grow"></span><button class="iconbtn" data-act="fontDown" aria-label="缩小字体" style="font-size:.8rem">A-</button><button class="iconbtn" data-act="fontUp" aria-label="放大字体">A+</button><button class="iconbtn" data-act="ttsChapter" aria-label="朗读本章">${I.speaker}</button></div>`;
+ const tools=`<div class="reader-tools"><button class="btn pick" data-act="openPick"><span>${esc(B[0])} 第 ${c} 章</span>${I.fwd}</button><button class="iconbtn" data-act="fontDown" aria-label="缩小字体">A-</button><button class="iconbtn" data-act="fontUp" aria-label="放大字体">A+</button><button class="iconbtn" data-act="ttsChapter" aria-label="朗读本章">${I.speaker}</button>${modeSeg(true)}</div>`;
  return topbar("圣经","和合本 · "+(S.en==="kjv"?"KJV":"BSB"),`<button class="iconbtn" data-act="openSearch" aria-label="搜索">${I.search}</button>`)+tools+`<div class="chapter-title">${esc(B[0])} 第 ${c} 章<span class="en">${esc(B[2])} ${c}${d.tz&&d.tz[c-1]?" · "+esc(d.tz[c-1]):""}</span></div><div class="reader" id="reader">${verses}</div>
  <div class="chapnav"><button class="btn" data-act="prevCh" ${b===0&&c===1?"disabled":""}>${I.back} 上一章</button><button class="btn ${read?"":"primary"}" data-act="toggleCh" data-b="${b}" data-c="${c}">${read?I.tick+" 已读过":"本章读完 ✓"}</button><button class="btn" data-act="nextCh" ${b===65&&c===22?"disabled":""}>下一章 ${I.fwd}</button></div>
  ${inPlan&&!read?`<div class="small muted center">这一章在你的读经计划里，点「本章读完」会同步计划进度。</div>`:""}`}
@@ -439,7 +439,7 @@ ACT.settings=async()=>{const vz=voices().filter(v=>/^zh/i.test(v.lang)),ve=voice
  <div class="eyebrow">阅读</div>
  ${setRow("显示","",modeSeg())}
  ${setRow("英文译本","BSB 现代英语；KJV 钦定本",`<select data-chg="setEn"><option value="bsb" ${S.en==="bsb"?"selected":""}>BSB</option><option value="kjv" ${S.en==="kjv"?"selected":""}>KJV</option></select>`)}
- ${setRow("字体大小","",`<div class="row"><button class="btn sm" data-act="fontDown">A-</button><span class="small">${Math.round(S.fs*100)}%</span><button class="btn sm" data-act="fontUp">A+</button></div>`)}
+ ${setRow("经文字体大小","也可在阅读页用 A- / A+ 调整",`<div class="row"><button class="btn sm" data-act="fontDown">A-</button><span class="small">${Math.round(S.fs*100)}%</span><button class="btn sm" data-act="fontUp">A+</button></div>`)}
  ${setRow("外观","",`<select data-chg="setTheme"><option value="auto" ${S.theme==="auto"?"selected":""}>跟随系统</option><option value="light" ${S.theme==="light"?"selected":""}>浅色</option><option value="dark" ${S.theme==="dark"?"selected":""}>深色</option></select>`)}
  <div class="eyebrow" style="margin-top:16px">朗读</div>
  ${setRow("朗读语言","对照模式下可选中英都读",`<select data-chg="setTtsLang">${[["follow","跟随显示"],["zh","只读中文"],["en","只读英文"],["both","中英都读"]].map(o=>`<option value="${o[0]}" ${S.ttsLang===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>`)}
@@ -457,7 +457,7 @@ ACT.settings=async()=>{const vz=voices().filter(v=>/^zh/i.test(v.lang)),ve=voice
  ${setRow("持久存储",persisted?"已获准，浏览器不会自动清理":"未获准；请把应用添加到主屏幕并常用，浏览器会更稳妥地保留数据",`<button class="btn sm" data-act="askPersist">申请</button>`)}
  ${est?`<div class="small muted">已用约 ${(est.usage/1048576).toFixed(1)} MB</div>`:""}
  <div class="eyebrow" style="margin-top:16px">关于</div>
- <div class="small muted">青草地 v${APP_VER}。经文：和合本（1919）、Berean Standard Bible、King James Version，均为公有领域。个人记录只保存在本机浏览器，不上传任何服务器；点按查词需要联网。</div>
+ <div class="small muted">晨光 v${APP_VER}。经文：和合本（1919）、Berean Standard Bible、King James Version，均为公有领域。个人记录只保存在本机浏览器，不上传任何服务器；点按查词需要联网。</div>
  <div class="row" style="margin-top:12px"><span class="grow"></span><button class="btn danger sm" data-act="wipeAll">清除全部数据</button></div>`)};
 ACT.setEn=async el=>{S.en=el.value;await saveS();render()};
 ACT.setTheme=async el=>{S.theme=el.value;await saveS();applyPrefs()};
@@ -468,20 +468,20 @@ ACT.setLockMin=async el=>{S.lockMin=+el.value;await saveS()};
 ACT.toggleAutoNext=async el=>{S.autoNext=!S.autoNext;el.setAttribute("aria-checked",String(S.autoNext));await saveS()};
 ACT.askPersist=async()=>{try{const ok=await navigator.storage.persist();toast(ok?"已获准持久存储":"浏览器暂未批准，添加到主屏幕后再试")}catch(e){toast("此浏览器不支持")}ACT.settings()};
 /* 备份 */
-async function exportData(){const kv=(await DB.all("kv")).filter(x=>x.k!=="pin");const docs=(await DB.all("docs")).filter(d=>d.type!=="dict");return {app:"meadow",ver:1,exported:new Date().toISOString(),kv,docs}}
-function fname(ext){return "meadow-backup-"+today()+ext}
+async function exportData(){const kv=(await DB.all("kv")).filter(x=>x.k!=="pin");const docs=(await DB.all("docs")).filter(d=>d.type!=="dict");return {app:"chenguang",ver:1,exported:new Date().toISOString(),kv,docs}}
+function fname(ext){return "chenguang-backup-"+today()+ext}
 ACT.exportJson=async()=>{const d=await exportData();const txt=JSON.stringify(d);await deliverFile(fname(".json"),txt,"application/json")};
 async function deliverFile(name,txt,mime){const file=new File([txt],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[file]})){const how=await choose("备份文件怎么保存？",[["share","发送到微信 / 云盘 / 邮件"],["down","下载到手机"]]);if(how==="share"){try{await navigator.share({files:[file],title:name});return}catch(e){if(e.name==="AbortError")return}}}download(name,txt,mime);toast("已下载："+name)}
 function choose(title,opts){return new Promise(res=>{openSheet(`<h3>${esc(title)}</h3><div class="stack" style="margin-top:10px">${opts.map(o=>`<button class="btn block" data-act="chooseOpt" data-v="${o[0]}">${o[1]}</button>`).join("")}<button class="btn ghost block" data-act="chooseOpt" data-v="">取消</button></div>`);ACT.chooseOpt=el=>{closeSheet();res(el.dataset.v||null)}})}
 const te=new TextEncoder(),td=new TextDecoder();
 const b64=u8=>btoa(String.fromCharCode(...u8)),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function deriveKey(pw,salt){const km=await crypto.subtle.importKey("raw",te.encode(pw),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:200000,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
-async function encryptText(txt,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await deriveKey(pw,salt);const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},k,te.encode(txt)));let s="";for(let i=0;i<ct.length;i+=8192)s+=String.fromCharCode(...ct.subarray(i,i+8192));return JSON.stringify({app:"meadow",enc:true,salt:b64(salt),iv:b64(iv),data:btoa(s)})}
+async function encryptText(txt,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const k=await deriveKey(pw,salt);const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},k,te.encode(txt)));let s="";for(let i=0;i<ct.length;i+=8192)s+=String.fromCharCode(...ct.subarray(i,i+8192));return JSON.stringify({app:"chenguang",enc:true,salt:b64(salt),iv:b64(iv),data:btoa(s)})}
 async function decryptText(obj,pw){const k=await deriveKey(pw,unb64(obj.salt));const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(obj.iv)},k,unb64(obj.data));return td.decode(pt)}
 ACT.exportEnc=async()=>{if(!crypto.subtle){toast("此环境不支持加密");return}const pw=await promptBox("设置备份密码（导入时需要）","","password");if(!pw)return;if(pw.length<6){toast("密码至少 6 位");return}const d=await exportData();const txt=await encryptText(JSON.stringify(d),pw);await deliverFile(fname(".enc.json"),txt,"application/json");ACT.settings()};
-ACT.exportMd=async()=>{const docs=(await DB.all("docs")).filter(d=>["journal","prayer","care","study"].includes(d.type)).sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);const marks=Object.values(MARKS);let out="# 青草地 笔记导出 "+today()+"\n\n";const grp=(t,title)=>{const l=docs.filter(d=>d.type===t);if(!l.length)return;out+="## "+title+"\n\n";l.forEach(d=>{out+=docText(d)+"\n\n---\n\n"})};grp("journal","灵修日记");grp("prayer","每日祷告");grp("care","代祷名单");grp("study","查经与资料");if(marks.length){out+="## 经文标记与注释\n\n";for(const m of marks){out+=`- ${refZh(m.b-1,m.c,m.v)}${m.fav?" ★":""}${m.note?"：" +m.note:""}\n`}}await deliverFile("meadow-notes-"+today()+".md",out,"text/markdown")};
+ACT.exportMd=async()=>{const docs=(await DB.all("docs")).filter(d=>["journal","prayer","care","study"].includes(d.type)).sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);const marks=Object.values(MARKS);let out="# 晨光 笔记导出 "+today()+"\n\n";const grp=(t,title)=>{const l=docs.filter(d=>d.type===t);if(!l.length)return;out+="## "+title+"\n\n";l.forEach(d=>{out+=docText(d)+"\n\n---\n\n"})};grp("journal","灵修日记");grp("prayer","每日祷告");grp("care","代祷名单");grp("study","查经与资料");if(marks.length){out+="## 经文标记与注释\n\n";for(const m of marks){out+=`- ${refZh(m.b-1,m.c,m.v)}${m.fav?" ★":""}${m.note?"：" +m.note:""}\n`}}await deliverFile("chenguang-notes-"+today()+".md",out,"text/markdown")};
 ACT.importPick=()=>$("#impFile").click();
-ACT.importFile=async el=>{const f=el.files[0];if(!f)return;el.value="";let txt=await f.text();let obj;try{obj=JSON.parse(txt)}catch(e){toast("不是有效的备份文件");return}if(obj.enc){const pw=await promptBox("输入备份密码","","password");if(!pw)return;try{txt=await decryptText(obj,pw);obj=JSON.parse(txt)}catch(e){toast("密码不对或文件损坏");return}}if(obj.app!=="meadow"||!Array.isArray(obj.docs)){toast("不是青草地的备份文件");return}
+ACT.importFile=async el=>{const f=el.files[0];if(!f)return;el.value="";let txt=await f.text();let obj;try{obj=JSON.parse(txt)}catch(e){toast("不是有效的备份文件");return}if(obj.enc){const pw=await promptBox("输入备份密码","","password");if(!pw)return;try{txt=await decryptText(obj,pw);obj=JSON.parse(txt)}catch(e){toast("密码不对或文件损坏");return}}if(obj.app!=="chenguang"||!Array.isArray(obj.docs)){toast("不是晨光的备份文件");return}
  const how=await choose(`备份含 ${obj.docs.length} 条记录（${obj.exported?obj.exported.slice(0,10):"未知日期"}）。怎样导入？`,[["merge","合并（保留两边，较新的为准）"],["replace","覆盖（清除本机数据后导入）"]]);if(!how)return;
  if(how==="replace"){await DB.clear("docs");await DB.clear("kv")}
  for(const d of obj.docs){if(how==="merge"){const old=await DB.get("docs",d.id);if(old&&(old.updated||0)>=(d.updated||0))continue}await DB.put("docs",d)}
@@ -493,15 +493,15 @@ async function sha(s){const h=await crypto.subtle.digest("SHA-256",te.encode(s))
 ACT.pinSet=async()=>{if(!crypto.subtle){toast("需要 https 环境");return}const a=await promptBox("设置 4–8 位数字密码","","password");if(!a)return;if(!/^\d{4,8}$/.test(a)){toast("请输入 4–8 位数字");return}const b=await promptBox("再输入一次","","password");if(a!==b){toast("两次输入不一致");return}const salt=b64(crypto.getRandomValues(new Uint8Array(12)));PIN={salt,hash:await sha(salt+a)};await kvSet("pin",PIN);toast("密码已设置");ACT.settings()};
 ACT.pinRemove=async()=>{const a=await promptBox("输入当前密码以关闭","","password");if(a===null)return;if(await sha(PIN.salt+a)!==PIN.hash){toast("密码不对");return}PIN=null;await DB.del("kv","pin");toast("已关闭密码");ACT.settings()};
 let pinBuf="";
-function showLock(){if($("#lock"))return;pinBuf="";const el=document.createElement("div");el.id="lock";el.className="lock";el.innerHTML=`<div style="color:var(--green)">${I.lock.replace("<svg",'<svg width="40" height="40"')}</div><h2>青草地</h2><div class="muted small">输入密码</div><div class="pinbox" id="pinbox">${"<i></i>".repeat(8)}</div><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="pinKey" data-k="${n}">${n}</button>`).join("")}<button data-act="pinKey" data-k="del">⌫</button><button data-act="pinKey" data-k="0">0</button><button data-act="pinKey" data-k="ok">✓</button></div>`;document.body.appendChild(el);renderPinDots()}
+function showLock(){if($("#lock"))return;pinBuf="";const el=document.createElement("div");el.id="lock";el.className="lock";el.innerHTML=`<div style="color:var(--green)">${I.lock.replace("<svg",'<svg width="40" height="40"')}</div><h2>晨光</h2><div class="muted small">输入密码</div><div class="pinbox" id="pinbox">${"<i></i>".repeat(8)}</div><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="pinKey" data-k="${n}">${n}</button>`).join("")}<button data-act="pinKey" data-k="del">⌫</button><button data-act="pinKey" data-k="0">0</button><button data-act="pinKey" data-k="ok">✓</button></div>`;document.body.appendChild(el);renderPinDots()}
 function renderPinDots(){const box=$("#pinbox");if(!box)return;box.innerHTML=Array.from({length:Math.max(4,Math.min(8,Math.max(pinBuf.length,4)))},(_,i)=>`<i class="${i<pinBuf.length?"on":""}"></i>`).join("")}
 ACT.pinKey=async el=>{const k=el.dataset.k;if(k==="del")pinBuf=pinBuf.slice(0,-1);else if(k==="ok"){if(await sha(PIN.salt+pinBuf)===PIN.hash){$("#lock").remove();pinBuf=""}else{toast("密码不对");pinBuf="";}}else if(pinBuf.length<8)pinBuf+=k;renderPinDots();if(pinBuf.length>=4&&k!=="ok"&&k!=="del"&&await sha(PIN.salt+pinBuf)===PIN.hash){$("#lock")&&$("#lock").remove();pinBuf=""}};
 let hiddenAt=null;document.addEventListener("visibilitychange",()=>{if(document.hidden){hiddenAt=Date.now();if(TTS.on&&!TTS.paused){/* 后台继续朗读 */}}else if(PIN&&hiddenAt&&Date.now()-hiddenAt>=S.lockMin*60000)showLock()});
 /* 离线 */
-async function cachedChapters(){try{const c=await caches.open("meadow-data");const ks=await c.keys();return ks.filter(r=>/\/data\/\d\d\.json$/.test(r.url)).length}catch(e){return 0}}
-ACT.downloadAll=async()=>{toast("开始下载全本经文…");try{const c=await caches.open("meadow-data");for(let i=1;i<=66;i++){const u=new URL("../data/"+pad2(i)+".json",location.href).href;const r=await fetch(u,{cache:"reload"});if(!r.ok)throw new Error("下载失败："+i);await c.put(u,r.clone())}toast("全本经文已保存，可离线阅读");ACT.settings()}catch(e){toast(e.message)}};
+async function cachedChapters(){try{const c=await caches.open("chenguang-data");const ks=await c.keys();return ks.filter(r=>/\/data\/\d\d\.json$/.test(r.url)).length}catch(e){return 0}}
+ACT.downloadAll=async()=>{toast("开始下载全本经文…");try{const c=await caches.open("chenguang-data");for(let i=1;i<=66;i++){const u=new URL("../data/"+pad2(i)+".json",location.href).href;const r=await fetch(u,{cache:"reload"});if(!r.ok)throw new Error("下载失败："+i);await c.put(u,r.clone())}toast("全本经文已保存，可离线阅读");ACT.settings()}catch(e){toast(e.message)}};
 /* 提醒 */
-async function checkReminder(){if(!S.remindOn||!P)return;const t=today();const last=await kvGet("lastRemind","");if(last===t)return;if(nowHM()<S.remindTime)return;const st=todayState();if(!st||!st.cur||dayDone(P.days[st.cur.idx]))return;await kvSet("lastRemind",t);if("Notification"in window&&Notification.permission==="granted"){try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)reg.showNotification("读经时间",{body:P.days[st.cur.idx].map(([b,c])=>refZh(b,c)).join("、"),icon:"icon.png",tag:"meadow-remind"});else new Notification("读经时间",{body:"今天的经文还没读"})}catch(e){}}if(V.tab==="today")render()}
+async function checkReminder(){if(!S.remindOn||!P)return;const t=today();const last=await kvGet("lastRemind","");if(last===t)return;if(nowHM()<S.remindTime)return;const st=todayState();if(!st||!st.cur||dayDone(P.days[st.cur.idx]))return;await kvSet("lastRemind",t);if("Notification"in window&&Notification.permission==="granted"){try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)reg.showNotification("读经时间",{body:P.days[st.cur.idx].map(([b,c])=>refZh(b,c)).join("、"),icon:"icon.png",tag:"chenguang-remind"});else new Notification("读经时间",{body:"今天的经文还没读"})}catch(e){}}if(V.tab==="today")render()}
 /* 启动 */
 async function boot(){await DB.open();S=Object.assign({},DEF,await kvGet("settings",{}));P=await kvGet("plan",null);READ=await kvGet("read",{});PIN=await kvGet("pin",null);(await DB.byType("mark")).forEach(m=>MARKS[m.id]=m);applyPrefs();V.tab=S.tab||"today";if(S.last){R.b=S.last.b;R.c=S.last.c}if(PIN)showLock();render();checkReminder();setInterval(checkReminder,60000);
  if("serviceWorker"in navigator){try{await navigator.serviceWorker.register("sw.js")}catch(e){}}

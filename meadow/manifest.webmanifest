@@ -1,1 +1,0 @@
-{"name": "青草地", "short_name": "青草地", "start_url": "./", "scope": "./", "display": "standalone", "orientation": "portrait", "background_color": "#FBF6EE", "theme_color": "#4F6F46", "lang": "zh-CN", "icons": [{"src": "icon.png", "sizes": "180x180", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]}
