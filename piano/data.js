@@ -100,24 +100,24 @@ window.PIANO_DATA = {
     {
       id: "doxology", cat: "hymn", level: 2, title: "三一颂", en: "Doxology (Old Hundredth)",
       key: "G", meter: "4/4", tempo: 76,
-      tip: "《日内瓦诗篇》1551 年的古调，教会最常唱的颂赞。G 大调，有一个升号：所有的 F 都要弹成 F#（F 右边的黑键）。",
-      lyrics: "Praise God, from whom all bless- ings flow; Praise Him, all crea- tures here be- low; Praise Him a- bove, ye heav'n- ly host; Praise Fa- ther, Son, and Ho- ly Ghost.",
+      tip: "《日内瓦诗篇》1551 年的古调，教会最常唱的颂赞。G 大调，有一个升号：所有的 F 都要弹成 F#（F 右边的黑键）。歌词用的是中文教会通用的译词。",
+      lyrics: "普 天 之 下 万 国 万 民 齐 声 赞 美 父 子 圣 灵 天 上 万 军 也 赞 主 名 三 一 妙 身 万 世 同 尊",
       rh: "G4:2 G4 F#4 | E4 D4 G4 A4 | B4:4 | B4:2 B4 A4 | G4 C5 B4 A4 | G4:4 | G4:2 A4 B4 | A4 G4 E4 F#4 | G4:4 | D5:2 B4 G4 | A4 C5 B4 A4 | G4:4",
       lh: "G2:4 | C3:2 D3:2 | G2:4 | G2:4 | E3:2 D3:2 | G2:4 | G2:4 | C3:2 D3:2 | G2:4 | G2:4 | D3:4 | G2:4"
     },
     {
       id: "amazing-grace", cat: "hymn", level: 2, title: "奇异恩典", en: "Amazing Grace",
       key: "G", meter: "3/4", tempo: 80,
-      tip: "约翰·牛顿作词，三拍子，\"强-弱-弱\"。第一个音是弱起，从第三拍进来。连线上的长音不要重新按键，按住数满拍子。",
-      lyrics: "A- maz- ing _ grace! how sweet the sound That saved a _ wretch like me! I once was _ lost, but now am found; Was blind, but _ now I see.",
+      tip: "约翰·牛顿作词，三拍子，\"强-弱-弱\"。第一个音是弱起，从第三拍进来。连线上的长音不要重新按键，按住数满拍子。歌词用的是中文教会通用的译词。",
+      lyrics: "奇 异 恩 _ 典 何 等 甘 甜 我 罪 已 _ 得 赦 免 前 我 失 _ 丧 今 被 寻 回 瞎 眼 今 _ 得 看 见",
       rh: "D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | D5:3~ | D5:2 B4 | D5:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:3",
       lh: "r | G2:3 | G2:3 | C3:3 | G2:3 | G2:3 | G2:3 | D3:3 | D3:3 | G2:3 | G2:3 | C3:3 | G2:3 | G2:3 | D3:3 | G2:3"
     },
     {
       id: "silent-night", cat: "hymn", level: 2, title: "平安夜", en: "Silent Night",
       key: "C", meter: "6/8", tempo: 78,
-      tip: "格鲁伯 1818 年作曲。6/8 拍要数成\"1-2-3、4-5-6\"两大拍，像摇篮一样轻轻摇。左手每小节只有一个长音。",
-      lyrics: "Si- lent night, _ ho- ly night, _ All is calm, all is bright Round yon vir- gin moth- er and child. _ Ho- ly in- fant so ten- der and mild, Sleep in heav- en- ly peace, _ Sleep in heav- en- ly peace. _",
+      tip: "格鲁伯 1818 年作曲。6/8 拍要数成\"1-2-3、4-5-6\"两大拍，像摇篮一样轻轻摇。左手每小节只有一个长音。歌词用的是中文教会通用的译词。",
+      lyrics: "平 安 夜 _ 圣 善 夜 _ 万 暗 中 光 华 射 照 着 圣 母 也 照 着 圣 婴 多 少 慈 祥 也 多 少 天 真 静 享 天 赐 安 眠 静 享 天 赐 安 _ 眠 _",
       rh: "G4:1.5 A4:0.5 G4 | E4:3 | G4:1.5 A4:0.5 G4 | E4:3 | D5:2 D5 | B4:3 | C5:2 C5 | G4:3 | A4:2 A4 | C5:1.5 B4:0.5 A4 | G4:1.5 A4:0.5 G4 | E4:3 | A4:2 A4 | C5:1.5 B4:0.5 A4 | G4:1.5 A4:0.5 G4 | E4:3 | D5:2 D5 | F5:1.5 D5:0.5 B4 | C5:3 | E5:3 | C5:1.5 G4:0.5 E4 | G4:1.5 F4:0.5 D4 | C4:3",
       lh: "C3:3 | C3:3 | C3:3 | C3:3 | G2:3 | G2:3 | C3:3 | C3:3 | F2:3 | F2:3 | C3:3 | C3:3 | F2:3 | F2:3 | C3:3 | C3:3 | G2:3 | G2:3 | C3:3 | C3:3 | C3:3 | G2:3 | C3:3"
     },
