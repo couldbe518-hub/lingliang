@@ -85,7 +85,7 @@ async function kvSet(k,v){return DB.put("kv",{k,v})}
 async function saveDoc(d){d.updated=Date.now();if(!d.created)d.created=d.updated;await DB.put("docs",d);return d}
 
 /* ---------- 状态 ---------- */
-const DEF={name:"",mode:"both",en:"bsb",fs:1.3,theme:"auto",rate:1,voiceZh:"",voiceEn:"",ttsLang:"follow",autoNext:true,remindOn:false,remindTime:"07:00",lockMin:5,last:{b:42,c:1},tab:"today",lineH:1.9};
+const DEF={name:"Natalie",mode:"both",en:"bsb",fs:1.3,theme:"auto",rate:1,voiceZh:"",voiceEn:"",ttsLang:"follow",autoNext:true,remindOn:false,remindTime:"07:00",lockMin:5,last:{b:42,c:1},tab:"today",lineH:1.9};
 let S={...DEF}, P=null, READ={}, MARKS={}, PIN=null;
 const V={tab:"today",bview:"read",pickB:null,sub:{devo:"journal",study:"all",plan:"today"},q:"",calM:null,filters:{}};
 const R={b:42,c:1,target:null};
@@ -141,7 +141,7 @@ const PRESETS={all:{name:"一年读完整本圣经",kind:"all",dpw:7,days:365},n
 
 /* ---------- 问候与每日经文 ---------- */
 const DAILY=[[18,23,1],[24,3,22],[24,3,23],[22,41,10],[49,4,6],[39,11,28],[18,46,1],[19,3,5],[44,8,28],[42,14,27],[18,118,24],[3,6,24],[18,121,1],[22,40,31],[59,5,7],[18,37,5],[5,1,9],[18,27,1],[39,6,34],[49,4,13],[57,13,8],[18,34,8],[18,90,14],[18,143,8],[18,5,3],[44,15,13],[18,103,2],[22,26,3],[42,16,33],[18,119,105],[39,5,16],[46,12,9],[18,16,11],[47,5,22],[48,2,8],[18,100,4],[39,28,20],[18,62,1],[22,43,2],[42,3,16],[18,91,1],[18,139,23],[22,30,15],[18,73,26],[49,4,7],[59,5,10],[18,42,11],[22,55,8],[39,7,7],[18,4,8]];
-function greeting(){const h=new Date().getHours();const n=S.name?"，"+S.name:"";if(h<5)return ["夜深了"+n,"愿你安睡，明早再来。"];if(h<11)return ["早安"+n,"新的一天，先亲近神。"];if(h<14)return ["午安"+n,"忙碌中也有片刻安息。"];if(h<18)return ["下午好"+n,"愿你今天的脚步有主同行。"];if(h<22)return ["晚上好"+n,"回顾今天，数算恩典。"];return ["夜安"+n,"把今天交托，安心休息。"]}
+function greeting(){const h=new Date().getHours();const n="，"+(S.name||"Natalie");if(h<5)return ["夜深了"+n,"愿你安睡，明早再来。"];if(h<11)return ["早安"+n,"新的一天，先亲近神。"];if(h<14)return ["午安"+n,"忙碌中也有片刻安息。"];if(h<18)return ["下午好"+n,"愿你今天的脚步有主同行。"];if(h<22)return ["晚上好"+n,"回顾今天，数算恩典。"];return ["夜安"+n,"把今天交托，安心休息。"]}
 async function dailyVerse(){const t=today();const [y,m,d]=t.split("-").map(Number);const doy=Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,0))/864e5);const [b,c,v]=DAILY[(doy+y)%DAILY.length];try{let zh=cleanZh(await verseText(b,c,v,"zh")),en=await verseText(b,c,v,"en");if(zh.includes("」")&&!zh.includes("「"))zh=zh.replace(/」/g,"");if(zh.includes("「")&&!zh.includes("」"))zh=zh.replace(/「/g,"");if(/^[“]/.test(en)&&!/[”]/.test(en))en=en.replace(/^[“]/,"");if(/[”]$/.test(en)&&!/[“]/.test(en))en=en.replace(/[”]$/,"");return {b,c,v,zh,en}}catch(e){return null}}
 
 async function eveningReview(jn){const t=today();const thanks=jn.flatMap(j=>(j.thanks||"").split("\n").filter(Boolean));const read=Object.entries(READ).filter(([k,d])=>d===t).map(([k])=>{const r=parseKey(k);return refZh(r.b,r.c)});const prayers=(await DB.byType("prayer")).filter(p=>p.date===t);const answered=(await DB.byType("care")).filter(c=>c.answeredDate===t);
