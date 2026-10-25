@@ -524,9 +524,7 @@ let COMP=null;
 const BLESS=["愿耶和华赐福给你，保护你。","愿主的平安保守你的心怀意念。","愿神使你在一切事上蒙引导，身体健壮，心里喜乐。","愿你在基督的爱中扎根，刚强起来。","愿主作你的牧者，使你不至缺乏。"];
 async function startComp(kind){
  const V2=async(b,c,vs,ve)=>(await verses(b,c,vs,ve)).filter(x=>!isMerged(x.zh)).map(x=>x.zh).join("");
- const fam=S.family.length?S.family:["家人"];const pend=S.prayers.filter(p=>!p.ans);
- const famHtml=fam.map((f,i)=>`<p class="guide"><b>${esc(f)}</b>：${BLESS[i%BLESS.length]}</p>`).join("")+(pend.length?`<div class="eyebrow" style="margin-top:6px">代祷清单</div>`+pend.map(p=>`<p class="guide">· ${esc(p.who)}：${esc(p.what)}</p>`).join(""):"");
- const famSpeak=fam.map((f,i)=>"为"+f+"祷告。"+BLESS[i%BLESS.length]).join("")+pend.map(p=>"为"+p.who+"，"+p.what+"。").join("");
+ const famHtml=famStepHtml,famSpeak=famStepSay;
  const lp=await V2(40,6,9,13);
  const ki=dailyIdx(),k=C.kv[ki];const dv=await V2(k[0],k[1],k[2],k[3]);
  if(kind==="morning"){
@@ -551,11 +549,25 @@ async function startComp(kind){
  }
  COMP.i=0;renderComp();
 }
+/* 为家人祷告：名字和代祷事项都可以在这一步直接写，内容随写随更新 */
+const famNames=()=>S.family.filter(f=>f&&f!=="家人");
+const prLabel=p=>(p.who&&p.who!=="我"?p.who+"：":"")+(p.what||"");
+function famStepHtml(){const fam=famNames(),pend=S.prayers.filter(p=>!p.ans);
+ const bless=fam.length?fam.map((f,i)=>`<p class="guide"><b>${esc(f)}</b>：${BLESS[i%BLESS.length]}</p>`).join(""):`<p class="guide">把家人一个一个带到神面前。先在下面写下他们的名字，以后早晚祷都会逐一为他们祝福。</p>`;
+ const list=pend.length?`<div class="card" style="padding:10px 12px"><div class="eyebrow" style="margin-bottom:4px">代祷清单</div>${pend.map(p=>`<div class="li" style="padding:6px 0"><button class="check" data-act="compAns" data-id="${p.id}" aria-label="标记蒙应允"></button><div class="body guide">${esc(prLabel(p))}<div class="small muted">${p.date} 开始</div></div><button class="btn sm ghost" data-act="compDelPr" data-id="${p.id}">移除</button></div>`).join("")}<p class="small muted" style="margin:4px 0 0">得了答复就打个勾，记作蒙应允。</p></div>`:"";
+ return `${bless}<form class="compf stack" data-f="fam" style="gap:6px"><label class="small muted" for="cfam">${fam.length?"家人的名字（可修改）":"家人的名字"}</label><div class="row" style="flex-wrap:nowrap"><input id="cfam" value="${esc(fam.join("、"))}" placeholder="例如：妈妈、爸爸、小明，用顿号分开"><button class="btn sm" type="submit" style="white-space:nowrap;flex:none">保存</button></div></form>
+ ${list}<form class="compf stack" data-f="pr" style="gap:6px"><label class="small muted" for="cprwhat">今天要为谁、为什么事祷告？</label><div class="row" style="flex-wrap:nowrap"><input id="cprwho" placeholder="为谁" style="flex:0 0 32%"><input id="cprwhat" placeholder="例如：妈妈的膝盖早日康复"></div><button class="btn primary sm" type="submit" style="align-self:flex-start">加入代祷</button></form>`}
+function famStepSay(){const fam=famNames(),pend=S.prayers.filter(p=>!p.ans);
+ return (fam.length?fam.map((f,i)=>"为"+f+"祷告。"+BLESS[i%BLESS.length]).join(""):"天父，我把我的家人带到你面前，求你赐福给他们，保护他们。")+pend.map(p=>(p.who&&p.who!=="我"?"为"+p.who+"，":"")+p.what+"。").join("")}
+function compFamSave(){const t=$("#cfam");if(!t)return;S.family=t.value.split(/[、,，\s]+/).map(x=>x.trim()).filter(Boolean);if(!S.family.length)S.family=["家人"];save()}
+function compPrAdd(){const a=$("#cprwho"),b=$("#cprwhat");if(!b)return false;const who=a.value.trim(),what=b.value.trim();if(!what&&!who)return false;S.prayers.push({id:Date.now(),who:who||"我",what:what||"",date:dstr(),ans:null});save();return true}
+document.addEventListener("submit",e=>{const f=e.target.closest(".compf");if(!f||!COMP)return;e.preventDefault();if(f.dataset.f==="fam"){compFamSave();toast("已保存家人名字")}else if(compPrAdd())toast("已加入代祷清单");renderComp();const n=$(f.dataset.f==="fam"?"#cprwhat":"#cprwho");n&&n.focus()});
 function renderComp(){if(!COMP){$("#layer").innerHTML="";return}const st=COMP.steps[COMP.i],last=COMP.i===COMP.steps.length-1;
  $("#layer").innerHTML=`<div class="comp" role="dialog" aria-modal="true"><div class="in"><div class="row between"><span class="eyebrow">${COMP.title} · 第 ${COMP.i+1} / ${COMP.steps.length} 步</span><button class="btn sm ghost" data-act="compClose">关闭</button></div><div class="dots">${COMP.steps.map((_,i)=>`<i class="${i<=COMP.i?"on":""}"></i>`).join("")}</div>
- <div class="stepname">${st.n}</div><div class="stack">${st.html}</div><div class="grow"></div>
+ <div class="stepname">${st.n}</div><div class="stack">${typeof st.html==="function"?st.html():st.html}</div><div class="grow"></div>
  <div class="row between"><button class="btn" data-act="compSay">${IC.play} 读给我听</button><div class="row">${COMP.i>0?`<button class="btn" data-act="compPrev">上一步</button>`:""}<button class="btn ${last?"gold":"primary"}" data-act="${last?"compDone":"compNext"}">${last?"阿们，完成":"下一步"}</button></div></div></div></div>`}
-function compCollect(){const t=$("#cmpthanks");if(t&&t.value.trim()){S.thanks.push({date:dstr(),text:t.value.trim()});save();t.value=""}collectCares()}
+function famCollect(){const cf=$("#cfam");if(cf&&cf.value.trim()!==famNames().join("、"))compFamSave();compPrAdd()}
+function compCollect(){famCollect();const t=$("#cmpthanks");if(t&&t.value.trim()){S.thanks.push({date:dstr(),text:t.value.trim()});save();t.value=""}collectCares()}
 function collectCares(){const t=$("#cmpcares");if(!t)return;const open=new Set(S.cares.filter(c=>!c.done).map(c=>c.text));t.value.split(/\n+/).map(x=>x.trim().replace(/^[\d一二三四五六七八九十]+[.、．)）]\s*/,"")).filter(x=>x&&!open.has(x)).forEach(x=>{S.cares.push({id:Date.now()+Math.random(),text:x,date:dstr(),done:null});open.add(x)});save()}
 function careListHtml(title){const open=S.cares.filter(c=>!c.done);if(!open.length)return "";return `<div id="carelist" class="card" style="padding:10px 12px"><div class="eyebrow" style="margin-bottom:4px">${title}</div>${open.map(c=>`<div class="li" style="padding:6px 0"><button class="check" data-act="careDone" data-id="${c.id}" aria-label="已有答复"></button><div class="body">${esc(c.text)}<div class="small muted">${c.date} 交托</div></div></div>`).join("")}<p class="small muted" style="margin:4px 0 0">事情过去或得了答复，就打个勾，它会记进感恩记录。</p></div>`}
 const CARE_CL={sick:"求你亲自医治，减轻疼痛，赐医生智慧，让身体在你的看顾中得安息",hard:"求你开一条出路，赐我明天够用的力量，使万事互相效力叫我得益处",low:"求你靠近我这伤心的人，明早赐下新的怜悯，让我重新有力气",anx:"我承认我掌控不了，求你赐下出人意外的平安，保守我的心怀意念",fear:"求你用公义的右手扶持我，叫我不惧怕，因为你与我同在",family:"求你保护他们的身体和心灵，引导他们的道路，使他们认识你的爱",sickfam:"求你亲自医治，减轻病痛，赐医护人员智慧，赐照顾的人体力和忍耐，使我们一家紧紧靠着你",night:"求你使我的身体放松、心里平静，今夜安然睡觉",lonely:"谢谢你应许永不离开我，求你让我在这件事上感受到你的同在",wisdom:"求你光照我，让我看清你的心意；若不是出于你，求你关门；若是出于你，赐我勇气",grief:"求你安慰我破碎的心，用复活的盼望托住我",sorry:"我真心认罪，求你因耶稣的宝血赦免我、洗净我，给我改正的勇气",forgive:"我把这份委屈交给你，求你医治我，也帮我像你饶恕我一样去饶恕，并修复这段关系",work:"求你供应所需，赐我智慧安排，使我知足不忧虑，在工作上忠心诚实",wait:"我已经为此等候很久，仍选择等候你，求你坚固我的心",thanks:"我要为这事感谢你，求你让我不忘记你的恩典",doubt:"我信，但我信不足，求你帮助，用你的话重新点燃我",travel:"求你保护一路平安，看顾行程中的每一段路"};
@@ -617,8 +629,10 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
  case"fullSearch":fullSearch();break;
  case"comp":await startComp(d.k);break;
  case"compNext":compCollect();stopTTS(true);renderPlayer();COMP.i++;renderComp();break;
- case"compPrev":stopTTS(true);renderPlayer();COMP.i--;renderComp();break;
- case"compSay":speak([{lang:"zh",text:(COMP.steps[COMP.i].n==="交托"&&COMP.genText)?COMP.genText:COMP.steps[COMP.i].say}],COMP.title+" · "+COMP.steps[COMP.i].n);break;
+ case"compPrev":famCollect();stopTTS(true);renderPlayer();COMP.i--;renderComp();break;
+ case"compAns":{const p=S.prayers.find(x=>x.id==d.id);if(p){p.ans=dstr();save();renderComp();toast("感谢主！")}break}
+ case"compDelPr":S.prayers=S.prayers.filter(x=>x.id!=d.id);save();renderComp();break;
+ case"compSay":if($("#cfam")){famCollect();renderComp()}speak([{lang:"zh",text:(COMP.steps[COMP.i].n==="交托"&&COMP.genText)?COMP.genText:(typeof COMP.steps[COMP.i].say==="function"?COMP.steps[COMP.i].say():COMP.steps[COMP.i].say)}],COMP.title+" · "+COMP.steps[COMP.i].n);break;
  case"genCare":genCare();break;
  case"speakCare":if(COMP&&COMP.genText)speak([{lang:"zh",text:COMP.genText}],"交托祷告");break;
  case"copyCare":if(COMP&&COMP.genText)copyText(COMP.genText);break;
