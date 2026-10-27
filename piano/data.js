@@ -80,6 +80,20 @@ window.PIANO_DATA = {
       rh: "",
       lh: "C3@5 D3@4 E3@3 F3@2 | G3@1 A3@3 B3@2 C4@1 | B3@2 A3@3 G3@1 F3@2 | E3@3 D3@4 C3:2@5"
     },
+    {
+      id: "w-lh-broken", cat: "warm", level: 1, title: "左手分解和弦 C–F–G", en: "Left hand broken chords",
+      key: "C", meter: "4/4", tempo: 66,
+      tip: "赞美诗伴奏最常用的三个和弦：C（C E G）、F（F A C）、G（G B D）。左手 5-3-1 指，一个一个音弹，换和弦时整只手平移，手指形状不变。",
+      rh: "",
+      lh: "C3@5 E3@3 G3@1 E3@3 | F3@5 A3@3 C4@1 A3@3 | G3@5 B3@3 D4@1 B3@3 | C3@5 E3@3 G3:2@1 | C3@5 E3@3 G3@1 E3@3 | F3@5 A3@3 C4@1 A3@3 | G3@5 B3@3 D4@1 B3@3 | C3+E3+G3:4"
+    },
+    {
+      id: "w-both-arp", cat: "warm", level: 1, title: "双手琶音 C–E–G", en: "Hands together arpeggio",
+      key: "C", meter: "4/4", tempo: 66,
+      tip: "两只手一起弹 1-3-5 的三个音再回来。右手 1-3-5-3，左手 5-3-1-3，两手是镜子。先分手，再合手；合手时眼睛看左手，右手靠手感。",
+      rh: "C4@1 E4@3 G4@5 E4@3 | C4@1 E4@3 G4@5 E4@3 | F4@1 A4@3 C5@5 A4@3 | G4@1 B4@3 D5@5 B4@3 | C4@1 E4@3 G4@5 E4@3 | C4:4@1",
+      lh: "C3@5 E3@3 G3@1 E3@3 | C3@5 E3@3 G3@1 E3@3 | F3@5 A3@3 C4@1 A3@3 | G3@5 B3@3 D4@1 B3@3 | C3@5 E3@3 G3@1 E3@3 | C3:4@5"
+    },
 
     /* ───────────── 赞美诗 ───────────── */
     {
@@ -174,6 +188,51 @@ window.PIANO_DATA = {
       lyrics: "Be still, my soul: _ the Lord is on thy side; _ Bear pa- tient- ly _ the cross of grief or pain; _ Leave to thy God _ to or- der and pro- vide; In ev- 'ry change He _ faith- ful will re- main. Be _ still, my soul: thy _ best, thy heav'n- ly Friend Through thorn- y ways leads to _ a joy- ful end. _ _ _",
       rh: "F4+A4 E4+G4 F4+A4 | E4+Bb4 E4+Bb4:2 F4+A4 | E4+G4 F4+A4 D4+F4:1.5 E4+G4:0.5 | E4+G4 F4+A4:3~ | F4+A4 F4+A4 E4+G4 F4+A4 | E4+Bb4 E4+Bb4:2 F4+A4 | E4+G4 F4+A4 D4+F4:1.5 E4+G4:0.5 | F4+A4 F4+A4:3~ | F4+A4 F4+C5 F4+C5 F4+C5 | F4+D5 F4+D5:2 F4+A4 | F4+A4 F4+C5 F4+C5:1.5 E4+G4:0.5 | E4+G4 G4+Bb4:3~ | G4+Bb4 G4+Bb4 Gb4+A4 G4 | F4+A4 F4+A4:2 F4 | F4 F4+G4 E4+G4:1.5 E4+A4:0.5 | E4+A4 E4+A4:3~ | E4+A4 A4+C5 F4+C5 F4+C5 | F4+D5 F4+D5:2 F4+A4 | F4+A4 F4+C5 F4+C5:1.5 E4+G4:0.5 | E4+G4 G4+Bb4:3~ | G4+Bb4 G4+Bb4 Gb4+A4 G4 | F4+A4 F4+A4:2 C4+F4 | F4 F4+G4 E4+G4:1.5 F4:0.5 | F4 F4:3~ | F4",
       lh: "F3+C4 Bb3+C4 A3+C4 | G3+C4 G3+C4:2 F3+C4 | Bb3+C4 A3+C4 Bb3:1.5 G3+Bb3:0.5 | G3+C4 F3+C4:3~ | F3+C4 F3+C4 Bb3+C4 A3+C4 | G3+C4 G3+C4:2 F3+C4 | Bb3+C4 A3+C4 Bb3:1.5 G3+Bb3:0.5 | F3+C4 F3+C4:3~ | F3+C4 F3+A3 F3+A3 E3+A3 | D3+A3 D3+A3:2 D3+D4 | D3+D4 A2+C4 A2+C4:1.5 C3+C4:0.5 | C3+C4 G2+D4:3~ | G2+D4 G2+D4 A2+C4 Bb2+D4 | C3+C4 C3+C4:2 A3+C4 | Bb3+D4 Bb3+D4 Bb3+D4:1.5 A3+Db4:0.5 | A3+Db4 A3+Db4:3~ | A3+Db4 F3+C4 F3+A3 E3+A3 | D3+A3 D3+A3:2 D3+D4 | D3+D4 A3+C4 A3+C4:1.5 C4:0.5 | C4 G3+D4:3~ | G3+D4 G2+D4 A2+C4 Bb2+D4 | C3+C4 C3+C4:2 C3+A3 | C3+A3 C3+Bb3 C3+Bb3:1.5 F3+A3:0.5 | F3+A3 F3+A3:3~ | F3+A3"
+    },
+    {
+      id: "nearer", cat: "hymn", level: 1, title: "与主接近", en: "Nearer, My God, to Thee",
+      key: "G", meter: "4/4", tempo: 76,
+      tip: "洛厄尔·梅森 1856 年曲调 Bethany，泰坦尼克号沉没时乐队演奏的就是这首。G 大调一个升号。右手大部分音在 D4–D5，两个手位：开头手放在 D 上，第三行升到高音 D。",
+      source: "乐谱来源：Echoes of Grace 诗本（github.com/kulp/eog，维护者声明放弃版权），取女高音旋律，左手按诗本低音简化",
+      lyrics: "Near- er, my God, to Thee, near- er to Thee! E'en though it be a cross that _ rais- eth me; Still all my song shall be, near- er, my God, to Thee, Near- er, my God, to Thee, near- _ er to Thee!",
+      rh: "B4:2 A4:1.5 G4:0.5 | G4:1.5 E4:0.5 E4:2 | D4:2 G4 B4 | A4:4 | B4:2 A4:1.5 G4:0.5 | G4:1.5 E4:0.5 E4:2 | D4 G4 F#4 A4 | G4:4 | D5:2 E5:1.5 D5:0.5 | D5:1.5 B4:0.5 D5:2 | D5:2 E5:1.5 D5:0.5 | D5:1.5 B4:0.5 A4:2 | B4:2 A4:1.5 G4:0.5 | G4:1.5 E4:0.5 E4:2 | D4 G4 F#4 A4 | G4:4",
+      lh: "G3:2 D3:2 | C3:4 | G3:2 B3:2 | D3:4 | G3:2 D3:2 | C3:4 | D3:4 | G3:4 | G3:4 | G3:4 | G3:2 C3:2 | F#3:2 D3:2 | G3:2 D3:2 | C3:4 | D3:4 | G3:4"
+    },
+    {
+      id: "st-anne", cat: "hymn", level: 1, title: "千古保障", en: "O God, Our Help in Ages Past",
+      key: "C", meter: "4/4", tempo: 80,
+      tip: "克罗夫特 1708 年曲调 St. Anne，以撒·华兹作词。只有 8 小节，全是四分音符，很适合第一首\"真正的\"赞美诗。一拍弱起，第三行有一个临时升号 F#。",
+      source: "乐谱来源：Echoes of Grace 诗本（github.com/kulp/eog，维护者声明放弃版权），取女高音旋律，左手按诗本低音简化",
+      lyrics: "O God, our help in a- ges past, Our hope for years to come, Our shel- ter from the storm- y _ blast, And our e- ter- nal home.",
+      rh: "G4 | E4 A4 G4 C5 | C5 B4 C5 G4 | C5 G4 A4 F#4 | G4:3 B4 | C5 A4 D5 B4 | C5 A4:0.5 D4:0.5 B4 G4 | A4 C5 D5 B4 | C5:3",
+      lh: "C3 | C3:2 E3:2 | F3:2 C3:2 | A3:2 C3:2 | G3:4 | C3:2 D3:2 | C3:2 E3:2 | D3:2 F3:2 | C3:3"
+    },
+    {
+      id: "just-as-i-am", cat: "hymn", level: 1, title: "照我本相", en: "Just As I Am",
+      key: "C", meter: "3/4", tempo: 72,
+      tip: "布拉德伯里 1849 年曲调 Woodworth。原调降 E，这里移到 C 大调，整首没有一个黑键。三拍子，一拍弱起，每两小节一句，像说话一样一句一句弹。",
+      source: "乐谱来源：Echoes of Grace 诗本（github.com/kulp/eog，维护者声明放弃版权），取女高音旋律，左手按诗本低音简化",
+      lyrics: "Just _ as I am, _ with- out _ one plea, But that _ Thy blood was shed for me, And _ that Thou bid'st _ me come to Thee, _ O Lamb of God, _ I come, I come.",
+      rh: "C4:0.5 D4:0.5 | E4:2 E4 | G4:1.5 F4:0.5 E4 | D4:1.5 E4:0.5 F4 | E4:2 G4 | G4 D4 E4 | F4:2 A4 | A4:2 G4 | E4:2 C4:0.5 D4:0.5 | E4:2 E4 | G4:1.5 F4:0.5 E4 | A4:2 A4 | C5:1.5 B4:0.5 A4 | G4:2 G4 | G4:1.5 F4:0.5 E4 | D4:3 | G4:3 | E4:3~ | E4:2",
+      lh: "C3 | C3:3 | C3:3 | G3:3 | C3:3 | G3:3 | G3:3 | C3:3 | C3:3 | C3:3 | C3:1.5 D3:1.5 | F3:3 | F3:3 | C3:3 | C3:3 | G3:3 | G3:3 | C3:3 | C3:2"
+    },
+    {
+      id: "children", cat: "hymn", level: 1, title: "耶稣喜爱小孩", en: "Jesus Loves the Little Children",
+      key: "C", meter: "4/4", tempo: 96,
+      tip: "乔治·鲁特的曲调（1864），儿童主日学最熟的歌。附点节奏\"长-短\"很多，先把每句的节奏念出来再弹。原调降 B，这里移到 C 大调。",
+      source: "乐谱来源：Echoes of Grace 诗本（github.com/kulp/eog，维护者声明放弃版权），取女高音旋律，左手按诗本低音简化",
+      lyrics: "Je- sus loves the lit- tle chil- _ dren, _ All the chil- dren of the world; _ _ Ev- 'ry col- or, ev- 'ry race, All are cov- ered by His grace; Je- sus loves the lit- tle chil- dren of the world.",
+      rh: "E5 E5 E5:0.75 D5:0.25 C5:0.75 A4:0.25 | G4 E4 C5 E4 | D5 D5 E5:0.75 D5:0.25 C5:0.75 E5:0.25 | D5 G4 G4 G4:0.75 F4:0.25 | E4:0.75 G4:0.25 C5:0.75 D5:0.25 C5 C5:0.75 B4:0.25 | A4:0.75 C5:0.25 C5:0.75 A4:0.25 G4 E5:0.75 D5:0.25 | C5:0.75 B4:0.25 C5:0.75 A4:0.25 B4:0.75 G4:0.25 B4:0.75 D5:0.25 | C5:3",
+      lh: "C3:4 | C3:4 | G3:2 C3:2 | G3:4 | C3:4 | F3:2 C3:2 | F3:2 G3:2 | C3:3"
+    },
+    {
+      id: "sweet-hour", cat: "hymn", level: 1, title: "祷告良辰", en: "Sweet Hour of Prayer",
+      key: "C", meter: "6/8", tempo: 66,
+      tip: "布拉德伯里 1861 年曲调。6/8 拍，两大拍摇荡着走；右手全在 C4–C5 一个八度内。原调 D，这里移到 C 大调。",
+      source: "乐谱来源：Echoes of Grace 诗本（github.com/kulp/eog，维护者声明放弃版权），取女高音旋律，左手按诗本低音简化",
+      lyrics: "Sweet hour of prayer! sweet hour of prayer! That calls me from _ a world of care, And bids me at my Fa- ther's throne Make all my wants and wish- es known: In sea- sons of dis- tress and grief, My soul has of- ten found re- lief, And oft es- caped the tempt- er's snare, By thy re- turn, sweet hour of prayer!",
+      rh: "C4:0.5 | E4 F4:0.5 G4 G4:0.5 | A4 B4:0.5 C5 A4:0.5 | G4 E4:0.5 E4:0.5 D4:0.5 C4:0.5 | D4 E4:0.5 D4 C4:0.5 | E4 F4:0.5 G4 G4:0.5 | A4 B4:0.5 C5 A4:0.5 | G4 E4:0.5 E4 C4:0.5 | E4 D4:0.5 C4 G4:0.5 | C5 B4:0.5 C5 A4:0.5 | G4 E4:0.5 G4 G4:0.5 | C5 B4:0.5 C5 A4:0.5 | G4 E4:0.5 D4 C4:0.5 | E4 F4:0.5 G4 G4:0.5 | A4 B4:0.5 C5 A4:0.5 | G4 E4:0.5 E4 C4:0.5 | E4 D4:0.5 C4",
+      lh: "C3:0.5 | C3:3 | F3:3 | C3:3 | G3:3 | C3:3 | F3:3 | C3:3 | G3:1.5 C3:1.5 | C3:1.5 E3:1.5 | C3:3 | C3:1.5 E3:1.5 | C3:1.5 G3:1.5 | C3:3 | F3:3 | C3:3 | G3:2~ G3:0.5"
     },
 
     /* ───────────── 世界名曲 ───────────── */
@@ -281,6 +340,41 @@ window.PIANO_DATA = {
       rh: "r:0.5 G4:0.25 C5:0.25 E5:0.25 G4:0.25 C5:0.25 E5:0.25 r:0.5 G4:0.25 C5:0.25 E5:0.25 G4:0.25 C5:0.25 E5:0.25 | r:0.5 A4:0.25 D5:0.25 F5:0.25 A4:0.25 D5:0.25 F5:0.25 r:0.5 A4:0.25 D5:0.25 F5:0.25 A4:0.25 D5:0.25 F5:0.25 | r:0.5 G4:0.25 D5:0.25 F5:0.25 G4:0.25 D5:0.25 F5:0.25 r:0.5 G4:0.25 D5:0.25 F5:0.25 G4:0.25 D5:0.25 F5:0.25 | r:0.5 G4:0.25 C5:0.25 E5:0.25 G4:0.25 C5:0.25 E5:0.25 r:0.5 G4:0.25 C5:0.25 E5:0.25 G4:0.25 C5:0.25 E5:0.25 | r:0.5 A4:0.25 E5:0.25 A5:0.25 A4:0.25 E5:0.25 A5:0.25 r:0.5 A4:0.25 E5:0.25 A5:0.25 A4:0.25 E5:0.25 A5:0.25 | r:0.5 F#4:0.25 A4:0.25 D5:0.25 F#4:0.25 A4:0.25 D5:0.25 r:0.5 F#4:0.25 A4:0.25 D5:0.25 F#4:0.25 A4:0.25 D5:0.25 | r:0.5 G4:0.25 D5:0.25 G5:0.25 G4:0.25 D5:0.25 G5:0.25 r:0.5 G4:0.25 D5:0.25 G5:0.25 G4:0.25 D5:0.25 G5:0.25 | r:0.5 E4:0.25 G4:0.25 C5:0.25 E4:0.25 G4:0.25 C5:0.25 r:0.5 E4:0.25 G4:0.25 C5:0.25 E4:0.25 G4:0.25 C5:0.25 | r:0.5 E4:0.25 G4:0.25 C5:0.25 E4:0.25 G4:0.25 C5:0.25 r:0.5 E4:0.25 G4:0.25 C5:0.25 E4:0.25 G4:0.25 C5:0.25 | r:0.5 D4:0.25 F#4:0.25 C5:0.25 D4:0.25 F#4:0.25 C5:0.25 r:0.5 D4:0.25 F#4:0.25 C5:0.25 D4:0.25 F#4:0.25 C5:0.25 | r:0.5 D4:0.25 G4:0.25 B4:0.25 D4:0.25 G4:0.25 B4:0.25 r:0.5 D4:0.25 G4:0.25 B4:0.25 D4:0.25 G4:0.25 B4:0.25 | r:0.5 E4:0.25 G4:0.25 C#5:0.25 E4:0.25 G4:0.25 C#5:0.25 r:0.5 E4:0.25 G4:0.25 C#5:0.25 E4:0.25 G4:0.25 C#5:0.25 | r:0.5 D4:0.25 A4:0.25 D5:0.25 D4:0.25 A4:0.25 D5:0.25 r:0.5 D4:0.25 A4:0.25 D5:0.25 D4:0.25 A4:0.25 D5:0.25 | r:0.5 D4:0.25 F4:0.25 B4:0.25 D4:0.25 F4:0.25 B4:0.25 r:0.5 D4:0.25 F4:0.25 B4:0.25 D4:0.25 F4:0.25 B4:0.25 | r:0.5 C4:0.25 G4:0.25 C5:0.25 C4:0.25 G4:0.25 C5:0.25 r:0.5 C4:0.25 G4:0.25 C5:0.25 C4:0.25 G4:0.25 C5:0.25 | r:0.5 A3:0.25 C4:0.25 F4:0.25 A3:0.25 C4:0.25 F4:0.25 r:0.5 A3:0.25 C4:0.25 F4:0.25 A3:0.25 C4:0.25 F4:0.25 | r:0.5 A3:0.25 C4:0.25 F4:0.25 A3:0.25 C4:0.25 F4:0.25 r:0.5 A3:0.25 C4:0.25 F4:0.25 A3:0.25 C4:0.25 F4:0.25 | r:0.5 G3:0.25 B3:0.25 F4:0.25 G3:0.25 B3:0.25 F4:0.25 r:0.5 G3:0.25 B3:0.25 F4:0.25 G3:0.25 B3:0.25 F4:0.25 | r:0.5 G3:0.25 C4:0.25 E4:0.25 G3:0.25 C4:0.25 E4:0.25 r:0.5 G3:0.25 C4:0.25 E4:0.25 G3:0.25 C4:0.25 E4:0.25",
       lh: "C4:2 C4:2 | C4:2 C4:2 | B3:2 B3:2 | C4:2 C4:2 | C4:2 C4:2 | C4:2 C4:2 | B3:2 B3:2 | B3:2 B3:2 | A3:2 A3:2 | D3:2 D3:2 | G3:2 G3:2 | G3:2 G3:2 | F3:2 F3:2 | F3:2 F3:2 | E3:2 E3:2 | E3:2 E3:2 | D3:2 D3:2 | G2:2 G2:2 | C3:2 C3:2",
       lh2: "x:0.25 E4:1.5~ E4:0.25 x:0.25 E4:1.5~ E4:0.25 | x:0.25 D4:1.5~ D4:0.25 x:0.25 D4:1.5~ D4:0.25 | x:0.25 D4:1.5~ D4:0.25 x:0.25 D4:1.5~ D4:0.25 | x:0.25 E4:1.5~ E4:0.25 x:0.25 E4:1.5~ E4:0.25 | x:0.25 E4:1.5~ E4:0.25 x:0.25 E4:1.5~ E4:0.25 | x:0.25 D4:1.5~ D4:0.25 x:0.25 D4:1.5~ D4:0.25 | x:0.25 D4:1.5~ D4:0.25 x:0.25 D4:1.5~ D4:0.25 | x:0.25 C4:1.5~ C4:0.25 x:0.25 C4:1.5~ C4:0.25 | x:0.25 C4:1.5~ C4:0.25 x:0.25 C4:1.5~ C4:0.25 | x:0.25 A3:1.5~ A3:0.25 x:0.25 A3:1.5~ A3:0.25 | x:0.25 B3:1.5~ B3:0.25 x:0.25 B3:1.5~ B3:0.25 | x:0.25 Bb3:1.5~ Bb3:0.25 x:0.25 Bb3:1.5~ Bb3:0.25 | x:0.25 A3:1.5~ A3:0.25 x:0.25 A3:1.5~ A3:0.25 | x:0.25 Ab3:1.5~ Ab3:0.25 x:0.25 Ab3:1.5~ Ab3:0.25 | x:0.25 G3:1.5~ G3:0.25 x:0.25 G3:1.5~ G3:0.25 | x:0.25 F3:1.5~ F3:0.25 x:0.25 F3:1.5~ F3:0.25 | x:0.25 F3:1.5~ F3:0.25 x:0.25 F3:1.5~ F3:0.25 | x:0.25 D3:1.5~ D3:0.25 x:0.25 D3:1.5~ D3:0.25 | x:0.25 E3:1.5~ E3:0.25 x:0.25 E3:1.5~ E3:0.25"
+    },
+    {
+      id: "lightly-row", cat: "classic", level: 1, title: "小蜜蜂", en: "Lightly Row (Hänschen klein)",
+      key: "C", meter: "4/4", tempo: 96,
+      tip: "德国儿歌，中文叫《小蜜蜂》（嗡嗡嗡，嗡嗡嗡，大家一起勤做工）。右手 C 位置五个手指不用挪：C D E F G = 1 2 3 4 5。几乎每本钢琴入门书的第一首。",
+      rh: "G4 E4 E4:2 | F4 D4 D4:2 | C4 D4 E4 F4 | G4 G4 G4:2 | G4 E4 E4:2 | F4 D4 D4:2 | C4 E4 G4 G4 | C4:4 | D4 D4 D4 D4 | D4 E4 F4:2 | E4 E4 E4 E4 | E4 F4 G4:2 | G4 E4 E4:2 | F4 D4 D4:2 | C4 E4 G4 G4 | C4:4",
+      lh: "C3:4 | G3:4 | C3:4 | G3:4 | C3:4 | G3:4 | C3:2 G3:2 | C3:4 | G3:4 | G3:4 | C3:4 | C3:4 | C3:4 | G3:4 | C3:2 G3:2 | C3:4"
+    },
+    {
+      id: "mary-lamb", cat: "classic", level: 1, title: "玛丽有只小羊羔", en: "Mary Had a Little Lamb",
+      key: "C", meter: "4/4", tempo: 100,
+      tip: "美国儿歌，1830 年。右手只用 C D E G 四个音，手放在 C 位置不动。左手只有 C 和 G 两个音。",
+      rh: "E4 D4 C4 D4 | E4 E4 E4:2 | D4 D4 D4:2 | E4 G4 G4:2 | E4 D4 C4 D4 | E4 E4 E4 E4 | D4 D4 E4 D4 | C4:4",
+      lh: "C3:4 | C3:4 | G3:4 | C3:4 | C3:4 | C3:4 | G3:4 | C3:4"
+    },
+    {
+      id: "frere-jacques", cat: "classic", level: 1, title: "两只老虎", en: "Frère Jacques",
+      key: "C", meter: "4/4", tempo: 100,
+      tip: "法国儿歌，中文就是《两只老虎》。第五、六小节的八分音符（五六五四三一）要弹得均匀；最后一句的 G 在中央 C 左边，用大拇指弹 C、食指或中指够过去弹 G。",
+      rh: "C4 D4 E4 C4 | C4 D4 E4 C4 | E4 F4 G4:2 | E4 F4 G4:2 | G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4 C4 | G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4 C4 | C4 G3 C4:2 | C4 G3 C4:2",
+      lh: "C3:4 | C3:4 | C3:4 | C3:4 | C3:4 | C3:4 | C3:2 G2:2 | C3:2 G2:2"
+    },
+    {
+      id: "happy-birthday", cat: "classic", level: 1, title: "生日快乐", en: "Happy Birthday to You",
+      key: "G", meter: "3/4", tempo: 100,
+      tip: "希尔姐妹 1893 年的曲调，2016 年起完全进入公有领域。G 大调一个升号 F#。三拍子，开头是弱起的\"附点八分 + 十六分\"（生-日）。会弹这首，家里过生日就能用上。",
+      rh: "D4:0.75 D4:0.25 | E4 D4 G4 | F#4:2 D4:0.75 D4:0.25 | E4 D4 A4 | G4:2 D4:0.75 D4:0.25 | D5 B4 G4 | F#4 E4 C5:0.75 C5:0.25 | B4 G4 A4 | G4:2",
+      lh: "r | G3:3 | D3:3 | D3:3 | G3:3 | G3:3 | C3:3 | G3 D3:2 | G3:2"
+    },
+    {
+      id: "jingle-bells", cat: "classic", level: 1, title: "铃儿响叮当（副歌）", en: "Jingle Bells (chorus)",
+      key: "C", meter: "4/4", tempo: 108,
+      tip: "皮尔庞特 1857 年的歌，这里是大家都会唱的副歌\"叮叮当，叮叮当\"。右手 C 位置五指加一个 A；一个手位弹完。左手每小节一个音。",
+      rh: "E4 E4 E4:2 | E4 E4 E4:2 | E4 G4 C4:1.5 D4:0.5 | E4:4 | F4 F4 F4:1.5 F4:0.5 | F4 E4 E4 E4:0.5 E4:0.5 | E4 D4 D4 E4 | D4:2 G4:2 | E4 E4 E4:2 | E4 E4 E4:2 | E4 G4 C4:1.5 D4:0.5 | E4:4 | F4 F4 F4 F4 | F4 E4 E4 E4:0.5 E4:0.5 | G4 G4 F4 D4 | C4:4",
+      lh: "C3:4 | C3:4 | C3:4 | C3:4 | F3:4 | C3:4 | G3:4 | G3:4 | C3:4 | C3:4 | C3:4 | C3:4 | F3:4 | C3:4 | G3:4 | C3:4"
     }
   ],
 

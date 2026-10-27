@@ -525,7 +525,8 @@
   function viewLibrary(main) {
     var tab = state.settings.libTab || "hymn";
     function list() {
-      var items = SONGS.filter(function (s) { return s.cat === tab; });
+      var items = SONGS.filter(function (s) { return s.cat === tab; }).map(function (s, i) { return { s: s, i: i }; })
+        .sort(function (a, b) { return (a.s.level - b.s.level) || (a.i - b.i); }).map(function (x) { return x.s; }); // 按难度排，同级保持原顺序
       return items.map(function (s) {
         var b = bestOf(s.id), cur = state.settings.current === s.id;
         var badges = ["rh", "lh", "both"].filter(function (h) { return hasHand(s, h); }).map(function (h) {
