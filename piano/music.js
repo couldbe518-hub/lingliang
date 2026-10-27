@@ -122,16 +122,19 @@
         var low = ev.pitches[0];
         tok += '"_' + label(low, opts.labels, song.key, isLH) + '"';
       }
-      if (ev.finger && opts.fingers !== false) tok += "!" + ev.finger + "!";
+      var showF = opts.fingers !== false && !ev.rest && !ev.tiedFrom;
+      var fs = ev.fingers || (ev.finger ? [ev.finger] : null);
+      if (showF && fs && ev.pitches.length === 1) tok += "!" + fs[0] + "!";
       var notes;
       if (ev.rest) notes = ev.invisible ? "x" : "z";
       else {
-        notes = ev.pitches.map(function (p) {
+        notes = ev.pitches.map(function (p, pi) {
           var want = p.acc, k = p.letter + p.oct;
           var cur = state.hasOwnProperty(k) ? state[k] : (keyAcc[p.letter] || "");
           var pre = "";
           if (want !== cur) { pre = want === "#" ? "^" : want === "b" ? "_" : "="; state[k] = want; }
-          return pre + abcPitch(p);
+          var fdec = showF && fs && ev.pitches.length > 1 && fs[pi] ? "!" + fs[pi] + "!" : "";
+          return fdec + pre + abcPitch(p);
         });
         notes = notes.length > 1 ? "[" + notes.join("") + "]" : notes[0];
       }
@@ -149,12 +152,105 @@
     return out.join("");
   }
 
+  /* ───── 自动指法（动态规划）─────
+     把左手镜像成右手处理：p' = -midi，这样两只手都是"音越高、指头号越大"。
+     每个音（或和弦）枚举可行的指法，代价 = 手位移动 + 伸张/拥挤 + 穿指/跨指 + 同指换音 + 拇指/小指按黑键，取总代价最小的一条。*/
+  var OFF = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7 }; // C 位置五指的自然间距（半音）
+  var MAXSPAN = { "12": 10, "13": 12, "14": 13, "15": 15, "23": 5, "24": 8, "25": 10, "34": 5, "35": 8, "45": 5 };
+  function isBlackMidi(m) { return [1, 3, 6, 8, 10].indexOf(((m % 12) + 12) % 12) >= 0; }
+  function spanCost(f, g, d) { // f<g，d = 两音相隔半音数（>0）
+    var mx = MAXSPAN[String(f) + g], nat = OFF[g] - OFF[f], c = 0;
+    if (d > mx) return 20 + (d - mx) * 2;
+    if (d > nat + 2) c += (d - nat - 2) * 1.2;
+    if (d < g - f) c += (g - f - d) * 1.5;
+    return c;
+  }
+  function chordOptions(ps) { // ps 升序 p'；返回可行指法数组
+    var n = ps.length, out = [];
+    if (n > 5) return out;
+    (function rec(i, minF, acc) {
+      if (i === n) { out.push(acc.slice()); return; }
+      for (var f = minF; f <= 5 - (n - 1 - i); f++) {
+        if (i > 0 && spanCost(acc[i - 1], f, ps[i] - ps[i - 1]) >= 20) continue;
+        acc.push(f); rec(i + 1, f + 1, acc); acc.pop();
+      }
+    })(0, 1, []);
+    return out;
+  }
+  function handPos(ps, fs) { var s = 0; for (var i = 0; i < ps.length; i++) s += ps[i] - OFF[fs[i]]; return s / ps.length; }
+  function selfCost(ps, fs, isLH) {
+    var c = 0;
+    for (var i = 1; i < ps.length; i++) c += spanCost(fs[i - 1], fs[i], ps[i] - ps[i - 1]);
+    for (i = 0; i < ps.length; i++) { var black = isBlackMidi(isLH ? -ps[i] : ps[i]); if (black && fs[i] === 1) c += 1.5; if (black && fs[i] === 5) c += 1; }
+    if (ps.length === 1) c += fs[0] === 5 ? 0.35 : fs[0] === 4 ? 0.2 : 0; // 单音略偏向 1-2-3 指（4、5 指弱）
+    return c;
+  }
+  function transCost(pp, pf, qp, qf) {
+    var c = Math.abs(handPos(qp, qf) - handPos(pp, pf)) * 0.5;
+    if (pp.length === 1 && qp.length === 1) {
+      var p = pp[0], f = pf[0], q = qp[0], g = qf[0], d = q - p;
+      if (d === 0) return c + (f === g ? 0 : 1);
+      if (f === g) return c + 3 + (Math.abs(d) <= 4 ? 3 : 0);
+      var CROSS = { 2: 2, 3: 1.8, 4: 2.5 }; // 穿指/跨指的代价：3 指最顺手
+      if (d > 0 && g < f) return c + ((g === 1 && f <= 4) ? CROSS[f] : 12); // 上行用更小的指：拇指从下面穿过才行
+      if (d < 0 && g > f) return c + ((f === 1 && g <= 4) ? CROSS[g] : 12); // 下行用更大的指：2/3/4 跨过拇指才行
+      return c + spanCost(Math.min(f, g), Math.max(f, g), Math.abs(d));
+    }
+    var extra = 0;
+    for (var i = 0; i < pp.length; i++) for (var j = 0; j < qp.length; j++) {
+      if (pf[i] === qf[j]) extra += pp[i] === qp[j] ? -0.5 : 1;
+      else if ((qp[j] > pp[i] && qf[j] < pf[i] && qf[j] !== 1) || (qp[j] < pp[i] && qf[j] > pf[i] && pf[i] !== 1)) extra += 1.5;
+    }
+    return c + Math.min(6, Math.max(-1.5, extra));
+  }
+  function autoFinger(parsed, isLH) {
+    var evs = parsed.events.filter(function (e) { return !e.rest && !e.tiedFrom && e.pitches.length; });
+    if (!evs.length) return;
+    if (evs.some(function (e) { return e.finger; })) return; // 手写过指法
+    var items = evs.map(function (e) {
+      var ps = e.pitches.map(function (p) { return isLH ? -p.midi : p.midi; }).sort(function (a, b) { return a - b; });
+      return { ev: e, ps: ps, opts: chordOptions(ps) };
+    });
+    var best = null, prevLayer = null;
+    items.forEach(function (it, i) {
+      var layer = it.opts.map(function (fs) {
+        var self = selfCost(it.ps, fs, isLH), node = { fs: fs, cost: self, back: null };
+        if (prevLayer && prevLayer.length) {
+          var bc = Infinity, bb = null;
+          prevLayer.forEach(function (pn) { var c = pn.cost + transCost(items[i - 1].ps, pn.fs, it.ps, fs); if (c < bc) { bc = c; bb = pn; } });
+          node.cost += bc; node.back = bb;
+        }
+        return node;
+      });
+      if (!layer.length) { // 这个和弦没有可行指法：留空，链条从这里重新开始
+        it.skip = true; prevLayer = null; return;
+      }
+      it.layer = layer; prevLayer = layer;
+    });
+    for (var i = items.length - 1; i >= 0; i--) {
+      if (items[i].skip) { best = null; continue; }
+      var layer = items[i].layer;
+      if (!best) best = layer.reduce(function (a, b) { return b.cost < a.cost ? b : a; });
+      var it = items[i], ev = it.ev;
+      // 把升序 p' 的指法映射回 ev.pitches 的原顺序
+      var order = ev.pitches.map(function (p, k) { return { k: k, v: isLH ? -p.midi : p.midi }; }).sort(function (a, b) { return a.v - b.v; });
+      ev.fingers = new Array(ev.pitches.length);
+      order.forEach(function (o, k) { ev.fingers[o.k] = best.fs[k]; });
+      best = best.back;
+    }
+  }
+
   /* hands: "both" | "rh" | "lh"；每只手可有第二声部 rh2 / lh2（同一行谱上符干朝下）。
      返回 { abc, voices: ["rh","rh2","lh",...]（与 abcjs 的 abcjs-vN 编号一致）, rh, rh2, lh, lh2 } */
   function buildAbc(song, hands, opts) {
     opts = opts || {};
     var P = {};
     ["rh", "rh2", "lh", "lh2"].forEach(function (k) { P[k] = parseHand(song[k] || "", song.meter); });
+    if (opts.fingers !== false && song.fing !== false) {
+      // 有第二声部的那只手不自动标（两个声部要一起算才准）；手写过 @指法 的也不动
+      if (!P.rh2.events.length) autoFinger(P.rh, false);
+      if (!P.lh2.events.length) autoFinger(P.lh, true);
+    }
     var useRh = P.rh.events.length && hands !== "lh";
     var useLh = P.lh.events.length && hands !== "rh";
     if (!useRh && !useLh) { useRh = !!P.rh.events.length; useLh = !useRh; }
@@ -185,7 +281,7 @@
 
   var api = {
     parseHand: parseHand, buildAbc: buildAbc, parsePitch: parsePitch, meterBeats: meterBeats,
-    midiToName: midiToName, midiToFreq: midiToFreq, label: label, KEYS: KEYS, LETTERS: LETTERS, SOLFEGE: SOLFEGE
+    midiToName: midiToName, midiToFreq: midiToFreq, label: label, autoFinger: autoFinger, KEYS: KEYS, LETTERS: LETTERS, SOLFEGE: SOLFEGE
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.PianoMusic = api;
