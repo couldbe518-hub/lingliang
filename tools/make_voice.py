@@ -81,7 +81,7 @@ def main():
         pieces, rate = [], None
         for sent in sentences(clone_text(text)):
             best = None
-            for steps in (8, 12, 16):
+            for steps in ((12,) if not rec else (8, 12, 16)):
                 g = tts.generate(sent if sent[-1] in "。；！？" else sent + "。", ptxt, px, psr, speed=CLONE_SPEED, num_steps=steps)
                 if not rec:
                     best = (0, g.samples, g.sample_rate); break
