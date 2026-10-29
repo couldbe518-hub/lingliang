@@ -1,5 +1,5 @@
 /* 晨光 Service Worker：缓存应用外壳；经文文件首次读取后保存，供离线使用 */
-const VER="chenguang-v3";
+const VER="chenguang-v4";
 const SHELL=["./","./index.html","./app.js","./books.js","./manifest.webmanifest","./icon.png","./icon-192.png","./icon-512.png","./icon-maskable.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(VER).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>null)))).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VER&&k!=="chenguang-data"&&k.startsWith("chenguang")).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
