@@ -237,7 +237,7 @@ const refEn=(b,c,vs,ve)=>BOOKS[b-1][2]+" "+c+(vs?":"+vs+(ve&&ve!==vs?"–"+ve:""
 
 /* ---------- 存储 ---------- */
 const KEY="lingliang.v1";
-const DEF={tab:"today",fs:1.12,mode:"both",en:"bsb",theme:"auto",rate:1,plan:"all",planStart:null,read:{},days:{},fav:[],prayers:[],thanks:[],cares:[],family:["家人"],last:null,voiceZh:"",voiceEn:"",marks:{},chnotes:{},bg:"paper",ink:"default"};
+const DEF={tab:"today",fs:1.12,mode:"both",en:"bsb",theme:"auto",rate:1,plan:"all",planStart:null,read:{},days:{},fav:[],prayers:[],thanks:[],cares:[],family:["家人"],last:null,voiceZh:"",voiceEn:"",marks:{},chnotes:{},bg:"paper",ink:"default",voiceClip:"kevin"};
 const HLN={y:"应许",g:"教导",b:"提醒",p:"安慰",v:"祷告"};const BGS={paper:["默认",""],warm:["暖黄","#FBF1D6"],green:["浅绿","#EEF5E8"],blue:["浅蓝","#E8F0F8"],pink:["浅粉","#FAEAEA"]};const INKS={default:["默认",""],black:["纯黑","#000000"],brown:["深褐","#4A2C17"],navy:["深蓝","#1F3A5F"],green:["深绿","#2F4A29"]};
 let S;
 try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}
@@ -304,14 +304,22 @@ const CHEER=["今天读一章就好，神看重的是你来到他面前。","慢
 function dailyIdx(){const pool=C.kv.map((k,i)=>[k,i]).filter(([k])=>k[3]-k[2]<=1);const n=daysBetween("2026-01-01",dstr());let h=(n*2654435761)>>>0;return pool[h%pool.length][1]}
 
 /* ---------- 朗读 ---------- */
-const TTS={q:[],i:0,on:false,label:"",sid:0};let UNLOCKED=false;
-function unlockTTS(){if(UNLOCKED)return;UNLOCKED=true;try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+const TTS={q:[],i:0,on:false,label:"",sid:0,clip:false};let UNLOCKED=false;
+/* 真人声音包：voice/manifest.json 把句子对应到 mp3；某次朗读的中文句子全部有录音时才用录音，否则整段用系统声音 */
+let VOICE=null,AUD=null;const SILENT="data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+fetch("voice/manifest.json").then(r=>r.ok?r.json():null).then(v=>{VOICE=v}).catch(()=>{});
+const clipKey=t=>cleanZh(t).replace(/[，。、；：！？,.!?;:\s…]+$/,"");
+function clipFor(text){if(!VOICE||!VOICE.lines||!S.voiceClip)return null;const e=VOICE.lines[clipKey(text)];return e?e[0]:null}
+function clipsCover(items){const zh=items.filter(i=>i.lang==="zh");return zh.length>0&&zh.every(i=>clipFor(i.text))}
+function speakUtter(it,sid){if(!("speechSynthesis" in window)){TTS.i++;next();return}const u=new SpeechSynthesisUtterance(it.lang==="zh"?cleanZh(it.text):it.text);u.lang=it.lang==="zh"?"zh-CN":"en-US";const v=pickVoice(it.lang);if(v)u.voice=v;u.rate=it.lang==="zh"?S.rate:Math.min(S.rate*.95,1.6);u.onend=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};u.onerror=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};try{speechSynthesis.speak(u)}catch(e){stopTTS()}}
+function playClip(it,sid){const f=clipFor(it.text);if(!f){speakUtter(it,sid);return}const a=AUD||(AUD=new Audio());a.onended=a.onerror=null;a.src="voice/"+S.voiceClip+"/"+f;a.playbackRate=Math.max(.7,Math.min(1.4,S.rate/.95));a.onended=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};a.onerror=()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)};a.play().catch(()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)})}
+function unlockTTS(){if(UNLOCKED)return;UNLOCKED=true;try{AUD=AUD||new Audio();AUD.src=SILENT;AUD.play().catch(()=>{})}catch(e){}try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 function voices(){try{return speechSynthesis.getVoices()}catch(e){return []}}
 function pickVoice(lang){const vs=voices();const pref=lang==="zh"?S.voiceZh:S.voiceEn;let v=vs.find(x=>x.name===pref);if(v)return v;if(lang==="zh")return vs.find(x=>/zh[-_]CN/i.test(x.lang)&&/Tingting|婷婷|Lili|Xiaoxiao/i.test(x.name))||vs.find(x=>/zh[-_]CN/i.test(x.lang))||vs.find(x=>/^zh/i.test(x.lang));return vs.find(x=>/en[-_]US/i.test(x.lang)&&/Samantha|Alex|Ava|Allison/i.test(x.name))||vs.find(x=>/en[-_](US|GB)/i.test(x.lang))||vs.find(x=>/^en/i.test(x.lang))}
-function speak(items,label){if(!("speechSynthesis" in window)){toast("这台设备不支持朗读");return}stopTTS(true);TTS.sid++;TTS.q=items;TTS.i=0;TTS.on=true;TTS.label=label||"朗读中";renderPlayer();next()}
-function next(){if(!TTS.on)return;document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(TTS.i>=TTS.q.length){stopTTS();return}const it=TTS.q[TTS.i];if(it.el){const el=document.getElementById(it.el);if(el){el.classList.add("speaking");el.scrollIntoView({block:"center",behavior:"smooth"})}}const u=new SpeechSynthesisUtterance(it.lang==="zh"?cleanZh(it.text):it.text);u.lang=it.lang==="zh"?"zh-CN":"en-US";const v=pickVoice(it.lang);if(v)u.voice=v;u.rate=it.lang==="zh"?S.rate:Math.min(S.rate*.95,1.6);const sid=TTS.sid;u.onend=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};u.onerror=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};try{speechSynthesis.speak(u)}catch(e){stopTTS()}}
-function stopTTS(silent){TTS.on=false;try{speechSynthesis.cancel()}catch(e){}document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(!silent)renderPlayer()}
-function renderPlayer(){const p=$("#player");if(!TTS.on){p.hidden=true;p.innerHTML="";return}p.hidden=false;p.className="player";p.innerHTML=`<div class="in"><span>朗读中 · ${esc(TTS.label)}</span><button data-act="ttsSkip">下一节</button><button data-act="ttsStop">停止</button></div>`}
+function speak(items,label){const clip=clipsCover(items);if(!clip&&!("speechSynthesis" in window)){toast("这台设备不支持朗读");return}stopTTS(true);TTS.sid++;TTS.clip=clip;TTS.q=items;TTS.i=0;TTS.on=true;TTS.label=label||"朗读中";renderPlayer();next()}
+function next(){if(!TTS.on)return;document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(TTS.i>=TTS.q.length){stopTTS();return}const it=TTS.q[TTS.i];if(it.el){const el=document.getElementById(it.el);if(el){el.classList.add("speaking");el.scrollIntoView({block:"center",behavior:"smooth"})}}const sid=TTS.sid;if(TTS.clip&&it.lang==="zh")playClip(it,sid);else speakUtter(it,sid)}
+function stopTTS(silent){TTS.on=false;TTS.sid++;try{speechSynthesis.cancel()}catch(e){}if(AUD){try{AUD.onended=AUD.onerror=null;AUD.pause()}catch(e){}}document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(!silent)renderPlayer()}
+function renderPlayer(){const p=$("#player");if(!TTS.on){p.hidden=true;p.innerHTML="";return}p.hidden=false;p.className="player";p.innerHTML=`<div class="in"><span>${TTS.clip?"Kevin 的声音":"朗读中"} · ${esc(TTS.label)}</span><button data-act="ttsSkip">下一节</button><button data-act="ttsStop">停止</button></div>`}
 function chapterQueue(b,c,d,from=1,mode){mode=mode||(S.mode==="both"?"both":S.mode);const q=[];const zh=d.zh[c-1],en=d[S.en][c-1]||[];if(from===1){if(mode!=="en")q.push({lang:"zh",text:BOOKS[b-1][0]+"第"+c+"章"});if(mode==="en")q.push({lang:"en",text:BOOKS[b-1][2]+" chapter "+c})}for(let v=from;v<=zh.length;v++){if(isMerged(zh[v-1]))continue;if(mode!=="en")q.push({lang:"zh",text:zh[v-1],el:"v"+v});if(mode!=="zh"&&en[v-1])q.push({lang:"en",text:en[v-1],el:"v"+v})}return q}
 
 /* ---------- 抽屉 ---------- */
@@ -536,6 +544,7 @@ function settingsSheet(){const vs=voices();const zv=vs.filter(x=>/^zh/i.test(x.l
  <div class="sec"><h4>外观</h4><div class="seg">${[["auto","跟随系统"],["light","浅色"],["dark","深色"]].map(([v,n])=>`<button data-act="theme" data-v="${v}" aria-pressed="${S.theme===v}">${n}</button>`).join("")}</div></div>
  ${colorPrefsHtml()}
  <div class="sec"><h4>朗读语速</h4><div class="seg">${[[.8,"慢"],[.95,"适中"],[1.1,"快"]].map(([v,n])=>`<button data-act="rate" data-v="${v}" aria-pressed="${S.rate==v}">${n}</button>`).join("")}</div>
+ <label class="small muted" style="display:block;margin-top:10px">中文朗读声音</label><div class="seg"><button data-act="voiceClip" data-v="kevin" aria-pressed="${S.voiceClip==="kevin"}">Kevin 本人</button><button data-act="voiceClip" data-v="" aria-pressed="${!S.voiceClip}">手机系统声音</button></div><p class="small muted">${VOICE?"Kevin 的声音覆盖早祷、晚祷、主祷文、经典经文、情境经文和祷告文；整章朗读仍用系统声音。":"Kevin 的语音包尚未上线，目前先用系统声音。"}</p>
  ${zv.length?`<label class="small muted" for="vzh" style="display:block;margin-top:8px">中文声音</label><select id="vzh">${zv.map(x=>`<option ${x.name===S.voiceZh?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:""}
  ${ev.length?`<label class="small muted" for="ven" style="display:block;margin-top:8px">英文声音</label><select id="ven">${ev.map(x=>`<option ${x.name===S.voiceEn?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:""}
  <p class="small muted">iPhone 可在 设置 › 辅助功能 › 朗读内容 › 声音 里下载更自然的“增强版”中文和英文声音。</p></div>
@@ -641,6 +650,7 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
  case"mode":S.mode=d.m;save();rerender();break;
  case"fs":S.fs=+d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
  case"en":S.en=d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));if(VIEW.name==="chapter")rerender();break;
+ case"voiceClip":S.voiceClip=d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
  case"theme":S.theme=d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
  case"rate":S.rate=+d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
  case"plan":S.plan=d.k;save();closeSheet();if(VIEW.name==="today")render();toast("已切换为“"+PLANS[d.k].name+"”");break;
@@ -666,7 +676,7 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
  case"compPrev":famCollect();stopTTS(true);renderPlayer();COMP.i--;renderComp();break;
  case"compAns":{const p=S.prayers.find(x=>x.id==d.id);if(p){p.ans=dstr();save();renderComp();toast("感谢主！")}break}
  case"compDelPr":S.prayers=S.prayers.filter(x=>x.id!=d.id);save();renderComp();break;
- case"compSay":if($("#cfam")){famCollect();renderComp()}speak([{lang:"zh",text:(COMP.steps[COMP.i].n==="交托"&&COMP.genText)?COMP.genText:(typeof COMP.steps[COMP.i].say==="function"?COMP.steps[COMP.i].say():COMP.steps[COMP.i].say)}],COMP.title+" · "+COMP.steps[COMP.i].n);break;
+ case"compSay":if($("#cfam")){famCollect();renderComp()}speak(sayItems((COMP.steps[COMP.i].n==="交托"&&COMP.genText)?COMP.genText:(typeof COMP.steps[COMP.i].say==="function"?COMP.steps[COMP.i].say():COMP.steps[COMP.i].say)),COMP.title+" · "+COMP.steps[COMP.i].n);break;
  case"genCare":genCare();break;
  case"speakCare":if(COMP&&COMP.genText)speak([{lang:"zh",text:COMP.genText}],"交托祷告");break;
  case"copyCare":if(COMP&&COMP.genText)copyText(COMP.genText);break;
@@ -694,6 +704,14 @@ document.addEventListener("click",async e=>{const el=e.target.closest("[data-act
 window.addEventListener("hashchange",fromHash);
 function fromHash(){const h=(location.hash||"").slice(1);if(h==="morning"||h==="evening"){startComp(h);return true}if(["today","seek","pray","bible","search"].includes(h)){go({name:h},false);return true}return false}
 try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+/* 引导语按「今日诗歌：」拆开：前半固定、可用录音，后半每天不同、用系统声音 */
+function sayItems(t){return String(t||"").split(/(?=今日诗歌：)/).filter(x=>x.trim()).map(x=>({lang:"zh",text:x}))}
+/* 语音包要覆盖的全部句子（tools/voice_lines.js 调用）*/
+window.__voiceLines=async function(){const out=new Set();const add=t=>{if(!t||typeof t!=="string")return;const k=clipKey(t);if(k)out.add(k)};
+ for(const kind of ["morning","evening"]){await startComp(kind);COMP.steps.forEach(st=>{if(typeof st.say==="string")sayItems(st.say).forEach(it=>{if(!/^今日诗歌：/.test(it.text))add(it.text)})});COMP=null;renderComp()}
+ for(const k of C.kv){(await verses(k[0],k[1],k[2],k[3])).forEach(x=>{if(!isMerged(x.zh))add(x.zh)})}
+ for(const sc of C.scen){add(sc.pr.replace(/______/g,"……"));for(const [b,c,vs,ve] of sc.p){(await verses(b,c,vs,ve)).forEach(x=>{if(!isMerged(x.zh))add(x.zh)})}}
+ (await verses(40,6,9,13)).forEach(x=>add(x.zh));return [...out]};
 /* ---------- 备份文件 ---------- */
 async function exportFile(){const name="lingliang-backup-"+dstr()+".json";const txt=JSON.stringify(S);const file=new File([txt],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return}catch(e){if(e&&e.name==="AbortError")return}}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("已导出："+name)}
 async function importFile(e){const f=e.target.files[0];if(!f)return;e.target.value="";try{const o=JSON.parse(await f.text());if(!o||typeof o!=="object"||!o.days)throw 0;openSheet(`<h3>导入备份</h3><p class="small muted">备份含 ${Object.keys(o.read||{}).length} 章打卡、${(o.fav||[]).length} 条收藏、${Object.keys(o.marks||{}).length} 处高亮或注释、${(o.prayers||[]).length} 条代祷。导入会用备份覆盖本机现有记录。</p><div class="row"><button class="btn sm" data-act="closeSheet">取消</button><button class="btn sm primary" id="impGo">确定导入</button></div>`);$("#impGo").addEventListener("click",()=>{S=Object.assign({},DEF,o);save();applyPrefs();closeSheet();render();toast("已导入")})}catch(x){toast("这不是灵粮读经的备份文件")}}
