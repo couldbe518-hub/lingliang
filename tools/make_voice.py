@@ -13,7 +13,8 @@
 用法：
   在仓库根目录： python3 -m http.server 8765 &
   python3 tools/make_voice.py --clone-dir /path/to/clone --zipvoice /path/to/zipvoice --vocoder /path/to/vocos_24khz.onnx
-  已生成的句子会跳过；--force 全部重做；--limit N 只做前 N 句（试听用）。
+  已生成的句子会跳过；--force 全部重做；--limit N 只做前 N 句（试听用）；--prune 清理清单外的旧 mp3。
+  句子清单可分批（--lines 指定不同文件），清单文件会合并、每 20 句写一次。
 """
 import argparse, hashlib, json, os, re, subprocess, sys, tempfile
 
@@ -55,6 +56,7 @@ def main():
     ap.add_argument("--url", default="http://127.0.0.1:8765/")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--prune", action="store_true", help="删除清单里不再引用的 mp3")
     a = ap.parse_args()
     import sherpa_onnx, soundfile as sf, numpy as np
     Z = a.zipvoice.rstrip("/") + "/"
@@ -100,7 +102,11 @@ def main():
     mf = os.path.join(OUT, "manifest.json")
     old = json.load(open(mf, encoding="utf-8")) if os.path.exists(mf) else {"lines": {}}
     d = os.path.join(OUT, VOICE[0]); os.makedirs(d, exist_ok=True)
-    entries, keep = {}, set()
+    entries, keep = dict(old.get("lines", {})), set()   # 保留清单里已有的句子（分批生成时不丢）
+    def write_manifest():
+        json.dump({"engine": "ZipVoice（k2-fsa，Apache-2.0），经 sherpa-onnx 零样本声音克隆合成", "speed": CLONE_SPEED,
+                   "voices": [{"id": VOICE[0], "name": VOICE[1], "desc": VOICE[2]}], "lines": entries},
+                  open(mf, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     for n, text in enumerate(lines):
         fn = hashlib.sha1(text.encode("utf-8")).hexdigest()[:12] + ".mp3"
         dst = os.path.join(d, fn); keep.add(fn)
@@ -113,14 +119,12 @@ def main():
             print(n + 1, "/", len(lines), text[:24], file=sys.stderr)
         dur = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", dst]))
         entries[text] = [fn, round(dur, 2)]
-    if not a.limit:
+        if n % 20 == 19: write_manifest()   # 分批写清单，中途提交也能用
+    write_manifest()
+    if a.prune:
+        used = {v[0] for v in entries.values()}
         for f in os.listdir(d):
-            if f.endswith(".mp3") and f not in keep: os.remove(os.path.join(d, f))
-    else:
-        entries = {**old.get("lines", {}), **entries}
-    json.dump({"engine": "ZipVoice（k2-fsa，Apache-2.0），经 sherpa-onnx 零样本声音克隆合成", "speed": CLONE_SPEED,
-               "voices": [{"id": VOICE[0], "name": VOICE[1], "desc": VOICE[2]}], "lines": entries},
-              open(mf, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+            if f.endswith(".mp3") and f not in used: os.remove(os.path.join(d, f))
     print("OK", len(entries), "句", file=sys.stderr)
 
 if __name__ == "__main__":
