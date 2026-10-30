@@ -313,7 +313,9 @@ function clipFor(text){if(!VOICE||!VOICE.lines||!S.voiceClip)return null;const e
 function clipsCover(items){const zh=items.filter(i=>i.lang==="zh");return zh.length>0&&zh.every(i=>clipFor(i.text))}
 function speakUtter(it,sid){if(!("speechSynthesis" in window)){TTS.i++;next();return}const u=new SpeechSynthesisUtterance(it.lang==="zh"?cleanZh(it.text):it.text);u.lang=it.lang==="zh"?"zh-CN":"en-US";const v=pickVoice(it.lang);if(v)u.voice=v;u.rate=it.lang==="zh"?S.rate:Math.min(S.rate*.95,1.6);u.onend=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};u.onerror=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};try{speechSynthesis.speak(u)}catch(e){stopTTS()}}
 function clipRate(){return S.rate<.9?0.8:S.rate>1.2?1.4:S.rate>1?1.2:1.0}
-function playClip(it,sid){const f=clipFor(it.text);if(!f){speakUtter(it,sid);return}const a=AUD||(AUD=new Audio());a.onended=a.onerror=null;a.src="../voice/"+S.voiceClip+"/"+f;a.playbackRate=clipRate();try{a.preservesPitch=true}catch(e){}a.onended=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};a.onerror=()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)};a.play().catch(()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)})}
+/* iPhone 只允许在点击当下播放音频：每次点朗读都先在同一个元素上放一段静音，之后换成录音才能继续播 */
+function primeAudio(){try{AUD=AUD||new Audio();if(TTS.on&&TTS.clip&&!AUD.paused)return;AUD.src=SILENT;AUD.load();const p=AUD.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function playClip(it,sid){const f=clipFor(it.text);if(!f){speakUtter(it,sid);return}const a=AUD||(AUD=new Audio());a.onended=a.onerror=null;a.src="../voice/"+S.voiceClip+"/"+f;a.playbackRate=clipRate();try{a.preservesPitch=true}catch(e){}a.onended=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};a.onerror=()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)};a.play().catch(err=>{if(sid!==TTS.sid)return;if(err&&err.name==="NotAllowedError"){toast("手机没有允许播放录音，改用系统声音；请再点一次朗读")}speakUtter(it,sid)})}
 function unlockTTS(){if(UNLOCKED)return;UNLOCKED=true;try{AUD=AUD||new Audio();AUD.src=SILENT;AUD.play().catch(()=>{})}catch(e){}try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}}
 function voices(){try{return speechSynthesis.getVoices()}catch(e){return []}}
 function pickVoice(lang){const vs=voices();const pref=lang==="zh"?S.voiceZh:S.voiceEn;let v=vs.find(x=>x.name===pref);if(v)return v;if(lang==="zh")return vs.find(x=>/zh[-_]CN/i.test(x.lang)&&/Tingting|婷婷|Lili|Xiaoxiao/i.test(x.name))||vs.find(x=>/zh[-_]CN/i.test(x.lang))||vs.find(x=>/^zh/i.test(x.lang));return vs.find(x=>/en[-_]US/i.test(x.lang)&&/Samantha|Alex|Ava|Allison/i.test(x.name))||vs.find(x=>/en[-_](US|GB)/i.test(x.lang))||vs.find(x=>/^en/i.test(x.lang))}
@@ -626,7 +628,7 @@ async function genCare(){collectCares();const open=S.cares.filter(c=>!c.done);co
  box.innerHTML=`<div class="card ribbon" style="margin-top:10px"><div class="eyebrow">交托祷告 · 第 ${seed} 版</div><p class="prayer" style="margin:8px 0 4px">天父，夜深了。我把今天还没解决的事和明天的担心，一件一件放在你手中。</p>${parts.join("")}<p class="prayer" style="margin:8px 0">${end}</p><div class="row"><button class="btn sm primary" data-act="speakCare">${IC.play} 朗读这篇祷告</button><button class="btn sm" data-act="genCare">换一组经文再生成</button><button class="btn sm ghost" data-act="copyCare">复制</button></div><p class="small muted" style="margin:8px 0 0">祷告按你写的每件事配上相应情境的经文和祈求，可以照着读，也可以用自己的话。</p></div>`;box.scrollIntoView({block:"start",behavior:"smooth"})}
 
 /* ---------- 事件 ---------- */
-document.addEventListener("click",async e=>{const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act,d=el.dataset;if(/^(play|speak|comp|tts)/.test(a))unlockTTS();
+document.addEventListener("click",async e=>{const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act,d=el.dataset;if(/^(play|speak|comp|tts)/.test(a)){unlockTTS();primeAudio()}
  switch(a){
  case"tab":closeSheet();HIST.length=0;go({name:d.k});break;
  case"back":back();break;
