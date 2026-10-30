@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F4F6F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1220" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<title>灵粮读经</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="灵粮读经">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* 版式：单栏阅读本，书签丝带 + 金色下划线标记经典经文；底部五个标签页 */
+:root{
+  --paper:#F4F6F2; --card:#FFFFFF; --ink:#1C2232; --muted:#5D6574; --line:#DCE0D7;
+  --accent:#2C3D7C; --accent-soft:#E6EAF6; --gold:#A6771A; --gold-soft:#F5ECD8; --care:#8E3B3B; --care-soft:#F7E9E6; --hl-y:#FBF0C4; --hl-g:#DDEEDC; --hl-b:#DCE6F5; --hl-p:#F7E1E1; --hl-v:#E9E0F2; --ok:#2F6B4F;
+  --f-scripture:"Noto Serif SC","Songti SC","STSong",serif;
+  --f-en:"Source Serif 4","Georgia",serif;
+  --f-ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --fs:1.12rem;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E1220; --card:#161B2B; --ink:#E7E3D7; --muted:#9BA1AF; --line:#283044;
+  --accent:#93A6EA; --accent-soft:#1E2640; --gold:#D9B45E; --gold-soft:#2B2617; --care:#E39A92; --care-soft:#2C1B1C; --hl-y:#45391A; --hl-g:#213A24; --hl-b:#1E2C44; --hl-p:#3F2428; --hl-v:#33274A; --ok:#7CC4A0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E1220; --card:#161B2B; --ink:#E7E3D7; --muted:#9BA1AF; --line:#283044;
+  --accent:#93A6EA; --accent-soft:#1E2640; --gold:#D9B45E; --gold-soft:#2B2617; --care:#E39A92; --care-soft:#2C1B1C; --hl-y:#45391A; --hl-g:#213A24; --hl-b:#1E2C44; --hl-p:#3F2428; --hl-v:#33274A; --ok:#7CC4A0; color-scheme:dark}
+html,body{background:var(--paper)}
+body{color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.65rem .8rem;width:100%}
+textarea{min-height:5.5rem;resize:vertical}
+a{color:var(--accent)}
+.wrap{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:12px 120px}
+h1,h2,h3{text-wrap:balance;margin:0;font-family:var(--f-scripture);font-weight:600}
+h1{font-size:1.65rem;line-height:1.25}
+h2{font-size:1.2rem}
+h3{font-size:1.02rem}
+.eyebrow{font-size:.74rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.ribbon{position:relative;padding-top:20px}
+.ribbon::before{content:"";position:absolute;top:-1px;right:22px;width:14px;height:30px;background:var(--gold);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.55rem .95rem;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:.92rem}
+.btn.primary{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.btn.gold{background:var(--gold);color:var(--paper);border-color:var(--gold)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:.35rem .7rem;font-size:.84rem}
+.chip{display:inline-flex;padding:.4rem .8rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.88rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.seg button{padding:.38rem .8rem;font-size:.86rem}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--paper)}
+.scripture{font-family:var(--f-scripture);font-size:var(--fs);line-height:1.9}
+.en{font-family:var(--f-en);font-size:calc(var(--fs)*.94);line-height:1.6;color:var(--muted)}
+.ref{font-size:.84rem;color:var(--gold);font-weight:600;letter-spacing:.04em}
+.note{font-size:.8em;color:var(--muted)}
+/* 标签栏 */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:30}
+.tabbar .in{display:grid;grid-template-columns:repeat(5,1fr);max-width:680px;width:100%}
+.tabbar button{padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;color:var(--muted)}
+.tabbar button svg{width:23px;height:23px}
+.tabbar button[aria-current="page"]{color:var(--accent)}
+/* 顶栏 */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:12px}
+.topbar .t{flex:1;min-width:0;font-family:var(--f-scripture);font-weight:600;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:38px;height:38px;border-radius:50%;display:inline-grid;place-items:center;flex:none}
+.iconbtn svg{width:22px;height:22px}
+/* 今日 */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.week .d{font-size:.72rem;color:var(--muted)}
+.week .dot{width:28px;height:28px;margin:4px auto 0;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:.75rem;font-variant-numeric:tabular-nums}
+.week .dot.on{background:var(--gold);border-color:var(--gold);color:var(--paper)}
+.week .dot.today{border-color:var(--accent)}
+.streak{font-family:var(--f-scripture);font-size:2.4rem;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.task{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.task:first-of-type{border-top:0}
+.check{width:26px;height:26px;flex:none;border-radius:8px;border:1.5px solid var(--muted);display:grid;place-items:center;margin-top:2px}
+.check.on{background:var(--ok);border-color:var(--ok);color:var(--paper)}
+.check svg{width:16px;height:16px}
+.task .body{flex:1;min-width:0}
+.pray2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.praybtn{border-radius:14px;padding:16px 14px;text-align:left;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;gap:4px}
+.praybtn b{font-family:var(--f-scripture);font-size:1.1rem}
+.praybtn.done{border-color:var(--ok)}
+.praybtn .st{font-size:.78rem;color:var(--muted)}
+.praybtn.done .st{color:var(--ok)}
+/* 圣经 */
+.cat{display:flex;flex-direction:column;gap:8px}
+.cat h3{font-size:.9rem;color:var(--muted);font-family:var(--f-ui);font-weight:600;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.cat h3 i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.books{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.bk{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;overflow:hidden}
+.bk b{font-family:var(--f-scripture);font-size:1.15rem}
+.bk span{font-size:.7rem;color:var(--muted);white-space:nowrap}
+.bk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.chlist{display:flex;flex-direction:column}
+.ch{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line);text-align:left;width:100%}
+.ch .n{font-family:var(--f-scripture);font-size:1.3rem;color:var(--gold);text-align:center;font-variant-numeric:tabular-nums;line-height:1.2}
+.ch .n small{display:block;font-size:.62rem;color:var(--muted);font-family:var(--f-ui)}
+.ch .tt{font-weight:600;font-family:var(--f-scripture)}
+.ch .ss{font-size:.88rem;color:var(--muted);line-height:1.5}
+.ch .tags{margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.7rem;padding:1px 7px;border-radius:999px;background:var(--gold-soft);color:var(--gold)}
+.tag.read{background:var(--accent-soft);color:var(--ok)}
+.intro dl{display:grid;grid-template-columns:4.2em 1fr;gap:6px 10px;margin:0;font-size:.9rem}
+.intro dt{color:var(--muted)}
+.intro dd{margin:0;min-width:0}
+/* 章节阅读 */
+.sum{background:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:.92rem}
+.sum b{font-family:var(--f-scripture)}
+.verses{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.sh{font-family:var(--f-en);font-style:italic;color:var(--accent);font-size:.9rem;margin:14px 0 2px}
+.v{padding:6px 6px;border-radius:8px;text-align:left;width:100%;display:block}
+.v .num{font-family:var(--f-ui);font-size:.68em;color:var(--gold);vertical-align:super;margin-right:3px;font-weight:600}
+.v.kv .zh{text-decoration:underline;text-decoration-color:var(--gold);text-decoration-thickness:2px;text-underline-offset:6px}
+.v.kv .en{text-decoration:underline dotted;text-decoration-color:var(--gold);text-underline-offset:4px}
+.v.speaking{background:var(--accent-soft)}
+.v.sel{background:var(--gold-soft)}
+.v.fav .num::after{content:" ♥";color:var(--care)}
+.v .en{display:block;margin-top:2px}
+.v.merged{opacity:.55}
+.v .zh,.v .en{color:var(--ink-s,inherit)}
+.v.hl-y{background:var(--hl-y)} .v.hl-g{background:var(--hl-g)} .v.hl-b{background:var(--hl-b)} .v.hl-p{background:var(--hl-p)} .v.hl-v{background:var(--hl-v)}
+.v .mynote{display:block;margin:6px 0 2px;padding:6px 10px;border-left:3px solid var(--accent);background:var(--accent-soft);font-size:.86rem;line-height:1.6;border-radius:0 8px 8px 0;white-space:pre-wrap;font-family:var(--f-ui)}
+.hlrow{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+.hlbtn{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.74rem;color:var(--muted)}
+.hlbtn i{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.hlbtn.on i{outline:2px solid var(--accent);outline-offset:2px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;border:1px solid var(--muted);vertical-align:-1px}
+.chnote{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:14px}
+.sw{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.sw button{width:34px;height:34px;border-radius:50%;border:2px solid var(--line)}
+.sw button.on{outline:2px solid var(--accent);outline-offset:2px}
+.li.hl-y{background:var(--hl-y)} .li.hl-g{background:var(--hl-g)} .li.hl-b{background:var(--hl-b)} .li.hl-p{background:var(--hl-p)} .li.hl-v{background:var(--hl-v)}
+.li[class*="hl-"]{padding:10px;border-radius:10px;border-top:0;margin-top:6px}
+.kvmark{display:inline-block;font-size:.66rem;font-family:var(--f-ui);color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:2px}
+.pstitle{font-size:.88rem;color:var(--muted);font-style:italic;margin-bottom:4px}
+.navch{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:18px}
+/* 底部抽屉 */
+.scrim{position:fixed;inset:0;background:rgba(10,12,20,.42);z-index:40}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--card);border-radius:18px 18px 0 0;max-height:86vh;overflow:auto;padding:8px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
+.sheet .inner{max-width:648px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.sec h4{margin:0 0 4px;font-size:.8rem;color:var(--gold);letter-spacing:.08em}
+.sec p{margin:0;font-size:.95rem;line-height:1.7}
+.idx li{font-size:.88rem}
+/* 播放条 */
+.player{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:29;display:flex;justify-content:center;padding:0 12px}
+.player .in{max-width:656px;width:100%;background:var(--accent);color:var(--paper);border-radius:14px;padding:8px 10px 8px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.player .in span{flex:1;min-width:0;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player button{padding:.35rem .7rem;border-radius:999px;background:rgba(255,255,255,.16);font-size:.84rem;color:var(--paper)}
+/* 情境 */
+.scgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sc{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:3px}
+.sc b{font-family:var(--f-scripture);font-size:1.05rem}
+.sc span{font-size:.78rem;color:var(--muted);line-height:1.4}
+.ask{background:var(--accent);color:var(--paper);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ask h2{color:var(--paper)}
+.ask input{border-color:transparent}
+.care{background:var(--care-soft);color:var(--care);border-radius:12px;padding:12px 14px;font-size:.9rem}
+.word{font-family:var(--f-scripture);font-size:1.15rem;line-height:1.7;border-left:3px solid var(--gold);padding-left:12px}
+.psg{display:flex;flex-direction:column;gap:6px;padding:14px 0;border-top:1px solid var(--line)}
+.psg:first-child{border-top:0}
+.prayer{font-family:var(--f-scripture);line-height:1.9;font-size:1.02rem}
+/* 祷告陪伴 */
+.comp{position:fixed;inset:0;z-index:50;background:var(--paper);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.comp .in{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-height:100%}
+.dots{display:flex;gap:6px}
+.dots i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.dots i.on{background:var(--gold)}
+.comp .stepname{font-family:var(--f-scripture);font-size:1.6rem}
+.comp .guide{font-size:1.02rem;line-height:1.8}
+.comp .grow{flex:1}
+.breath{width:150px;height:150px;border-radius:50%;margin:10px auto;border:2px solid var(--gold);display:grid;place-items:center;font-family:var(--f-scripture);color:var(--gold);animation:breathe 10s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(.82)}50%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.breath{animation:none}}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.li:first-child{border-top:0}
+.li .body{flex:1;min-width:0}
+.answered{color:var(--ok);font-size:.8rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:.55rem 1rem;border-radius:999px;font-size:.88rem;z-index:60}
+.hl{background:var(--gold-soft);border-radius:3px}
+.progress{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--gold)}
+details summary{cursor:pointer;list-style:none}
+details summary::-webkit-details-marker{display:none}
+.rd summary{line-height:1.5}
+.hv{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.hv:first-child{border-top:0}
+.hvn{font-family:var(--f-scripture);color:var(--gold);font-size:1.1rem;text-align:center}
+.hv.ref2{background:var(--gold-soft);border-radius:10px;padding:10px 8px;border-top:0;margin:4px 0}
+.hymnbody .en{font-size:calc(var(--fs)*1.0);line-height:1.75}
+.rd summary::after{content:"展开";float:right;font-size:.75rem;color:var(--muted)}
+.rd[open] summary::after{content:"收起"}
+.steps li{margin-bottom:6px}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+</style>
+<style>
+html{-webkit-text-size-adjust:100%;color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="app"><div class="wrap"><div class="loading">正在打开圣经……</div></div></div>
+<nav class="tabbar" aria-label="主导航"><div class="in" id="tabs"></div></nav>
+<div id="player" hidden></div>
+<div id="layer"></div>
+
+<script>
+"use strict";
+/* ---------- 书卷 ---------- */
+const BOOKS=[["创世记","创","Genesis","Gen"],["出埃及记","出","Exodus","Exod"],["利未记","利","Leviticus","Lev"],["民数记","民","Numbers","Num"],["申命记","申","Deuteronomy","Deut"],["约书亚记","书","Joshua","Josh"],["士师记","士","Judges","Judg"],["路得记","得","Ruth","Ruth"],["撒母耳记上","撒上","1 Samuel","1Sam"],["撒母耳记下","撒下","2 Samuel","2Sam"],["列王纪上","王上","1 Kings","1Kgs"],["列王纪下","王下","2 Kings","2Kgs"],["历代志上","代上","1 Chronicles","1Chr"],["历代志下","代下","2 Chronicles","2Chr"],["以斯拉记","拉","Ezra","Ezra"],["尼希米记","尼","Nehemiah","Neh"],["以斯帖记","斯","Esther","Esth"],["约伯记","伯","Job","Job"],["诗篇","诗","Psalms","Ps"],["箴言","箴","Proverbs","Prov"],["传道书","传","Ecclesiastes","Eccl"],["雅歌","歌","Song of Songs","Song"],["以赛亚书","赛","Isaiah","Isa"],["耶利米书","耶","Jeremiah","Jer"],["耶利米哀歌","哀","Lamentations","Lam"],["以西结书","结","Ezekiel","Ezek"],["但以理书","但","Daniel","Dan"],["何西阿书","何","Hosea","Hos"],["约珥书","珥","Joel","Joel"],["阿摩司书","摩","Amos","Amos"],["俄巴底亚书","俄","Obadiah","Obad"],["约拿书","拿","Jonah","Jonah"],["弥迦书","弥","Micah","Mic"],["那鸿书","鸿","Nahum","Nah"],["哈巴谷书","哈","Habakkuk","Hab"],["西番雅书","番","Zephaniah","Zeph"],["哈该书","该","Haggai","Hag"],["撒迦利亚书","亚","Zechariah","Zech"],["玛拉基书","玛","Malachi","Mal"],["马太福音","太","Matthew","Matt"],["马可福音","可","Mark","Mark"],["路加福音","路","Luke","Luke"],["约翰福音","约","John","John"],["使徒行传","徒","Acts","Acts"],["罗马书","罗","Romans","Rom"],["哥林多前书","林前","1 Corinthians","1Cor"],["哥林多后书","林后","2 Corinthians","2Cor"],["加拉太书","加","Galatians","Gal"],["以弗所书","弗","Ephesians","Eph"],["腓立比书","腓","Philippians","Phil"],["歌罗西书","西","Colossians","Col"],["帖撒罗尼迦前书","帖前","1 Thessalonians","1Thess"],["帖撒罗尼迦后书","帖后","2 Thessalonians","2Thess"],["提摩太前书","提前","1 Timothy","1Tim"],["提摩太后书","提后","2 Timothy","2Tim"],["提多书","多","Titus","Titus"],["腓利门书","门","Philemon","Phlm"],["希伯来书","来","Hebrews","Heb"],["雅各书","雅","James","Jas"],["彼得前书","彼前","1 Peter","1Pet"],["彼得后书","彼后","2 Peter","2Pet"],["约翰一书","约壹","1 John","1John"],["约翰二书","约贰","2 John","2John"],["约翰三书","约叁","3 John","3John"],["犹大书","犹","Jude","Jude"],["启示录","启","Revelation","Rev"]];
+const CATS=[["律法书",1,5,"#8A6A2E"],["历史书",6,17,"#5C7A55"],["诗歌智慧书",18,22,"#A6771A"],["大先知书",23,27,"#7A4B6E"],["小先知书",28,39,"#9A5F45"],["福音书",40,43,"#2C3D7C"],["教会历史",44,44,"#3F6E8C"],["保罗书信",45,57,"#4D5FA6"],["普通书信",58,65,"#5E7F8F"],["预言书",66,66,"#8E3B3B"]];
+const NCH=[50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22];
+const catOf=b=>CATS.find(c=>b>=c[1]&&b<=c[2]);
+const ref=(b,c,vs,ve)=>BOOKS[b-1][1]+c+(vs?":"+vs+(ve&&ve!==vs?"-"+ve:""):"");
+const refFull=(b,c,vs,ve)=>BOOKS[b-1][0]+" "+c+(vs?":"+vs+(ve&&ve!==vs?"-"+ve:""):"")+"章".slice(vs?1:0);
+const refEn=(b,c,vs,ve)=>BOOKS[b-1][2]+" "+c+(vs?":"+vs+(ve&&ve!==vs?"–"+ve:""):"");
+
+/* ---------- 存储 ---------- */
+const KEY="lingliang.yue.v1";
+const DEF={tab:"today",fs:1.12,mode:"both",en:"bsb",theme:"auto",rate:1,plan:"all",planStart:null,read:{},days:{},fav:[],prayers:[],thanks:[],cares:[],family:["家人"],last:null,voiceZh:"",voiceEn:"",marks:{},chnotes:{},bg:"paper",ink:"default",voiceClip:"kevin"};
+const HLN={y:"应许",g:"教导",b:"提醒",p:"安慰",v:"祷告"};const BGS={paper:["默认",""],warm:["暖黄","#FBF1D6"],green:["浅绿","#EEF5E8"],blue:["浅蓝","#E8F0F8"],pink:["浅粉","#FAEAEA"]};const INKS={default:["默认",""],black:["纯黑","#000000"],brown:["深褐","#4A2C17"],navy:["深蓝","#1F3A5F"],green:["深绿","#2F4A29"]};
+let S;
+try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function applyPrefs(){const st=document.documentElement.style;st.setProperty("--fs",S.fs+"rem");if(S.theme==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",S.theme);const dark=S.theme==="dark"||(S.theme==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);const bg=BGS[S.bg]&&BGS[S.bg][1],ink=INKS[S.ink]&&INKS[S.ink][1];if(!dark&&bg)st.setProperty("--paper",bg);else st.removeProperty("--paper");if(!dark&&ink)st.setProperty("--ink-s",ink);else st.removeProperty("--ink-s")}
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>applyPrefs())}catch(e){}
+applyPrefs();
+
+/* ---------- 工具 ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const pad2=n=>String(n).padStart(2,"0");
+function dstr(d=new Date()){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+function addDays(s,n){const [y,m,d]=s.split("-").map(Number);const t=new Date(y,m-1,d+n);return dstr(t)}
+function daysBetween(a,b){const [y1,m1,d1]=a.split("-").map(Number),[y2,m2,d2]=b.split("-").map(Number);return Math.round((Date.UTC(y2,m2-1,d2)-Date.UTC(y1,m1-1,d1))/864e5)}
+const WD="日一二三四五六";
+function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2000)}
+function copyText(t){try{navigator.clipboard.writeText(t).then(()=>toast("已复制"),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}}
+function fallbackCopy(t){openSheet(`<h3>复制下面的文字</h3><textarea id="cpy" readonly>${esc(t)}</textarea>`);setTimeout(()=>{const a=$("#cpy");if(a){a.focus();a.select()}},50)}
+const cleanZh=t=>t.replace(/〔[^〕]*〕/g,"").replace(/\s+/g,"");
+const fmtZh=t=>esc(t).replace(/〔([^〕]*)〕/g,'<span class="note">〔$1〕</span>');
+const isMerged=t=>/^并于上节/.test(t);
+const IC={
+ today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+ bible:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2z"/><path d="M5 19a2 2 0 0 1 2-2h12M12 7v6M9.5 9.5h5"/></svg>',
+ seek:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>',
+ pray:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v4M10 5h4"/><path d="M8 21v-6l4-6 4 6v6"/><path d="M6 21h12"/></svg>',
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>',
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+ play:'<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M7 4v16l13-8z"/></svg>',
+ tick:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>',
+ aa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 19l5-14 5 14M5 14h6M15 19l3.5-9 3.5 9M16.2 16h4.6"/></svg>'
+};
+
+/* ---------- 数据 ---------- */
+let C=null; const BK={}; let KVMAP={};
+async function loadContent(){const r=await fetch("../content.json");C=await r.json();C.kv.forEach((k,i)=>{const key=k[0]+":"+k[1];(KVMAP[key]=KVMAP[key]||[]).push(i)})}
+async function book(b){if(BK[b])return BK[b];const r=await fetch("../data/"+pad2(b)+".json");if(!r.ok)throw new Error("经文文件读取失败");BK[b]=await r.json();return BK[b]}
+async function verses(b,c,vs,ve){const d=await book(b);const zh=d.zh[c-1]||[],en=d[S.en][c-1]||[];const out=[];for(let v=vs;v<=ve;v++)out.push({v,zh:zh[v-1]||"",en:en[v-1]||""});return out}
+function kvAt(b,c,v){const l=KVMAP[b+":"+c]||[];for(const i of l){const k=C.kv[i];if(v>=k[2]&&v<=k[3])return i}return -1}
+
+/* ---------- 读经计划 ---------- */
+const ORDER=[];for(let b=1;b<=66;b++)for(let c=1;c<=NCH[b-1];c++)ORDER.push([b,c]);
+const OT=ORDER.filter(x=>x[0]<=39),NT=ORDER.filter(x=>x[0]>=40),PS=ORDER.filter(x=>x[0]===19);
+const GOSPEL1=[41,43,42,40,44,45,49,50,51,48,58,59,60,62,46,47,52,53,54,55,56,57,61,63,64,65,66,19,20,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39];
+const ONE=[];GOSPEL1.forEach(b=>{for(let c=1;c<=NCH[b-1];c++)ONE.push([b,c])});
+const slice=(arr,n,days)=>arr.slice(Math.floor(n*arr.length/days),Math.floor((n+1)*arr.length/days));
+const PLANS={
+ all:{name:"一年读完全本",desc:"每天约 3–4 章：旧约一段 + 新约一段，365 天读完整本圣经。",days:365,day:n=>slice(OT,n,365).concat(slice(NT,n,365))},
+ ntps:{name:"新约与诗篇",desc:"每天 1–2 章：新约配诗篇，一年读完新约和诗篇。",days:365,day:n=>slice(NT,n,365).concat(slice(PS,n,365))},
+ one:{name:"每天一章",desc:"从马可福音开始，先读福音书和书信，再读诗篇箴言和旧约。适合刚开始养成习惯。",days:ONE.length,day:n=>n<ONE.length?[ONE[n]]:[]}
+};
+function planDayIndex(){const P=PLANS[S.plan];for(let n=0;n<P.days;n++){if(!P.day(n).every(([b,c])=>S.read[b+":"+c]))return n}return P.days}
+function isRead(b,c){return !!S.read[b+":"+c]}
+function markRead(b,c,on=true){const k=b+":"+c;if(on){S.read[k]=dstr();checkin("r")}else delete S.read[k];save()}
+function checkin(kind){const t=dstr();const before=streak();S.days[t]=S.days[t]||{};S.days[t][kind]=1;save();const after=streak();if(after>before)milestone(after)}
+function streak(){let n=0,d=dstr();if(!S.days[d])d=addDays(d,-1);while(S.days[d]){n++;d=addDays(d,-1)}return n}
+const MILES={3:"你已经连续三天来到神面前。“你们亲近神，神就必亲近你们。”（雅4:8）",7:"整整一周！“凡劳苦担重担的人可以到我这里来。”（太11:28）",21:"连续 21 天，这已经是一个习惯了。“你的话是我脚前的灯。”（诗119:105）",40:"四十天。像旷野中的以色列，神每天都供应吗哪。",100:"一百天！“他的怜悯每早晨都是新的。”（哀3:23）",365:"一整年！愿你像树栽在溪水旁，按时候结果子。（诗1:3）"};
+function milestone(n){if(MILES[n])openSheet(`<div class="eyebrow">里程碑</div><h2>连续 ${n} 天</h2><p class="prayer">${esc(MILES[n])}</p><button class="btn primary" data-act="closeSheet">阿们</button>`)}
+const CHEER=["今天读一章就好，神看重的是你来到他面前。","慢慢读，读懂一节，胜过读完十章。","读之前先求圣灵光照：“求你开我的眼睛。”（诗119:18）","把今天读到的一句话，带进今天的生活。","你不是一个人在读经，主就在你身边。","如果今天很累，就读一篇诗篇，再说一声阿们。","神的话像种子，今天播下，日后结果。"];
+
+/* ---------- 每日经文 ---------- */
+function dailyIdx(){const pool=C.kv.map((k,i)=>[k,i]).filter(([k])=>k[3]-k[2]<=1);const n=daysBetween("2026-01-01",dstr());let h=(n*2654435761)>>>0;return pool[h%pool.length][1]}
+
+/* ---------- 朗读 ---------- */
+const TTS={q:[],i:0,on:false,label:"",sid:0,clip:false};let UNLOCKED=false;
+/* 真人声音包：voice/manifest.json 把句子对应到 mp3；某次朗读的中文句子全部有录音时才用录音，否则整段用系统声音 */
+let VOICE=null,AUD=null;const SILENT="data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+fetch("../voice/manifest.json").then(r=>r.ok?r.json():null).then(v=>{VOICE=v}).catch(()=>{});
+const clipKey=t=>cleanZh(t).replace(/[，。、；：！？,.!?;:\s…]+$/,"");
+function clipFor(text){if(!VOICE||!VOICE.lines||!S.voiceClip)return null;const e=VOICE.lines[clipKey(text)];return e?e[0]:null}
+function clipsCover(items){const zh=items.filter(i=>i.lang==="zh");return zh.length>0&&zh.every(i=>clipFor(i.text))}
+function speakUtter(it,sid){if(!("speechSynthesis" in window)){TTS.i++;next();return}const u=new SpeechSynthesisUtterance(it.lang==="zh"?cleanZh(it.text):it.text);u.lang=it.lang==="zh"?"zh-CN":"en-US";const v=pickVoice(it.lang);if(v)u.voice=v;u.rate=it.lang==="zh"?S.rate:Math.min(S.rate*.95,1.6);u.onend=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};u.onerror=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};try{speechSynthesis.speak(u)}catch(e){stopTTS()}}
+function clipRate(){return S.rate<.9?0.8:S.rate>1.2?1.4:S.rate>1?1.2:1.0}
+function playClip(it,sid){const f=clipFor(it.text);if(!f){speakUtter(it,sid);return}const a=AUD||(AUD=new Audio());a.onended=a.onerror=null;a.src="../voice/"+S.voiceClip+"/"+f;a.playbackRate=clipRate();try{a.preservesPitch=true}catch(e){}a.onended=()=>{if(sid!==TTS.sid)return;TTS.i++;next()};a.onerror=()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)};a.play().catch(()=>{if(sid!==TTS.sid)return;speakUtter(it,sid)})}
+function unlockTTS(){if(UNLOCKED)return;UNLOCKED=true;try{AUD=AUD||new Audio();AUD.src=SILENT;AUD.play().catch(()=>{})}catch(e){}try{const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}}
+function voices(){try{return speechSynthesis.getVoices()}catch(e){return []}}
+function pickVoice(lang){const vs=voices();const pref=lang==="zh"?S.voiceZh:S.voiceEn;let v=vs.find(x=>x.name===pref);if(v)return v;if(lang==="zh")return vs.find(x=>/zh[-_]CN/i.test(x.lang)&&/Tingting|婷婷|Lili|Xiaoxiao/i.test(x.name))||vs.find(x=>/zh[-_]CN/i.test(x.lang))||vs.find(x=>/^zh/i.test(x.lang));return vs.find(x=>/en[-_]US/i.test(x.lang)&&/Samantha|Alex|Ava|Allison/i.test(x.name))||vs.find(x=>/en[-_](US|GB)/i.test(x.lang))||vs.find(x=>/^en/i.test(x.lang))}
+function speak(items,label){const clip=clipsCover(items);if(!clip&&!("speechSynthesis" in window)){toast("这台设备不支持朗读");return}stopTTS(true);TTS.sid++;TTS.clip=clip;TTS.q=items;TTS.i=0;TTS.on=true;TTS.label=label||"朗读中";renderPlayer();next()}
+function next(){if(!TTS.on)return;document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(TTS.i>=TTS.q.length){stopTTS();return}const it=TTS.q[TTS.i];if(it.el){const el=document.getElementById(it.el);if(el){el.classList.add("speaking");el.scrollIntoView({block:"center",behavior:"smooth"})}}const sid=TTS.sid;if(TTS.clip&&it.lang==="zh")playClip(it,sid);else speakUtter(it,sid)}
+function stopTTS(silent){TTS.on=false;TTS.sid++;try{speechSynthesis.cancel()}catch(e){}if(AUD){try{AUD.onended=AUD.onerror=null;AUD.pause()}catch(e){}}document.querySelectorAll(".v.speaking").forEach(e=>e.classList.remove("speaking"));if(!silent)renderPlayer()}
+function renderPlayer(){const p=$("#player");if(!TTS.on){p.hidden=true;p.innerHTML="";return}p.hidden=false;p.className="player";p.innerHTML=`<div class="in"><span>${TTS.clip?"Kevin 的声音":"朗读中"} · ${esc(TTS.label)}</span><button data-act="ttsSkip">下一节</button><button data-act="ttsStop">停止</button></div>`}
+function chapterQueue(b,c,d,from=1,mode){mode=mode||(S.mode==="both"?"both":S.mode);const q=[];const zh=d.zh[c-1],en=d[S.en][c-1]||[];if(from===1){if(mode!=="en")q.push({lang:"zh",text:BOOKS[b-1][0]+"第"+c+"章"});if(mode==="en")q.push({lang:"en",text:BOOKS[b-1][2]+" chapter "+c})}for(let v=from;v<=zh.length;v++){if(isMerged(zh[v-1]))continue;if(mode!=="en")q.push({lang:"zh",text:zh[v-1],el:"v"+v});if(mode!=="zh"&&en[v-1])q.push({lang:"en",text:en[v-1],el:"v"+v})}return q}
+
+/* ---------- 抽屉 ---------- */
+function openSheet(html){$("#layer").innerHTML=`<div class="scrim" data-act="closeSheet"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="inner"><button class="btn sm ghost" style="align-self:flex-end;margin-bottom:-8px" data-act="closeSheet">关闭</button>${html}</div></div>`}
+function closeSheet(){$("#layer").innerHTML=""}
+
+/* ---------- 路由 ---------- */
+let VIEW={name:"today"};const HIST=[];
+async function go(v,push=true){if(push)HIST.push(Object.assign({},VIEW,{y:window.scrollY,v:0}));VIEW=v;if(["today","bible","seek","pray","search"].includes(v.name)){S.tab=v.name;save()}await render();if(!v.v)window.scrollTo(0,v.y||0)}
+async function rerender(){const y=window.scrollY;VIEW.v=0;await render();window.scrollTo(0,y)}
+function back(){const v=HIST.pop()||{name:S.tab};go(v,false)}
+function renderTabs(){const T=[["today","今日"],["bible","圣经"],["seek","寻求"],["pray","祷告"],["search","查找"]];const cur={chapter:"bible",book:"bible",scen:"seek",hymns:"pray",hymn:"pray"}[VIEW.name]||VIEW.name;$("#tabs").innerHTML=T.map(([k,n])=>`<button data-act="tab" data-k="${k}" ${cur===k?'aria-current="page"':""}>${IC[k]}<span>${n}</span></button>`).join("")}
+async function render(){renderTabs();const f=V[VIEW.name];const app=$("#app");try{app.innerHTML=`<div class="wrap">${await f(VIEW)}</div>`}catch(e){app.innerHTML=`<div class="wrap"><div class="card">页面打开失败：${esc(e.message)}。请检查网络后刷新。</div></div>`}after[VIEW.name]&&after[VIEW.name](VIEW)}
+const after={};
+
+/* ---------- 视图 ---------- */
+const V={};
+V.today=async()=>{
+ const t=dstr(),now=new Date(),h=now.getHours();
+ const greet=h<5?"夜深了":h<11?"早安":h<14?"午安":h<18?"下午好":"晚安";
+ const st=streak(),total=Object.keys(S.days).length;
+ let wk="";for(let i=6;i>=0;i--){const d=addDays(t,-i);const [y,m,dd]=d.split("-").map(Number);const wd=new Date(y,m-1,dd).getDay();wk+=`<div><div class="d">${WD[wd]}</div><div class="dot ${S.days[d]?"on":""} ${i===0?"today":""}">${dd}</div></div>`}
+ const ki=dailyIdx(),k=C.kv[ki];const dv=await verses(k[0],k[1],k[2],k[3]);
+ const P=PLANS[S.plan];const n=planDayIndex();const list=P.day(n);
+ const tasks=list.map(([b,c])=>{const s=C.books[b-1].c[c-1];return `<div class="task"><button class="check ${isRead(b,c)?"on":""}" data-act="toggleRead" data-b="${b}" data-c="${c}" aria-label="标记已读">${isRead(b,c)?IC.tick:""}</button><button class="body" style="text-align:left" data-act="open" data-b="${b}" data-c="${c}"><div><b style="font-family:var(--f-scripture)">${BOOKS[b-1][0]} ${c} 章</b> · ${esc(s[0])}</div><div class="small muted">${esc(s[1])}</div></button></div>`}).join("")||`<p>这个计划已经全部读完。感谢主！可以在设置里换一个计划。</p>`;
+ const dm=S.days[t]||{};
+ const cont=S.last?`<button class="card row between" data-act="open" data-b="${S.last[0]}" data-c="${S.last[1]}" style="text-align:left;width:100%"><span><span class="eyebrow">接着读</span><br><b style="font-family:var(--f-scripture)">${BOOKS[S.last[0]-1][0]} ${S.last[1]} 章</b></span><span class="chip">继续</span></button>`:"";
+ return `<div class="row between" style="padding-top:6px"><div><div class="eyebrow">${now.getMonth()+1}月${now.getDate()}日 · 星期${WD[now.getDay()]}</div><h1>${greet}，Yue</h1></div><button class="iconbtn" data-act="settings" aria-label="设置">${IC.gear}</button></div>
+ <div class="stack" style="margin-top:14px">
+ <section class="card ribbon"><div class="eyebrow">今日经文</div><div class="ref" style="margin-top:6px">${ref(k[0],k[1],k[2],k[3])} · ${esc(k[4])}</div>
+ <div class="scripture" style="margin-top:4px">${dv.map(x=>fmtZh(x.zh)).join("")}</div><div class="en" style="margin-top:6px">${dv.map(x=>esc(x.en)).join(" ")} <span class="small">(${refEn(k[0],k[1],k[2],k[3])})</span></div>
+ <div class="row" style="margin-top:10px"><button class="btn sm" data-act="speakKv" data-i="${ki}">${IC.play} 朗读</button><button class="btn sm" data-act="kv" data-i="${ki}">释义与背景</button><button class="btn sm ghost" data-act="open" data-b="${k[0]}" data-c="${k[1]}">读全章</button></div></section>
+ <section class="pray2"><button class="praybtn ${dm.m?"done":""}" data-act="comp" data-k="morning"><span class="eyebrow">早上</span><b>早祷陪伴</b><span class="st">${dm.m?"今天已完成 ✓":"约 5 分钟"}</span></button><button class="praybtn ${dm.e?"done":""}" data-act="comp" data-k="evening"><span class="eyebrow">晚上</span><b>晚祷陪伴</b><span class="st">${dm.e?"今天已完成 ✓":"约 5 分钟"}</span></button></section>
+ <section class="card"><div class="row between"><div><div class="eyebrow">今日读经 · ${esc(P.name)}</div><h3 style="margin-top:2px">第 ${Math.min(n+1,P.days)} 天 / 共 ${P.days} 天</h3></div><button class="btn sm ghost" data-act="settings">换计划</button></div>
+ <div class="progress" style="margin:10px 0 4px"><i style="width:${(n/P.days*100).toFixed(1)}%"></i></div><div>${tasks}</div><p class="small muted" style="margin:8px 0 0">${esc(CHEER[daysBetween("2026-01-01",t)%CHEER.length])}</p></section>
+ ${cont}
+ <section class="card"><div class="row between" style="align-items:flex-end"><div><div class="eyebrow">连续亲近神</div><div class="row" style="gap:6px;align-items:baseline;margin-top:4px"><span class="streak">${st}</span><span class="muted">天 · 累计 ${total} 天</span></div></div></div><div class="week" style="margin-top:12px">${wk}</div><p class="small muted" style="margin:10px 0 0">读完一章，或完成一次早祷/晚祷，当天就会点亮。</p></section>
+ <section class="stack" style="gap:8px"><div class="eyebrow">此刻需要</div><div class="row">${C.scen.slice(0,8).map(s=>`<button class="chip" data-act="scen" data-id="${s.id}">${esc(s.n)}</button>`).join("")}<button class="chip" data-act="tab" data-k="seek">更多…</button></div></section>
+ </div>`;
+};
+V.bible=async v=>{
+ const t=v.t||"ot";
+ const cats=CATS.filter(c=>t==="ot"?c[2]<=39:c[1]>=40);
+ return `<div class="row between" style="padding-top:6px"><h1>圣经</h1><div class="seg"><button data-act="testament" data-t="ot" aria-pressed="${t==="ot"}">旧约 39 卷</button><button data-act="testament" data-t="nt" aria-pressed="${t==="nt"}">新约 27 卷</button></div></div>
+ <p class="muted small">点书卷看导论和每章概要；带金色下划线的是常被引用的经典经文，点一下可看释义。</p>
+ <div class="stack">${cats.map(c=>`<div class="cat"><h3><i style="background:${c[3]}"></i>${c[0]}</h3><div class="books">${Array.from({length:c[2]-c[1]+1},(_,i)=>c[1]+i).map(b=>`<button class="bk" style="--c:${c[3]}" data-act="book" data-b="${b}"><b>${BOOKS[b-1][1]}</b><span>${BOOKS[b-1][0]}</span></button>`).join("")}</div></div>`).join("")}</div>`;
+};
+V.book=async v=>{
+ const b=v.b,B=C.books[b-1],I=B.i,cat=catOf(b);
+ const rows=B.c.map(([t,s],i)=>{const c=i+1;const nk=(KVMAP[b+":"+c]||[]).length;return `<button class="ch" data-act="open" data-b="${b}" data-c="${c}"><div class="n">${c}<small>章</small></div><div style="min-width:0"><div class="tt">${esc(t)}</div><div class="ss">${esc(s)}</div><div class="tags">${nk?`<span class="tag">经典 ${nk}</span>`:""}${isRead(b,c)?`<span class="tag read">已读</span>`:""}</div></div></button>`}).join("");
+ const nread=B.c.filter((_,i)=>isRead(b,i+1)).length;
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${BOOKS[b-1][0]}</div><span class="small muted">${BOOKS[b-1][2]}</span></div>
+ <div class="stack"><details class="card intro" ${v.open?"open":""}><summary class="row between"><span><span class="eyebrow" style="color:${cat[3]}">${cat[0]} · ${B.c.length} 章 · 已读 ${nread}</span><br><b style="font-family:var(--f-scripture);font-size:1.1rem">书卷导论</b></span><span class="chip">展开</span></summary>
+ <dl style="margin-top:12px"><dt>作者</dt><dd>${esc(I.author)}</dd><dt>年代</dt><dd>${esc(I.date)}</dd><dt>主题</dt><dd>${esc(I.theme)}</dd><dt>结构</dt><dd>${esc(I.outline)}</dd><dt>指向基督</dt><dd>${esc(I.christ)}</dd><dt>钥节</dt><dd><div class="row" style="gap:6px">${refChips(I.key)}</div></dd></dl></details>
+ <div class="chlist">${rows}</div></div>`;
+};
+V.chapter=async v=>{
+ const {b,c}=v;const d=await book(b);S.last=[b,c];save();
+ const zh=d.zh[c-1]||[],en=d[S.en][c-1]||[],hd=d.h[c-1]||{},s=C.books[b-1].c[c-1];
+ const title=(b===19&&(d.t[c-1]))?`<div class="pstitle">${esc(d.t[c-1])}</div>`:"";
+ const favs=new Set(S.fav.map(f=>f.join(":")));
+ let html="",lastKv=-1;
+ for(let i=0;i<zh.length;i++){const vn=i+1;if(hd[vn]&&S.mode!=="zh")html+=`<div class="sh">${esc(hd[vn])}</div>`;const ki=kvAt(b,c,vn);const merged=isMerged(zh[i]);
+  const mark=(ki>=0&&ki!==lastKv)?`<span class="kvmark">经典</span>`:"";lastKv=ki;const mk=S.marks[b+":"+c+":"+vn]||null;
+  html+=`<button id="v${vn}" class="v ${ki>=0?"kv":""} ${merged?"merged":""} ${favs.has(b+":"+c+":"+vn)?"fav":""} ${mk&&mk.hl?"hl-"+mk.hl:""}" data-act="verse" data-v="${vn}" data-k="${ki}">${S.mode!=="en"?`<span class="zh scripture"><span class="num">${vn}</span>${merged?'<span class="note">（本节经文并于上节）</span>':fmtZh(zh[i])}</span>`:""}${S.mode!=="zh"&&en[i]?`<span class="en">${S.mode==="en"?`<span class="num">${vn}</span>`:""}${esc(en[i])}</span>`:""}${mark}${mk&&mk.note?`<span class="mynote">${esc(mk.note)}</span>`:""}</button>`}
+ const prev=c>1?[b,c-1]:b>1?[b-1,NCH[b-2]]:null,nxt=c<NCH[b-1]?[b,c+1]:b<66?[b+1,1]:null;
+ const nk=(KVMAP[b+":"+c]||[]).length;
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><button class="t" style="text-align:left" data-act="book" data-b="${b}">${BOOKS[b-1][0]} ${c} 章 <span class="small muted" style="font-family:var(--f-ui);font-weight:400">${BOOKS[b-1][2]} ${c}</span></button><button class="iconbtn" data-act="readprefs" aria-label="阅读设置">${IC.aa}</button></div>
+ <div class="stack"><div class="sum"><b>${esc(s[0])}</b> — ${esc(s[1])}${nk?`<div class="small" style="margin-top:4px;color:var(--gold)">本章有 ${nk} 处经典经文（金色下划线），点经文可看释义与背景。</div>`:""}</div>
+ <div class="row"><button class="btn primary sm" data-act="playCh">${IC.play} 朗读本章</button><div class="seg"><button data-act="mode" data-m="zh" aria-pressed="${S.mode==="zh"}">中文</button><button data-act="mode" data-m="both" aria-pressed="${S.mode==="both"}">对照</button><button data-act="mode" data-m="en" aria-pressed="${S.mode==="en"}">English</button></div></div>
+ ${title}<div class="verses">${html}</div>
+ <button class="btn ${isRead(b,c)?"":"gold"}" style="align-self:center;margin-top:8px" data-act="doneCh">${isRead(b,c)?"✓ 已读完（点此取消）":"读完本章，打卡"}</button>
+ <div class="navch">${prev?`<button class="btn sm" data-act="open" data-b="${prev[0]}" data-c="${prev[1]}">‹ ${ref(prev[0],prev[1])}</button>`:"<span></span>"}<span></span>${nxt?`<button class="btn sm" style="justify-self:end" data-act="open" data-b="${nxt[0]}" data-c="${nxt[1]}">${ref(nxt[0],nxt[1])} ›</button>`:"<span></span>"}</div>
+ <div class="chnote"><div class="row between"><h3>本章默想与领受</h3><button class="btn sm" data-act="chNote">${S.chnotes[b+":"+c]?"修改":"写一段"}</button></div>${S.chnotes[b+":"+c]?`<p style="white-space:pre-wrap;margin:8px 0 0;font-size:.95rem;line-height:1.7">${esc(S.chnotes[b+":"+c])}</p>`:`<p class="small muted" style="margin:4px 0 0">读完这一章的默想、祷告和个人领受，可以记在这里；与经节注释分开保存。</p>`}</div>
+ <p class="small muted" style="text-align:center">中文：和合本（1919，公共领域）· English: ${S.en==="bsb"?"Berean Standard Bible (public domain)":"King James Version"}</p></div>`;
+};
+after.chapter=v=>{if(v.v){const el=document.getElementById("v"+v.v);if(el){el.scrollIntoView({block:"center"});const ls=[];for(let n=v.v;n<=(v.ve||v.v);n++){const x=document.getElementById("v"+n);if(x){x.classList.add("sel");ls.push(x)}}setTimeout(()=>ls.forEach(x=>x.classList.remove("sel")),3200)}}};
+V.seek=async()=>`<div style="padding-top:6px" class="stack">
+ <div class="ask"><div class="eyebrow" style="color:inherit;opacity:.8">寻求</div><h2>现在的你，怎么了？</h2><p class="small" style="margin:0;opacity:.9">用一句话说说你的状况，比如“妈妈住院了我很担心”，会为你找到最相关的经文和祷告。</p><form id="askf" class="row" style="flex-wrap:nowrap"><input id="askin" placeholder="说说你的状况……" autocomplete="off"><button class="btn gold" type="submit">寻找</button></form><div id="askres"></div></div>
+ <div class="scgrid">${C.scen.map(s=>`<button class="sc" data-act="scen" data-id="${s.id}"><b>${esc(s.n)}</b><span>${esc(s.sub)}</span></button>`).join("")}</div></div>`;
+function matchScen(q){const fam=/妈妈|爸爸|母亲|父亲|孩子|儿子|女儿|丈夫|妻子|老公|老婆|父母|家人|婆婆|公公|奶奶|爷爷|外婆|外公|弟弟|妹妹|哥哥|姐姐/.test(q);return C.scen.map(s=>{let n=0;s.kw.split(/\s+/).forEach(w=>{if(w&&q.includes(w))n+=w.length});if(q.includes(s.n))n+=5;if(n&&fam&&(s.id==="sickfam"||s.id==="family"))n+=3;if(n&&fam&&s.id==="sick")n-=1;return [n,s]}).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]).map(x=>x[1])}
+after.seek=()=>{$("#askf").addEventListener("submit",e=>{e.preventDefault();const q=$("#askin").value.trim();if(!q)return;const sc=matchScen(q).slice(0,3).map(s=>[1,s]);
+ $("#askres").innerHTML=sc.length?`<div class="stack" style="gap:8px">${sc.map(([,s])=>`<button class="sc" style="color:var(--ink)" data-act="scen" data-id="${s.id}"><b>${esc(s.n)}</b><span>${esc(s.w)}</span></button>`).join("")}</div>`:`<p class="small" style="margin:0">没有找到完全对应的类别。可以从下面挑一个最接近的，或者直接去“祷告”把心里的话写下来交给神。</p>`})};
+V.scen=async v=>{
+ const s=C.scen.find(x=>x.id===v.id);
+ const ps=await Promise.all(s.p.map(async([b,c,vs,ve,note])=>({b,c,vs,ve,note,t:await verses(b,c,vs,ve)})));
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${esc(s.n)}</div></div>
+ <div class="stack"><p class="word">${esc(s.w)}</p>${s.care?`<div class="care">${esc(s.care)}</div>`:""}
+ <section class="card"><div class="eyebrow">推荐经文 · ${ps.length} 段</div>${ps.map((p,i)=>`<div class="psg"><div class="row between"><span class="ref">${refFull(p.b,p.c,p.vs,p.ve)}</span><span class="row" style="gap:6px"><button class="btn sm" data-act="speakPs" data-i="${i}">${IC.play}</button><button class="btn sm ghost" data-act="open" data-b="${p.b}" data-c="${p.c}" data-v="${p.vs}">全章</button></span></div><div class="small" style="color:var(--gold)">${esc(p.note)}</div><div class="scripture">${p.t.map(x=>isMerged(x.zh)?"":fmtZh(x.zh)).join("")}</div>${S.mode!=="zh"?`<div class="en">${p.t.map(x=>esc(x.en)).join(" ")}</div>`:""}</div>`).join("")}</section>
+ <div id="scenhymns"></div>
+ <section class="card ribbon"><div class="eyebrow">可以这样祷告</div><p class="prayer" style="margin:8px 0">${esc(s.pr).replace(/______/g,'<span class="hl">（说出名字或事情）</span>')}</p><div class="row"><button class="btn sm" data-act="speakPr">${IC.play} 朗读祷告</button><button class="btn sm" data-act="addPrayerFrom" data-id="${s.id}">加入代祷清单</button></div></section></div>`;
+};
+after.scen=async v=>{try{const H=await loadHymns();const L=H.map((h,i)=>[h,i]).filter(([h])=>(h.tags||[]).includes(v.id)).slice(0,3);const box=$("#scenhymns");if(box&&L.length)box.innerHTML=`<section class="card"><div class="row between"><div class="eyebrow">可以唱的诗歌</div><button class="btn sm ghost" data-act="hymns" data-tag="${v.id}">更多 ›</button></div><div class="stack" style="gap:8px;margin-top:8px">${L.map(([h,i])=>hymnCard(h,i)).join("")}</div></section>`}catch(e){}};
+V.pray=async()=>{
+ const pr=S.prayers.slice().sort((a,b)=>(a.ans?1:0)-(b.ans?1:0)||b.id-a.id);
+ return `<div style="padding-top:6px" class="stack"><h1>祷告</h1>
+ <section class="pray2"><button class="praybtn" data-act="comp" data-k="morning"><span class="eyebrow">早上</span><b>早祷陪伴</b><span class="st">安静 · 赞美 · 献上今天 · 主祷文</span></button><button class="praybtn" data-act="comp" data-k="evening"><span class="eyebrow">晚上</span><b>晚祷陪伴</b><span class="st">感恩 · 省察 · 交托 · 安睡</span></button></section>
+ <section class="card"><div class="row between"><h3>代祷清单</h3><span class="small muted">${pr.filter(p=>p.ans).length} 项已蒙应允</span></div>
+ <form id="prf" class="stack" style="gap:8px;margin-top:10px"><div class="row" style="flex-wrap:nowrap"><input id="prwho" placeholder="为谁" style="flex:0 0 32%"><input id="prwhat" placeholder="为什么事祷告"></div><button class="btn primary sm" type="submit" style="align-self:flex-start">加入</button></form>
+ <div class="list" style="margin-top:8px">${pr.map(p=>`<div class="li"><button class="check ${p.ans?"on":""}" data-act="answer" data-id="${p.id}" aria-label="标记蒙应允">${p.ans?IC.tick:""}</button><div class="body"><b>${esc(p.who)}</b> · ${esc(p.what)}<div class="small muted">${p.date} 开始${p.ans?` · <span class="answered">${p.ans} 蒙应允，感谢主</span>`:""}</div></div><button class="btn sm ghost" data-act="delPrayer" data-id="${p.id}">移除</button></div>`).join("")||`<p class="small muted">还没有代祷事项。把家人和挂心的事写下来，早晚祷时会一一提醒你。</p>`}</div></section>
+ <section class="card"><h3>我的家人</h3><p class="small muted" style="margin:4px 0 8px">早晚祷“为家人祷告”一步会逐一提到这些名字。用顿号或逗号分开。</p><form id="famf" class="row" style="flex-wrap:nowrap"><input id="famin" value="${esc(S.family.join("、"))}"><button class="btn sm" type="submit">保存</button></form></section>
+ <section class="card"><div class="row between"><h3>交托清单</h3><span class="small muted">晚祷「交托」一步写下的事</span></div><div class="list" style="margin-top:6px">${S.cares.filter(c=>!c.done).map(c=>`<div class="li"><button class="check" data-act="careDone" data-id="${c.id}" aria-label="已有答复"></button><div class="body">${esc(c.text)}<div class="small muted">${c.date} 交托</div></div></div>`).join("")||`<p class="small muted">还没有。晚祷时把未解决的事和明天的担心写下来，会一件一件记在这里；有了答复就打勾。</p>`}</div></section>
+ <section class="card"><h3>感恩记录</h3><div class="list" style="margin-top:6px">${S.thanks.slice(-30).reverse().map(t=>`<div class="li"><div class="body"><span class="small muted">${t.date}</span><br>${esc(t.text)}</div></div>`).join("")||`<p class="small muted">晚祷时写下的感恩会留在这里。日后回头看，会看见神一路的带领。</p>`}</div></section>
+ <section class="card"><div class="row between"><h3>赞美诗</h3><button class="btn sm" data-act="hymns">全部 ›</button></div><div id="hymnbox" class="stack" style="gap:8px;margin-top:8px"><p class="small muted">载入中……</p></div></section>
+ <section class="card"><h3>主祷文</h3><p class="small muted" style="margin:2px 0 6px">马太福音 6:9-13</p><div id="lordsp" class="scripture">…</div><button class="btn sm" style="margin-top:8px" data-act="speakLP">${IC.play} 朗读</button></section></div>`;
+};
+after.pray=async()=>{
+ $("#prf").addEventListener("submit",e=>{e.preventDefault();const who=$("#prwho").value.trim(),what=$("#prwhat").value.trim();if(!what&&!who)return;S.prayers.push({id:Date.now(),who:who||"我",what:what||"",date:dstr(),ans:null});save();render()});
+ $("#famf").addEventListener("submit",e=>{e.preventDefault();S.family=$("#famin").value.split(/[、,，\s]+/).map(x=>x.trim()).filter(Boolean);save();toast("已保存")});
+ const lp=await verses(40,6,9,13);$("#lordsp").innerHTML=lp.map(x=>fmtZh(x.zh)).join("");
+ try{const H=await loadHymns();const h=hymnOfDay(H);const i=H.indexOf(h);const box=$("#hymnbox");if(box)box.innerHTML=h?`<div class="eyebrow">今日诗歌</div>${hymnCard(h,i,{intro:true})}`:'<p class="small muted">赞美诗整理中，稍后上线。</p>'}catch(e){const box=$("#hymnbox");if(box)box.innerHTML='<p class="small muted">赞美诗载入失败。</p>'}
+};
+V.search=async v=>`<div style="padding-top:6px" class="stack"><h1>查找</h1>
+ <form id="sf" class="row" style="flex-wrap:nowrap"><input id="sq" value="${esc(v.q||"")}" placeholder="例：约3:16、诗23、John 3、平安、牧者" autocomplete="off"><button class="btn primary" type="submit">查找</button></form>
+ <div id="sres"></div>
+ ${await marksSection()}
+ <section class="card"><div class="row between"><h3>经典经文索引</h3><span class="small muted">${C.kv.length} 处</span></div><p class="small muted" style="margin:4px 0 8px">教会最常引用、背诵、讲道的经文，每处附释义、背景和延伸阅读。</p><select id="kvbook"><option value="">选择书卷……</option>${BOOKS.map((x,i)=>(KVcount(i+1)?`<option value="${i+1}">${x[0]}（${KVcount(i+1)}）</option>`:"")).join("")}</select><div id="kvlist" class="list" style="margin-top:8px"></div></section></div>`;
+function KVcount(b){return C.kv.filter(k=>k[0]===b).length}
+after.search=v=>{
+ $("#sf").addEventListener("submit",e=>{e.preventDefault();doSearch($("#sq").value.trim())});
+ $("#kvbook").addEventListener("change",e=>{const b=+e.target.value;$("#kvlist").innerHTML=C.kv.map((k,i)=>[k,i]).filter(([k])=>k[0]===b).map(([k,i])=>`<button class="li" style="text-align:left;width:100%" data-act="kv" data-i="${i}"><div class="body"><span class="ref">${ref(k[0],k[1],k[2],k[3])}</span> <b>${esc(k[4])}</b><div class="small muted">${esc(k[5])}</div></div></button>`).join("")});
+ if(v.q)doSearch(v.q);
+};
+
+/* ---------- 经文引用解析与搜索 ---------- */
+const NAMES={};BOOKS.forEach((x,i)=>{const b=i+1;[x[0],x[1],x[0].replace(/[书记]$/,""),x[2],x[3]].forEach(n=>{NAMES[n.toLowerCase().replace(/\s+/g,"")]=b})});
+Object.assign(NAMES,{"诗":19,"诗篇":19,"psalm":19,"psa":19,"约一":62,"约二":63,"约三":64,"约1":62,"jud":65,"phm":57,"tit":56,"1jn":62,"2jn":63,"3jn":64,"song":22,"sos":22,"ps":19,"jn":43,"jhn":43,"mt":40,"mk":41,"lk":42,"ge":1,"ex":2,"约翰":43,"马太":40,"马可":41,"路加":42,"罗马":45,"启示":66,"箴":20,"song of solomon":22,"songofsolomon":22,"cor":46,"1cor":46,"2cor":47,"1co":46,"2co":47,"rev":66,"revelations":66,"phil":50,"php":50,"eph":49,"heb":58});
+function parseRef(q){{const mm=String(q).trim().match(/^(\D+?)\s*(\d+)\s*[-–~]\s*(\d+)$/);if(mm){const k=mm[1].toLowerCase().replace(/\s+/g,"");const bb=NAMES[k]||NAMES[k.replace(/[书记]$/,"")];if(bb&&NCH[bb-1]===1)q=mm[1]+"1:"+mm[2]+"-"+mm[3]}}const m=q.replace(/\s+/g," ").trim().match(/^([1-3]?\s?[A-Za-z一-龥 ]+?)\s*(\d+)?(?:\s*[:：章\.\s]\s*(\d+)(?:\s*[-–~]\s*(\d+))?)?\s*节?$/);if(!m)return null;const key=m[1].toLowerCase().replace(/\s+/g,"");let b=NAMES[key];if(!b){const k2=key.replace(/[书记]$/,"");b=NAMES[k2]}if(!b)return null;let c=m[2]?+m[2]:0,v=m[3]?+m[3]:0,ve=m[4]?+m[4]:0;
+ if(NCH[b-1]===1&&c&&!v&&!/[:：章]/.test(q)){if(c>1||/[-–~]/.test(q)){const mm=q.match(/(\d+)\s*[-–~]\s*(\d+)\s*$/);v=c;ve=mm?+mm[2]:0;c=1}}
+ if(c>NCH[b-1])return null;return {b,c,v,ve:ve&&ve>=v?ve:v}}
+function parseRefs(str){const out=[];let lastB=0,lastC=0;for(let p of String(str).split(/[；;，,、]\s*/)){p=p.trim();if(!p)continue;let r=parseRef(p);
+ if(!r&&lastB){if(/^\d+[:：]\d+/.test(p))r=parseRef(BOOKS[lastB-1][1]+p);else if(/^\d+(\s*[-–~]\s*\d+)?$/.test(p)&&lastC)r=parseRef(BOOKS[lastB-1][1]+lastC+":"+p)}
+ if(r&&r.c){lastB=r.b;lastC=r.c;out.push(Object.assign(r,{label:ref(r.b,r.c,r.v,r.ve)}))}else out.push({label:p,bad:1})}return out}
+function refChips(str){return parseRefs(str).map(r=>r.bad?`<span class="chip" style="opacity:.6">${esc(r.label)}</span>`:`<button class="chip" data-act="refpv" data-b="${r.b}" data-c="${r.c}" data-v="${r.v}" data-ve="${r.ve}">${esc(r.label)}</button>`).join("")}
+let ALLLOADED=false;
+async function doSearch(q){const box=$("#sres");if(!q){box.innerHTML="";return}VIEW.q=q;
+ const r=parseRef(q);
+ if(r){if(r.c)return go({name:"chapter",b:r.b,c:r.c,v:r.v,ve:r.ve});return go({name:"book",b:r.b,open:true})}
+ const ql=q.toLowerCase();
+ const hb=BOOKS.map((x,i)=>i+1).filter(b=>BOOKS[b-1][0].includes(q)||BOOKS[b-1][2].toLowerCase().includes(ql));
+ const hs=[];C.books.forEach((B,bi)=>B.c.forEach(([t,s],ci)=>{if(t.includes(q)||s.includes(q))hs.push([bi+1,ci+1,t,s])}));
+ const hk=C.kv.map((k,i)=>[k,i]).filter(([k])=>k[4].includes(q)||k[5].includes(q)||k[6].includes(q));
+ const hi=s=>esc(s).split(esc(q)).join(`<span class="hl">${esc(q)}</span>`);
+ box.innerHTML=`<div class="stack">
+ ${hb.length?`<section class="card"><h3>书卷</h3><div class="row" style="margin-top:8px">${hb.map(b=>`<button class="chip" data-act="book" data-b="${b}">${BOOKS[b-1][0]}</button>`).join("")}</div></section>`:""}
+ <section class="card"><h3>经典经文 <span class="small muted">${hk.length}</span></h3><div class="list">${hk.slice(0,30).map(([k,i])=>`<button class="li" style="text-align:left;width:100%" data-act="kv" data-i="${i}"><div class="body"><span class="ref">${ref(k[0],k[1],k[2],k[3])}</span> <b>${hi(k[4])}</b><div class="small muted">${hi(k[5])}</div></div></button>`).join("")||'<p class="small muted">没有匹配。</p>'}</div></section>
+ <section class="card"><h3>章节概要 <span class="small muted">${hs.length}</span></h3><div class="list">${hs.slice(0,40).map(([b,c,t,s])=>`<button class="li" style="text-align:left;width:100%" data-act="open" data-b="${b}" data-c="${c}"><div class="body"><span class="ref">${ref(b,c)}</span> <b>${hi(t)}</b><div class="small muted">${hi(s)}</div></div></button>`).join("")||'<p class="small muted">没有匹配。</p>'}</div></section>
+ <section class="card" id="fullres"><h3>全部经文</h3><p class="small muted" style="margin:4px 0 8px">在整本圣经（中文与英文）里逐节搜索。第一次需要下载约 12MB。</p><button class="btn sm" data-act="fullSearch">搜索全部经文</button></section></div>`;
+ if(ALLLOADED)fullSearch(q);
+}
+async function fullSearch(q){q=q||VIEW.q;const box=$("#fullres");if(!box)return;box.innerHTML=`<h3>全部经文</h3><p class="small muted" id="fsp">正在载入经文……</p>`;let done=0;await Promise.all(Array.from({length:66},(_,i)=>book(i+1).then(()=>{done++;const p=$("#fsp");if(p)p.textContent=`正在载入经文…… ${done}/66`})));ALLLOADED=true;
+ const ql=q.toLowerCase();const res=[];for(let b=1;b<=66&&res.length<300;b++){const d=BK[b];d.zh.forEach((ch,ci)=>ch.forEach((t,vi)=>{if(res.length<300&&(t.includes(q)||((d[S.en][ci]||[])[vi]||"").toLowerCase().includes(ql)))res.push([b,ci+1,vi+1,t,(d[S.en][ci]||[])[vi]||""])}))}
+ const hi=s=>esc(s).split(esc(q)).join(`<span class="hl">${esc(q)}</span>`);
+ box.innerHTML=`<h3>全部经文 <span class="small muted">${res.length>=300?"前 300 条":res.length+" 条"}</span></h3><div class="list">${res.map(([b,c,v,t,e])=>`<button class="li" style="text-align:left;width:100%" data-act="open" data-b="${b}" data-c="${c}" data-v="${v}"><div class="body"><span class="ref">${ref(b,c,v)}</span> <span class="scripture" style="font-size:.95rem;line-height:1.7">${hi(t)}</span>${/[a-z]/i.test(q)?`<div class="small muted">${esc(e)}</div>`:""}</div></button>`).join("")||'<p class="small muted">没有找到。可以换个说法，比如“平安”“牧者”。</p>'}</div>`}
+
+/* ---------- 释义抽屉 ---------- */
+async function kvSheet(i,v){const k=C.kv[i];const t=await verses(k[0],k[1],k[2],k[3]);const mv=v||k[2];
+ openSheet(`<div class="eyebrow">经典经文</div><h2>${esc(k[4])}</h2><div class="ref">${refFull(k[0],k[1],k[2],k[3])} · ${refEn(k[0],k[1],k[2],k[3])}</div>
+ <div class="scripture">${t.map(x=>isMerged(x.zh)?"":`<span class="num" style="font-size:.7em;color:var(--gold);vertical-align:super">${x.v}</span>${fmtZh(x.zh)}`).join("")}</div><div class="en">${t.map(x=>esc(x.en)).join(" ")}</div>
+ <div class="row"><button class="btn sm" data-act="speakKv" data-i="${i}">${IC.play} 朗读</button><button class="btn sm" data-act="copyKv" data-i="${i}">复制</button><button class="btn sm ghost" data-act="openClose" data-b="${k[0]}" data-c="${k[1]}" data-v="${k[2]}">读全章</button>${VIEW.name==="chapter"?`<button class="btn sm gold" data-act="markV" data-b="${k[0]}" data-c="${k[1]}" data-v="${mv}">高亮 · 注释</button>`:""}</div>
+ <div class="sec"><h4>为什么经典</h4><p>${esc(k[5])}</p></div><div class="sec"><h4>解释</h4><p>${esc(k[6])}</p></div><div class="sec"><h4>背景</h4><p>${esc(k[7])}</p></div>
+ ${k[8].length?`<div class="sec"><h4>对照经文</h4><div class="row">${k[8].map(refChips).join("")}</div><p class="small muted" style="margin:6px 0 0">点一下可直接看经文。</p></div>`:""}
+ <div class="sec"><h4>延伸阅读 · 经典原著</h4><div id="refbox" class="stack" style="gap:10px"><p class="small muted">正在载入……</p></div></div>
+ <p class="small muted" style="margin:0">释义依循福音派新教的主流解经，引用的经典注释多出自改革宗传统；有分歧处已注明。</p>`);
+ loadRefs().then(R=>{const box=$("#refbox");if(box)box.innerHTML=refCards(R[i]||[])}).catch(()=>{const box=$("#refbox");if(box)box.innerHTML='<p class="small muted">延伸阅读载入失败，请检查网络后再打开。</p>'})}
+let HY=null;async function loadHymns(){if(HY)return HY;const r=await fetch("../hymns.json");if(!r.ok)throw 0;HY=await r.json();return HY}
+function hymnOfDay(H){if(!H.length)return null;const n=daysBetween("2026-01-01",dstr());return H[((n*7919)>>>0)%H.length]}
+function hymnCard(h,i,opts={}){return `<button class="card" style="text-align:left;width:100%;padding:12px 14px" data-act="hymn" data-i="${i}"><div class="row between"><b style="font-family:var(--f-scripture);font-size:1.05rem">${esc(h.zh)}</b><span class="small muted">${esc(h.pub||"")}</span></div><div class="en" style="font-size:.95rem">${esc(h.title)}</div>${opts.intro?`<div class="small muted" style="margin-top:4px">${esc(h.intro)}</div>`:""}</button>`}
+function ytUrl(h){return "https://www.youtube.com/results?search_query="+encodeURIComponent(h.title+" hymn")}
+V.hymns=async v=>{const H=await loadHymns();const tag=v.tag||"";const list=H.map((h,i)=>[h,i]).filter(([h])=>!tag||(h.tags||[]).includes(tag));
+ const TAGS=[["","全部"],["thanks","赞美感恩"],["sorry","悔改救恩"],["anx","忧虑交托"],["fear","惧怕"],["low","低落"],["sick","病痛"],["grief","哀伤"],["wait","等候"],["wisdom","引导奉献"],["doubt","信心"],["night","夜晚"],["christmas","圣诞"],["easter","复活节"]];
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">赞美诗</div><span class="small muted">${H.length} 首</span></div>
+ <div class="stack"><div class="row" style="gap:6px">${TAGS.map(([k,n])=>`<button class="chip" style="${tag===k?"background:var(--accent);color:var(--paper)":""}" data-act="hymnTag" data-tag="${k}">${n}</button>`).join("")}</div>
+ <p class="small muted" style="margin:0">这些都是教会传唱百年以上的经典圣诗。英文原作保留英文原词；中文名只作标题。点开可看全部歌词、创作背景，并可在 YouTube 听。</p>
+ ${list.map(([h,i])=>hymnCard(h,i,{intro:true})).join("")}</div>`};
+V.hymn=async v=>{const H=await loadHymns();const h=H[v.i];const isF=S.fav.some(f=>f[0]==="h"&&f[1]===v.i);
+ const vs=h.verses.map((vv,k)=>`<div class="hv"><div class="hvn">${k+1}</div><div class="en" style="color:var(--ink)">${vv.map(esc).join("<br>")}</div></div>${h.refrain&&h.refrain.length&&k<h.verses.length?`<div class="hv ref2"><div class="hvn"><i>R</i></div><div class="en" style="font-style:italic">${h.refrain.map(esc).join("<br>")}</div></div>`:""}`).join("");
+ return `<div class="topbar"><button class="iconbtn" data-act="back" aria-label="返回">${IC.back}</button><div class="t">${esc(h.zh)}</div><button class="iconbtn" data-act="readprefs" aria-label="阅读设置">${IC.aa}</button></div>
+ <div class="stack"><div><h1 style="font-family:var(--f-en);font-weight:600">${esc(h.title)}</h1><div class="small muted">${esc(h.author||"")}${h.years?`（${esc(h.years)}）`:""}${h.pub?` · ${esc(String(h.pub))}`:""}${h.translator?` · 英译 ${esc(h.translator)}`:""}${h.tune?` · 曲调 ${esc(h.tune)}`:""}</div></div>
+ <div class="row"><a class="btn sm primary" style="text-decoration:none" href="${ytUrl(h)}" target="_blank" rel="noopener">${IC.play} 在 YouTube 听</a><button class="btn sm" data-act="speakHymn" data-i="${v.i}">朗读歌词</button><button class="btn sm ${isF?"":"ghost"}" data-act="favHymn" data-i="${v.i}">${isF?"已收藏":"收藏"}</button></div>
+ <div class="sum"><b>背景</b> — ${esc(h.intro||"")}${h.scripture?`<div class="row" style="margin-top:6px;gap:6px"><span class="small muted">所据经文</span>${refChips(h.scripture)}</div>`:""}</div>
+ <div class="hymnbody">${vs}</div>
+ <p class="small muted">歌词为公有领域原文，录自 <a href="${esc(h.src)}" target="_blank" rel="noopener">${esc((h.src||"").split("/")[2]||"来源")}</a>。${esc(h.note||"")}</p></div>`};
+let REFS=null;async function loadRefs(){if(REFS)return REFS;const r=await fetch("../refs.json");if(!r.ok)throw 0;REFS=await r.json();return REFS}
+function refCards(list){if(!list.length)return '<p class="small muted">暂无。</p>';return list.map((e,j)=>{
+ if(e.k==="read")return `<details class="card rd" ${j===0?"open":""}><summary><span class="tag" style="background:var(--accent-soft);color:var(--accent)">可直接阅读</span> <b>${esc(e.n)}</b></summary>
+  <div class="stack" style="gap:8px;margin-top:8px"><div class="eyebrow" style="text-transform:none;letter-spacing:.02em">原著导读</div><p style="margin:0;line-height:1.75">${esc(e.z)}</p>
+  <blockquote class="en" style="margin:0;padding-left:10px;border-left:2px solid var(--gold);font-style:italic">“${esc(e.q)}”</blockquote>
+  <a class="btn sm primary" style="align-self:flex-start;text-decoration:none" href="${esc(e.u)}" target="_blank" rel="noopener">打开原著 · 直接跳到这段 ↗</a>
+  <p class="small muted" style="margin:0">原文为英文：${esc(e.s)}。在 Safari 打开后可点地址栏左侧「大小」图标 → 翻译成中文。</p></div></details>`;
+ if(e.k==="conf")return `<details class="card rd"><summary><span class="tag" style="background:var(--accent-soft);color:var(--accent)">信条全文</span> <b>${esc(e.n)}</b></summary>
+  <div class="stack" style="gap:10px;margin-top:8px">${e.units.map(u=>u.secs?`<div><b style="font-family:var(--f-scripture)">${esc(u.t)}</b>${u.secs.map(x=>`<p style="margin:6px 0 0;line-height:1.75"><span class="ref">${x[0]}.</span> ${esc(x[1])}</p><p class="en small" style="margin:2px 0 0">${esc(x[2])}</p>`).join("")}</div>`
+   :`<div><p style="margin:0;line-height:1.75"><span class="ref">${esc(u.t)}</span> 问：${esc(u.q)}</p><p style="margin:4px 0 0;line-height:1.75">答：${esc(u.a)}</p><p class="en small" style="margin:4px 0 0">Q. ${esc(u.qe)} A. ${esc(u.ae)}</p></div>`).join("")}
+  <a class="btn sm" style="align-self:flex-start;text-decoration:none" href="${esc(e.u)}" target="_blank" rel="noopener">查看英文原文网页 ↗</a><p class="small muted" style="margin:0">中文为本站据英文原文翻译。来源：${esc(e.s)}。</p></div></details>`;
+ return `<div class="card" style="padding:12px 14px"><span class="tag">现代著作</span> <b>${esc(e.n)}</b><p class="small muted" style="margin:4px 0 6px">${esc(e.a)}, <i>${esc(e.t)}</i>。仍受版权保护，无法在此免费全文阅读；可购买或在图书馆借阅。</p><a class="small" href="${esc(e.u)}" target="_blank" rel="noopener">在 Google 图书查找此书 ↗</a></div>`}).join("")}
+function rangeSheet(b,c,v,ve){book(b).then(d=>{const zh=d.zh[c-1]||[],en=d[S.en][c-1]||[];const a=v||1,z=v?(ve||v):zh.length;let h="";for(let n=a;n<=Math.min(z,zh.length);n++){if(isMerged(zh[n-1]))continue;h+=`<span class="num" style="font-size:.7em;color:var(--gold);vertical-align:super">${n}</span>${fmtZh(zh[n-1])}`}
+ const e=[];for(let n=a;n<=Math.min(z,en.length);n++)if(en[n-1])e.push(esc(en[n-1]));
+ openSheet(`<div class="ref">${refFull(b,c,v,ve)} · ${refEn(b,c,v,ve)}</div><div class="scripture">${h}</div><div class="en">${e.join(" ")}</div><div class="row"><button class="btn sm primary" data-act="openClose" data-b="${b}" data-c="${c}" data-v="${v}" data-ve="${ve}">读全章</button></div>`)})}
+function verseSheet(b,c,v){const d=BK[b];const z=d.zh[c-1][v-1],e=(d[S.en][c-1]||[])[v-1]||"";const isF=S.fav.some(f=>f[0]===b&&f[1]===c&&f[2]===v);const mk=S.marks[b+":"+c+":"+v]||{};const nV=d.zh[c-1].length;
+ openSheet(`<div class="ref">${refFull(b,c,v)}</div><div class="scripture">${fmtZh(z)}</div><div class="en">${esc(e)}</div>
+ <div class="row" style="margin-top:8px"><span class="small muted">范围：第 ${v} 节到</span><select id="rangeEnd" style="width:auto;padding:.4rem .5rem">${Array.from({length:nV-v+1},(_,i)=>v+i).map(x=>`<option value="${x}">第 ${x} 节</option>`).join("")}</select></div>
+ <div class="hlrow">${Object.keys(HLN).map(k=>`<button class="hlbtn ${mk.hl===k?"on":""}" data-act="hl" data-b="${b}" data-c="${c}" data-v="${v}" data-hl="${k}"><i style="background:var(--hl-${k})"></i><span>${HLN[k]}</span></button>`).join("")}<button class="hlbtn" data-act="hl" data-b="${b}" data-c="${c}" data-v="${v}" data-hl=""><i>✕</i><span>清除</span></button></div>
+ <div class="row"><button class="btn sm ${isF?"":"gold"}" data-act="fav" data-b="${b}" data-c="${c}" data-v="${v}">${isF?"取消收藏":"收藏"}</button><button class="btn sm" data-act="noteV" data-b="${b}" data-c="${c}" data-v="${v}">${mk.note?"改注释":"写注释"}</button><button class="btn sm" data-act="copyV" data-b="${b}" data-c="${c}" data-v="${v}">复制</button><button class="btn sm" data-act="playFrom" data-v="${v}">${IC.play} 从这里朗读</button></div>
+ ${mk.note?`<div class="v" style="padding:0;margin-top:10px"><span class="mynote">${esc(mk.note)}</span></div>`:""}`)}
+function rangeEnd(v){const e=$("#rangeEnd");return Math.max(v,e?+e.value:v)}
+function setMark(b,c,v,patch){const k=b+":"+c+":"+v;const m=Object.assign({hl:"",note:""},S.marks[k]||{},patch);if(!m.hl&&!m.note)delete S.marks[k];else S.marks[k]=m;save()}
+function noteSheet(b,c,v){const mk=S.marks[b+":"+c+":"+v]||{};openSheet(`<h3>注释 · ${refFull(b,c,v)}</h3><textarea id="noteTxt" placeholder="写下你的领受…" style="min-height:7rem">${esc(mk.note||"")}</textarea><div class="row" style="margin-top:10px">${mk.note?`<button class="btn sm" style="color:var(--care)" data-act="noteDel" data-b="${b}" data-c="${c}" data-v="${v}">删除</button>`:""}<span style="flex:1"></span><button class="btn sm" data-act="closeSheet">取消</button><button class="btn sm primary" data-act="noteSave" data-b="${b}" data-c="${c}" data-v="${v}">保存</button></div>`);setTimeout(()=>{const t=$("#noteTxt");if(t)t.focus()},80)}
+function chNoteSheet(b,c){const t=S.chnotes[b+":"+c]||"";openSheet(`<h3>本章默想 · ${ref(b,c)}</h3><textarea id="cnTxt" placeholder="默想、祷告、个人领受…" style="min-height:9rem">${esc(t)}</textarea><div class="row" style="margin-top:10px">${t?`<button class="btn sm" style="color:var(--care)" data-act="chNoteDel" data-b="${b}" data-c="${c}">删除</button>`:""}<span style="flex:1"></span><button class="btn sm" data-act="closeSheet">取消</button><button class="btn sm primary" data-act="chNoteSave" data-b="${b}" data-c="${c}">保存</button></div>`);setTimeout(()=>{const t=$("#cnTxt");if(t)t.focus()},80)}
+async function marksSection(){const f=VIEW.mf||"fav";const chips=[["fav","收藏"],["hl","全部高亮"],...Object.keys(HLN).map(k=>["hl-"+k,`<i class="dot" style="background:var(--hl-${k})"></i>${HLN[k]}`]),["note","注释"],["ch","整章默想"]];
+ let rows=[];
+ if(f==="fav"){rows=S.fav.slice().reverse().map(([b,c,vv])=>b==="h"?`<div class="li"><button class="body" style="text-align:left" data-act="hymn" data-i="${c}"><span class="ref">赞美诗</span> <span class="small">${HY&&HY[c]?esc(HY[c].zh+" · "+HY[c].title):"（点开查看）"}</span></button></div>`:`<div class="li"><button class="body" style="text-align:left" data-act="open" data-b="${b}" data-c="${c}" data-v="${vv}"><span class="ref">${ref(b,c,vv)}</span> <span class="muted small">${BOOKS[b-1][0]}</span></button></div>`)}
+ else if(f==="ch"){rows=Object.entries(S.chnotes).map(([k,t])=>{const [b,c]=k.split(":").map(Number);return {b,c,t}}).sort((a,b)=>a.b-b.b||a.c-b.c).map(x=>`<div class="li"><button class="body" style="text-align:left" data-act="open" data-b="${x.b}" data-c="${x.c}"><span class="ref">${ref(x.b,x.c)}</span> <span class="muted small">${BOOKS[x.b-1][0]}</span><div class="small" style="white-space:pre-wrap;margin-top:2px">${esc(x.t.slice(0,120))}${x.t.length>120?"…":""}</div></button></div>`)}
+ else{const list=Object.entries(S.marks).map(([k,m])=>{const [b,c,v]=k.split(":").map(Number);return {b,c,v,m}}).filter(x=>f==="hl"?x.m.hl:f==="note"?x.m.note:x.m.hl===f.slice(3)).sort((a,b)=>a.b-b.b||a.c-b.c||a.v-b.v);for(const x of list){let zh="";try{const t=await verses(x.b,x.c,x.v,x.v);zh=cleanZh(t[0]&&t[0].zh||"")}catch(e){}rows.push(`<div class="li ${x.m.hl?"hl-"+x.m.hl:""}"><button class="body" style="text-align:left" data-act="open" data-b="${x.b}" data-c="${x.c}" data-v="${x.v}"><div class="row between"><span class="ref">${ref(x.b,x.c,x.v)}</span>${x.m.hl?`<span class="tag">${HLN[x.m.hl]}</span>`:""}</div><div class="scripture" style="font-size:.95rem;line-height:1.6">${esc(zh)}</div>${x.m.note?`<div class="small" style="margin-top:4px;color:var(--accent);white-space:pre-wrap">✎ ${esc(x.m.note)}</div>`:""}</button></div>`)}}
+ return `<section class="card"><h3>我的收藏与标记</h3><div class="row" style="margin:8px 0 2px;gap:6px">${chips.map(([k,n])=>`<button class="btn sm ${f===k?"primary":""}" data-act="markFilter" data-v="${k}">${n}</button>`).join("")}</div><div class="list" style="margin-top:6px">${rows.join("")||`<p class="small muted">${f==="fav"?"读经时点一节经文，选“收藏”，会出现在这里。":f==="ch"?"在每章末尾写「本章默想」，会按书卷列在这里。":"读经时点一节经文，选一种高亮颜色或写注释，会汇总在这里。"}</p>`}</div></section>`}
+
+/* ---------- 设置 ---------- */
+function settingsSheet(){const vs=voices();const zv=vs.filter(x=>/^zh/i.test(x.lang)),ev=vs.filter(x=>/^en/i.test(x.lang));
+ openSheet(`<h2>设置</h2>
+ <div class="sec"><h4>读经计划</h4><div class="stack" style="gap:8px">${Object.entries(PLANS).map(([k,p])=>`<button class="card" style="text-align:left;padding:12px;${S.plan===k?"border-color:var(--gold)":""}" data-act="plan" data-k="${k}"><b>${p.name}</b>${S.plan===k?' <span class="tag">当前</span>':""}<div class="small muted">${p.desc}</div></button>`).join("")}</div><p class="small muted">计划按“读完哪天算哪天”推进，漏掉的日子不会堆积，随时接着读。</p></div>
+ <div class="sec"><h4>字号</h4><div class="seg">${[[.98,"小"],[1.12,"中"],[1.28,"大"],[1.45,"特大"]].map(([v,n])=>`<button data-act="fs" data-v="${v}" aria-pressed="${S.fs==v}">${n}</button>`).join("")}</div></div>
+ <div class="sec"><h4>英文译本</h4><div class="seg"><button data-act="en" data-v="bsb" aria-pressed="${S.en==="bsb"}">BSB 现代</button><button data-act="en" data-v="kjv" aria-pressed="${S.en==="kjv"}">KJV 钦定本</button></div></div>
+ <div class="sec"><h4>外观</h4><div class="seg">${[["auto","跟随系统"],["light","浅色"],["dark","深色"]].map(([v,n])=>`<button data-act="theme" data-v="${v}" aria-pressed="${S.theme===v}">${n}</button>`).join("")}</div></div>
+ ${colorPrefsHtml()}
+ <div class="sec"><h4>朗读语速</h4><div class="seg">${[[.8,"慢"],[.95,"适中"],[1.1,"快"],[1.3,"更快"]].map(([v,n])=>`<button data-act="rate" data-v="${v}" aria-pressed="${S.rate==v}">${n}</button>`).join("")}</div>
+ <label class="small muted" style="display:block;margin-top:10px">中文朗读声音</label><div class="seg"><button data-act="voiceClip" data-v="kevin" aria-pressed="${S.voiceClip==="kevin"}">Kevin 本人</button><button data-act="voiceClip" data-v="" aria-pressed="${!S.voiceClip}">手机系统声音</button></div><p class="small muted">${VOICE?"Kevin 的声音覆盖早祷、晚祷、主祷文、经典经文、情境经文和祷告文；整章朗读仍用系统声音。":"Kevin 的语音包尚未上线，目前先用系统声音。"}</p>
+ ${zv.length?`<label class="small muted" for="vzh" style="display:block;margin-top:8px">中文声音</label><select id="vzh">${zv.map(x=>`<option ${x.name===S.voiceZh?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:""}
+ ${ev.length?`<label class="small muted" for="ven" style="display:block;margin-top:8px">英文声音</label><select id="ven">${ev.map(x=>`<option ${x.name===S.voiceEn?"selected":""}>${esc(x.name)}</option>`).join("")}</select>`:""}
+ <p class="small muted">iPhone 可在 设置 › 辅助功能 › 朗读内容 › 声音 里下载更自然的“增强版”中文和英文声音。</p></div>
+ <details class="sec"><summary><h4>放到主屏幕 · 设置每日提醒</h4></summary><ol class="steps small" style="padding-left:1.2em;margin:6px 0 0">
+ <li><b>放到主屏幕：</b>用 Safari 打开这个链接 → 点底部“分享”按钮 → “添加到主屏幕”。</li>
+ <li><b>用快捷指令做图标：</b>打开“快捷指令”App → 新建 → 添加“打开 URL”，粘贴本页链接 → 点名称改为“灵粮读经” → 分享 › 添加到主屏幕。</li>
+ <li><b>早祷提醒：</b>快捷指令 → 自动化 → 新建 → 特定时间（如 7:00，每天）→ 选择“立即运行” → 动作“打开 URL”，填本页链接并在末尾加 <code>#morning</code>，打开后直接进入早祷陪伴。</li>
+ <li><b>晚祷提醒：</b>同上，时间设为 21:30，链接末尾加 <code>#evening</code>。</li>
+ <li>链接末尾加 <code>#seek</code> 直接打开“寻求”页。</li></ol></details>
+ <details class="sec"><summary><h4>备份与恢复</h4></summary><p class="small muted">打卡、收藏、高亮、注释、代祷都保存在这台手机的浏览器里。换手机前先导出备份文件（可发到微信、邮件或 iCloud），新手机导入即可；也可以复制备份文字存到备忘录。</p><div class="row"><button class="btn sm primary" data-act="exportFile">导出备份文件</button><button class="btn sm" data-act="importPick">导入备份文件</button><button class="btn sm" data-act="backup">复制备份文字</button></div><input type="file" id="impFile" accept=".json,application/json" hidden><textarea id="restore" placeholder="或把备份文字粘贴到这里" style="margin-top:8px"></textarea><button class="btn sm" data-act="restore" style="margin-top:6px">恢复备份文字</button></details>
+ <div class="sec"><h4>离线</h4><p class="small muted" id="offStatus">正在检查…</p><div class="row" style="margin-top:6px"><button class="btn sm" data-act="offlineNow">立即下载全本</button></div></div>
+ <div class="sec"><h4>关于译本</h4><p class="small muted">中文：和合本（1919，公共领域）。英文：Berean Standard Bible（2023 年起公共领域，忠实直译、现代英语）与 King James Version。章节概要、经文释义、情境推荐与祷告文为原创内容，依循福音派新教主流解经。延伸阅读中的马太·亨利、加尔文、司布真、路德、赖尔、欧文等公有领域原著，附中文导读，可一键打开原文并跳到相关段落（需 iOS 16.1 以上）；信条与要理问答附中英全文；现代著作受版权保护，只列书目。</p></div>`);
+ const a=$("#vzh"),b=$("#ven");a&&a.addEventListener("change",e=>{S.voiceZh=e.target.value;save()});b&&b.addEventListener("change",e=>{S.voiceEn=e.target.value;save()});const fi=$("#impFile");fi&&fi.addEventListener("change",importFile);offStatus();}
+function colorPrefsHtml(){return `<div class="sec"><h4>阅读背景</h4><div class="sw">${Object.entries(BGS).map(([k,v])=>`<button data-act="bg" data-v="${k}" class="${S.bg===k?"on":""}" style="background:${v[1]||"var(--paper)"}" aria-label="${v[0]}" title="${v[0]}"></button>`).join("")}</div></div><div class="sec"><h4>经文文字颜色</h4><div class="sw">${Object.entries(INKS).map(([k,v])=>`<button data-act="ink" data-v="${k}" class="${S.ink===k?"on":""}" style="background:${v[1]||"var(--ink)"}" aria-label="${v[0]}" title="${v[0]}"></button>`).join("")}</div><p class="small muted" style="margin-top:4px">深色模式下自动用浅色字。</p></div>`}
+function readPrefsSheet(){openSheet(`<h3>阅读设置</h3><div class="sec"><h4>字号</h4><div class="seg">${[[.98,"小"],[1.12,"中"],[1.28,"大"],[1.45,"特大"]].map(([v,n])=>`<button data-act="fs" data-v="${v}" aria-pressed="${S.fs==v}">${n}</button>`).join("")}</div></div><div class="sec"><h4>英文译本</h4><div class="seg"><button data-act="en" data-v="bsb" aria-pressed="${S.en==="bsb"}">BSB 现代</button><button data-act="en" data-v="kjv" aria-pressed="${S.en==="kjv"}">KJV 钦定本</button></div></div><div class="sec"><h4>朗读语速</h4><div class="seg">${[[.8,"慢"],[.95,"适中"],[1.1,"快"],[1.3,"更快"]].map(([v,n])=>`<button data-act="rate" data-v="${v}" aria-pressed="${S.rate==v}">${n}</button>`).join("")}</div></div>${colorPrefsHtml()}`)}
+
+/* ---------- 早晚祷陪伴 ---------- */
+let COMP=null;
+const BLESS=["愿耶和华赐福给你，保护你。","愿主的平安保守你的心怀意念。","愿神使你在一切事上蒙引导，身体健壮，心里喜乐。","愿你在基督的爱中扎根，刚强起来。","愿主作你的牧者，使你不至缺乏。"];
+async function startComp(kind){
+ const V2=async(b,c,vs,ve)=>(await verses(b,c,vs,ve)).filter(x=>!isMerged(x.zh)).map(x=>x.zh).join("");
+ const famHtml=famStepHtml,famSpeak=famStepSay;
+ const lp=await V2(40,6,9,13);
+ const ki=dailyIdx(),k=C.kv[ki];const dv=await V2(k[0],k[1],k[2],k[3]);
+ if(kind==="morning"){
+  const s1=await V2(19,46,10,10),s2=await V2(25,3,22,23),s3=await V2(19,5,3,3),s4=await V2(4,6,24,26);let hd=null,hdi=-1;try{const H=await loadHymns();hd=hymnOfDay(H);hdi=H.indexOf(hd)}catch(e){}
+  COMP={kind,title:"早祷",steps:[
+   {n:"安静",html:`<div class="breath">吸气 · 呼气</div><p class="guide">先停一下。放下手机以外的事，深深吸一口气，再慢慢呼出来。</p><p class="scripture">${fmtZh(s1)}</p><p class="ref">诗篇 46:10</p>`,say:"先停一下，深深吸一口气，再慢慢呼出来。"+s1},
+   {n:"赞美",html:`<p class="scripture">${fmtZh(s2)}</p><p class="ref">耶利米哀歌 3:22-23</p><p class="guide">为新的一天感谢神。可以出声说：“主啊，谢谢你今天早晨又赐我新的怜悯。”</p>${hd?`<div class="card" style="padding:12px 14px"><div class="eyebrow">今日诗歌 · ${esc(hd.zh)}</div><div class="en" style="color:var(--ink);margin:6px 0">${hd.verses[0].map(esc).join("<br>")}</div><div class="row"><a class="btn sm" style="text-decoration:none" href="${ytUrl(hd)}" target="_blank" rel="noopener">${IC.play} 听</a><button class="btn sm ghost" data-act="hymn" data-i="${hdi}">全部歌词</button></div></div>`:""}`,say:s2+"主啊，谢谢你今天早晨又赐我新的怜悯。"+(hd?"今日诗歌："+hd.zh+"。":"")},
+   {n:"今日经文",html:`<p class="ref">${ref(k[0],k[1],k[2],k[3])} · ${esc(k[4])}</p><p class="scripture">${fmtZh(dv)}</p><p class="guide small muted">${esc(k[6].slice(0,110))}…</p><p class="guide">把这节经文带进今天。读第二遍时，留意哪个词最触动你。</p>`,say:dv},
+   {n:"献上今天",html:`<p class="scripture">${fmtZh(s3)}</p><p class="ref">诗篇 5:3</p><p class="guide">告诉神今天要做的事、要见的人、心里的担心。写下来也可以：</p>${careListHtml("昨晚交托的事")}<textarea id="cmpnote" placeholder="主啊，今天我把这些交给你……"></textarea>`,say:s3+"告诉神今天要做的事、要见的人、和心里的担心。"},
+   {n:"为家人祷告",html:famHtml,say:famSpeak},
+   {n:"主祷文",html:`<p class="scripture">${fmtZh(lp)}</p><p class="ref">马太福音 6:9-13</p>`,say:lp},
+   {n:"祝福出发",html:`<p class="scripture">${fmtZh(s4)}</p><p class="ref">民数记 6:24-26</p><p class="guide">奉主耶稣基督的名，阿们。愿你今天平安。</p>`,say:s4+"奉主耶稣基督的名，阿们。"}]};
+ }else{
+  const s1=await V2(19,139,23,24),s2=await V2(62,1,9,9),s3=await V2(60,5,7,7),s4=await V2(19,4,8,8),s5=await V2(19,103,2,2);
+  COMP={kind,title:"晚祷",steps:[
+   {n:"回顾感恩",html:`<p class="scripture">${fmtZh(s5)}</p><p class="ref">诗篇 103:2</p><p class="guide">回想今天，写下三件可以感谢的事，再小也算。</p><textarea id="cmpthanks" placeholder="1. …&#10;2. …&#10;3. …"></textarea>`,say:s5+"回想今天，说出三件可以感谢的事，再小也算。"},
+   {n:"省察",html:`<p class="scripture">${fmtZh(s1)}</p><p class="ref">诗篇 139:23-24</p><p class="guide">安静片刻，请圣灵光照：今天有没有说过、想过、做过不讨神喜悦的事？向神承认。</p><p class="scripture">${fmtZh(s2)}</p><p class="ref">约翰一书 1:9</p>`,say:s1+"安静片刻，向神承认今天的过错。"+s2},
+   {n:"交托",html:`<p class="scripture">${fmtZh(s3)}</p><p class="ref">彼得前书 5:7</p><p class="guide">把还没解决的事、明天的担心，一件一件写下来，交给神。</p>${careListHtml("之前交托、还在等候的事")}<textarea id="cmpcares" placeholder="一行写一件，例如：&#10;明天的体检结果&#10;和同事的误会还没解开&#10;孩子的考试"></textarea><div class="row"><button class="btn gold sm" data-act="genCare">为这些事生成交托祷告</button></div><div id="careout"></div>`,say:s3+"把还没解决的事和明天的担心，一件一件写下来，交给神。"},
+   {n:"为家人祷告",html:famHtml,say:famSpeak},
+   {n:"主祷文",html:`<p class="scripture">${fmtZh(lp)}</p><p class="ref">马太福音 6:9-13</p>`,say:lp},
+   {n:"安睡",html:`<p class="scripture">${fmtZh(s4)}</p><p class="ref">诗篇 4:8</p><p class="guide">主啊，我把今夜交在你手中。求你使我安然睡觉，明早醒来仍与你同在。奉主耶稣基督的名，阿们。</p>`,say:s4+"主啊，我把今夜交在你手中。求你使我安然睡觉。奉主耶稣基督的名，阿们。"}]};
+ }
+ COMP.i=0;renderComp();
+}
+/* 为家人祷告：名字和代祷事项都可以在这一步直接写，内容随写随更新 */
+const famNames=()=>S.family.filter(f=>f&&f!=="家人");
+const prLabel=p=>(p.who&&p.who!=="我"?p.who+"：":"")+(p.what||"");
+function famStepHtml(){const fam=famNames(),pend=S.prayers.filter(p=>!p.ans);
+ const bless=fam.length?fam.map((f,i)=>`<p class="guide"><b>${esc(f)}</b>：${BLESS[i%BLESS.length]}</p>`).join(""):`<p class="guide">把家人一个一个带到神面前。先在下面写下他们的名字，以后早晚祷都会逐一为他们祝福。</p>`;
+ const list=pend.length?`<div class="card" style="padding:10px 12px"><div class="eyebrow" style="margin-bottom:4px">代祷清单</div>${pend.map(p=>`<div class="li" style="padding:6px 0"><button class="check" data-act="compAns" data-id="${p.id}" aria-label="标记蒙应允"></button><div class="body guide">${esc(prLabel(p))}<div class="small muted">${p.date} 开始</div></div><button class="btn sm ghost" data-act="compDelPr" data-id="${p.id}">移除</button></div>`).join("")}<p class="small muted" style="margin:4px 0 0">得了答复就打个勾，记作蒙应允。</p></div>`:"";
+ return `${bless}<form class="compf stack" data-f="fam" style="gap:6px"><label class="small muted" for="cfam">${fam.length?"家人的名字（可修改）":"家人的名字"}</label><div class="row" style="flex-wrap:nowrap"><input id="cfam" value="${esc(fam.join("、"))}" placeholder="例如：妈妈、爸爸、小明，用顿号分开"><button class="btn sm" type="submit" style="white-space:nowrap;flex:none">保存</button></div></form>
+ ${list}<form class="compf stack" data-f="pr" style="gap:6px"><label class="small muted" for="cprwhat">今天要为谁、为什么事祷告？</label><div class="row" style="flex-wrap:nowrap"><input id="cprwho" placeholder="为谁" style="flex:0 0 32%"><input id="cprwhat" placeholder="例如：妈妈的膝盖早日康复"></div><button class="btn primary sm" type="submit" style="align-self:flex-start">加入代祷</button></form>`}
+function famStepSay(){const fam=famNames(),pend=S.prayers.filter(p=>!p.ans);
+ return (fam.length?fam.map((f,i)=>"为"+f+"祷告。"+BLESS[i%BLESS.length]).join(""):"天父，我把我的家人带到你面前，求你赐福给他们，保护他们。")+pend.map(p=>(p.who&&p.who!=="我"?"为"+p.who+"，":"")+p.what+"。").join("")}
+function compFamSave(){const t=$("#cfam");if(!t)return;S.family=t.value.split(/[、,，\s]+/).map(x=>x.trim()).filter(Boolean);if(!S.family.length)S.family=["家人"];save()}
+function compPrAdd(){const a=$("#cprwho"),b=$("#cprwhat");if(!b)return false;const who=a.value.trim(),what=b.value.trim();if(!what&&!who)return false;S.prayers.push({id:Date.now(),who:who||"我",what:what||"",date:dstr(),ans:null});save();return true}
+document.addEventListener("submit",e=>{const f=e.target.closest(".compf");if(!f||!COMP)return;e.preventDefault();if(f.dataset.f==="fam"){compFamSave();toast("已保存家人名字")}else if(compPrAdd())toast("已加入代祷清单");renderComp();const n=$(f.dataset.f==="fam"?"#cprwhat":"#cprwho");n&&n.focus()});
+function renderComp(){if(!COMP){$("#layer").innerHTML="";return}const st=COMP.steps[COMP.i],last=COMP.i===COMP.steps.length-1;
+ $("#layer").innerHTML=`<div class="comp" role="dialog" aria-modal="true"><div class="in"><div class="row between"><span class="eyebrow">${COMP.title} · 第 ${COMP.i+1} / ${COMP.steps.length} 步</span><button class="btn sm ghost" data-act="compClose">关闭</button></div><div class="dots">${COMP.steps.map((_,i)=>`<i class="${i<=COMP.i?"on":""}"></i>`).join("")}</div>
+ <div class="stepname">${st.n}</div><div class="stack">${typeof st.html==="function"?st.html():st.html}</div><div class="grow"></div>
+ <div class="row between"><button class="btn" data-act="compSay">${IC.play} 读给我听</button><div class="row">${COMP.i>0?`<button class="btn" data-act="compPrev">上一步</button>`:""}<button class="btn ${last?"gold":"primary"}" data-act="${last?"compDone":"compNext"}">${last?"阿们，完成":"下一步"}</button></div></div></div></div>`}
+function famCollect(){const cf=$("#cfam");if(cf&&cf.value.trim()!==famNames().join("、"))compFamSave();compPrAdd()}
+function compCollect(){famCollect();const t=$("#cmpthanks");if(t&&t.value.trim()){S.thanks.push({date:dstr(),text:t.value.trim()});save();t.value=""}collectCares()}
+function collectCares(){const t=$("#cmpcares");if(!t)return;const open=new Set(S.cares.filter(c=>!c.done).map(c=>c.text));t.value.split(/\n+/).map(x=>x.trim().replace(/^[\d一二三四五六七八九十]+[.、．)）]\s*/,"")).filter(x=>x&&!open.has(x)).forEach(x=>{S.cares.push({id:Date.now()+Math.random(),text:x,date:dstr(),done:null});open.add(x)});save()}
+function careListHtml(title){const open=S.cares.filter(c=>!c.done);if(!open.length)return "";return `<div id="carelist" class="card" style="padding:10px 12px"><div class="eyebrow" style="margin-bottom:4px">${title}</div>${open.map(c=>`<div class="li" style="padding:6px 0"><button class="check" data-act="careDone" data-id="${c.id}" aria-label="已有答复"></button><div class="body">${esc(c.text)}<div class="small muted">${c.date} 交托</div></div></div>`).join("")}<p class="small muted" style="margin:4px 0 0">事情过去或得了答复，就打个勾，它会记进感恩记录。</p></div>`}
+const CARE_CL={sick:"求你亲自医治，减轻疼痛，赐医生智慧，让身体在你的看顾中得安息",hard:"求你开一条出路，赐我明天够用的力量，使万事互相效力叫我得益处",low:"求你靠近我这伤心的人，明早赐下新的怜悯，让我重新有力气",anx:"我承认我掌控不了，求你赐下出人意外的平安，保守我的心怀意念",fear:"求你用公义的右手扶持我，叫我不惧怕，因为你与我同在",family:"求你保护他们的身体和心灵，引导他们的道路，使他们认识你的爱",sickfam:"求你亲自医治，减轻病痛，赐医护人员智慧，赐照顾的人体力和忍耐，使我们一家紧紧靠着你",night:"求你使我的身体放松、心里平静，今夜安然睡觉",lonely:"谢谢你应许永不离开我，求你让我在这件事上感受到你的同在",wisdom:"求你光照我，让我看清你的心意；若不是出于你，求你关门；若是出于你，赐我勇气",grief:"求你安慰我破碎的心，用复活的盼望托住我",sorry:"我真心认罪，求你因耶稣的宝血赦免我、洗净我，给我改正的勇气",forgive:"我把这份委屈交给你，求你医治我，也帮我像你饶恕我一样去饶恕，并修复这段关系",work:"求你供应所需，赐我智慧安排，使我知足不忧虑，在工作上忠心诚实",wait:"我已经为此等候很久，仍选择等候你，求你坚固我的心",thanks:"我要为这事感谢你，求你让我不忘记你的恩典",doubt:"我信，但我信不足，求你帮助，用你的话重新点燃我",travel:"求你保护一路平安，看顾行程中的每一段路"};
+const CARE_GEN=[[50,4,6,7,"应当一无挂虑，借着祷告把所要的告诉神"],[19,55,22,22,"把重担卸给耶和华，他必抚养你"],[40,6,34,34,"不要为明天忧虑"],[20,3,5,6,"专心仰赖耶和华，他必指引你的路"],[19,37,5,5,"当将你的事交托耶和华，并倚靠他"],[23,41,10,10,"你不要害怕，因为我与你同在"]];
+async function genCare(){collectCares();const open=S.cares.filter(c=>!c.done);const box=$("#careout");if(!open.length){box.innerHTML='<p class="small muted">先在上面写下一两件事，再生成。</p>';return}
+ COMP.genSeed=(COMP.genSeed||0)+1;const seed=COMP.genSeed;box.innerHTML='<p class="small muted">正在为每件事配上经文……</p>';
+ const parts=[];let say="天父，夜深了。我把今天还没解决的事和明天的担心，一件一件放在你手中。";
+ for(let j=0;j<open.length;j++){const c=open[j];const sc=matchScen(c.text)[0];const pool=(sc?sc.p.filter(x=>x[3]-x[2]<=2&&!(x[0]===41&&x[1]===5)&&!(x[0]===19&&x[1]===13)):[]);const src=pool.length?pool:CARE_GEN;const pv=src[(seed+j)%src.length];const cl=sc?CARE_CL[sc.id]:"求你掌管这件事，赐我平安和智慧，在你的时间里显明你的道路";
+  const t=await verses(pv[0],pv[1],pv[2],pv[3]);const zh=t.filter(x=>!isMerged(x.zh)).map(x=>cleanZh(x.zh).replace(/^（[^）]*）/,"")).join("");
+  parts.push(`<div class="psg"><div><b style="font-family:var(--f-scripture)">${esc(c.text)}</b>${sc?` <span class="tag">${esc(sc.n)}</span>`:""}</div><p class="prayer" style="margin:4px 0">主啊，关于${esc(c.text)}，${esc(cl)}。</p><div class="scripture" style="font-size:.98rem">${esc(zh)}</div><div class="row" style="gap:6px"><button class="chip" data-act="refpv" data-b="${pv[0]}" data-c="${pv[1]}" data-v="${pv[2]}" data-ve="${pv[3]}">${ref(pv[0],pv[1],pv[2],pv[3])}</button>${sc?`<button class="chip" data-act="scenClose" data-id="${sc.id}">更多经文 ›</button>`:""}</div></div>`);
+  say+=`关于${c.text}，${cl}。你的话说：${zh}`}
+ const end="这些事我放下了，不再独自背负。你是不打盹也不睡觉的神，我安然躺下睡觉。奉主耶稣基督的名，阿们。";say+=end;COMP.genText=say;
+ box.innerHTML=`<div class="card ribbon" style="margin-top:10px"><div class="eyebrow">交托祷告 · 第 ${seed} 版</div><p class="prayer" style="margin:8px 0 4px">天父，夜深了。我把今天还没解决的事和明天的担心，一件一件放在你手中。</p>${parts.join("")}<p class="prayer" style="margin:8px 0">${end}</p><div class="row"><button class="btn sm primary" data-act="speakCare">${IC.play} 朗读这篇祷告</button><button class="btn sm" data-act="genCare">换一组经文再生成</button><button class="btn sm ghost" data-act="copyCare">复制</button></div><p class="small muted" style="margin:8px 0 0">祷告按你写的每件事配上相应情境的经文和祈求，可以照着读，也可以用自己的话。</p></div>`;box.scrollIntoView({block:"start",behavior:"smooth"})}
+
+/* ---------- 事件 ---------- */
+document.addEventListener("click",async e=>{const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act,d=el.dataset;if(/^(play|speak|comp|tts)/.test(a))unlockTTS();
+ switch(a){
+ case"tab":closeSheet();HIST.length=0;go({name:d.k});break;
+ case"back":back();break;
+ case"testament":go({name:"bible",t:d.t},false);break;
+ case"book":closeSheet();go({name:"book",b:+d.b});break;
+ case"open":closeSheet();go({name:"chapter",b:+d.b,c:+d.c,v:d.v?+d.v:0});break;
+ case"openClose":closeSheet();go({name:"chapter",b:+d.b,c:+d.c,v:+d.v,ve:d.ve?+d.ve:0});break;
+ case"refgo":{const r=parseRef(d.q);if(r&&r.c){closeSheet();go({name:"chapter",b:r.b,c:r.c,v:r.v,ve:r.ve})}break}
+ case"refpv":rangeSheet(+d.b,+d.c,+d.v,+d.ve);break;
+ case"scen":go({name:"scen",id:d.id});break;
+ case"hymns":closeSheet();if(COMP){stopTTS();COMP=null;renderComp()}go({name:"hymns",tag:d.tag||""});break;
+ case"hymnTag":go({name:"hymns",tag:d.tag},false);break;
+ case"hymn":closeSheet();if(COMP){stopTTS();COMP=null;renderComp()}go({name:"hymn",i:+d.i});break;
+ case"speakHymn":{const h=HY[+d.i];const q=[];h.verses.forEach(vv=>{q.push({lang:"en",text:vv.join(" ")});if(h.refrain&&h.refrain.length)q.push({lang:"en",text:h.refrain.join(" ")})});speak(q,h.title);break}
+ case"favHymn":{const i=+d.i;const k=S.fav.findIndex(f=>f[0]==="h"&&f[1]===i);if(k>=0)S.fav.splice(k,1);else S.fav.push(["h",i]);save();rerender();break}
+ case"closeSheet":closeSheet();break;
+ case"settings":settingsSheet();break;
+ case"readprefs":readPrefsSheet();break;
+ case"kv":kvSheet(+d.i);break;
+ case"verse":{const k=+d.k,v=+d.v;if(k>=0)kvSheet(k,v);else verseSheet(VIEW.b,VIEW.c,v);break}
+ case"markV":{const b=+d.b,c=+d.c,v=+d.v;if(!BK[b])await book(b);verseSheet(b,c,v);break}
+ case"mode":S.mode=d.m;save();rerender();break;
+ case"fs":S.fs=+d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
+ case"en":S.en=d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));if(VIEW.name==="chapter")rerender();break;
+ case"voiceClip":S.voiceClip=d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
+ case"theme":S.theme=d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));break;
+ case"rate":S.rate=+d.v;save();el.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===el));if(AUD&&TTS.on&&TTS.clip){try{AUD.playbackRate=clipRate()}catch(e){}}break;
+ case"plan":S.plan=d.k;save();closeSheet();if(VIEW.name==="today")render();toast("已切换为“"+PLANS[d.k].name+"”");break;
+ case"toggleRead":markRead(+d.b,+d.c,!isRead(+d.b,+d.c));rerender();break;
+ case"doneCh":{const on=!isRead(VIEW.b,VIEW.c);markRead(VIEW.b,VIEW.c,on);await rerender();if(on)toast("已打卡，感谢主");break}
+ case"playCh":{const dd=await book(VIEW.b);speak(chapterQueue(VIEW.b,VIEW.c,dd),BOOKS[VIEW.b-1][0]+" "+VIEW.c+" 章");break}
+ case"playFrom":{closeSheet();const dd=await book(VIEW.b);speak(chapterQueue(VIEW.b,VIEW.c,dd,+d.v),BOOKS[VIEW.b-1][0]+" "+VIEW.c+":"+d.v+" 起");break}
+ case"ttsStop":stopTTS();break;
+ case"ttsSkip":try{speechSynthesis.cancel()}catch(x){}break;
+ case"speakKv":{const k=C.kv[+d.i];const t=await verses(k[0],k[1],k[2],k[3]);const q=[];t.forEach(x=>{if(!isMerged(x.zh))q.push({lang:"zh",text:x.zh})});if(S.mode!=="zh")t.forEach(x=>x.en&&q.push({lang:"en",text:x.en}));speak(q,ref(k[0],k[1],k[2],k[3]));break}
+ case"speakPs":{const s=C.scen.find(x=>x.id===VIEW.id);const [b,c,vs,ve]=s.p[+d.i];const t=await verses(b,c,vs,ve);const q=t.filter(x=>!isMerged(x.zh)).map(x=>({lang:"zh",text:x.zh}));if(S.mode!=="zh")t.forEach(x=>x.en&&q.push({lang:"en",text:x.en}));speak(q,ref(b,c,vs,ve));break}
+ case"speakPr":{const s=C.scen.find(x=>x.id===VIEW.id);speak([{lang:"zh",text:s.pr.replace(/______/g,"……")}],"祷告");break}
+ case"speakLP":{const t=await verses(40,6,9,13);speak(t.map(x=>({lang:"zh",text:x.zh})),"主祷文");break}
+ case"addPrayerFrom":{const s=C.scen.find(x=>x.id===d.id);S.prayers.push({id:Date.now(),who:"我",what:s.n,date:dstr(),ans:null});save();toast("已加入代祷清单，可在“祷告”页修改");break}
+ case"answer":{const p=S.prayers.find(x=>x.id==d.id);p.ans=p.ans?null:dstr();save();render();if(p.ans)toast("感谢主！");break}
+ case"delPrayer":S.prayers=S.prayers.filter(x=>x.id!=d.id);save();render();break;
+ case"fav":{const b=+d.b,c=+d.c,v=+d.v;const i=S.fav.findIndex(f=>f[0]===b&&f[1]===c&&f[2]===v);if(i>=0)S.fav.splice(i,1);else S.fav.push([b,c,v]);save();closeSheet();const ve=document.getElementById("v"+v);if(ve)ve.classList.toggle("fav",i<0);toast(i>=0?"已取消收藏":"已收藏");break}
+ case"copyV":{const b=+d.b,c=+d.c,v=+d.v;const D=BK[b];copyText(cleanZh(D.zh[c-1][v-1])+"（"+ref(b,c,v)+"）\n"+((D[S.en][c-1]||[])[v-1]||"")+" ("+refEn(b,c,v)+")");break}
+ case"copyKv":{const k=C.kv[+d.i];const t=await verses(k[0],k[1],k[2],k[3]);copyText(t.map(x=>cleanZh(x.zh)).join("")+"（"+ref(k[0],k[1],k[2],k[3])+"）\n"+t.map(x=>x.en).join(" ")+" ("+refEn(k[0],k[1],k[2],k[3])+")");break}
+ case"fullSearch":fullSearch();break;
+ case"comp":await startComp(d.k);break;
+ case"compNext":compCollect();stopTTS(true);renderPlayer();COMP.i++;renderComp();break;
+ case"compPrev":famCollect();stopTTS(true);renderPlayer();COMP.i--;renderComp();break;
+ case"compAns":{const p=S.prayers.find(x=>x.id==d.id);if(p){p.ans=dstr();save();renderComp();toast("感谢主！")}break}
+ case"compDelPr":S.prayers=S.prayers.filter(x=>x.id!=d.id);save();renderComp();break;
+ case"compSay":if($("#cfam")){famCollect();renderComp()}speak(sayItems((COMP.steps[COMP.i].n==="交托"&&COMP.genText)?COMP.genText:(typeof COMP.steps[COMP.i].say==="function"?COMP.steps[COMP.i].say():COMP.steps[COMP.i].say)),COMP.title+" · "+COMP.steps[COMP.i].n);break;
+ case"genCare":genCare();break;
+ case"speakCare":if(COMP&&COMP.genText)speak([{lang:"zh",text:COMP.genText}],"交托祷告");break;
+ case"copyCare":if(COMP&&COMP.genText)copyText(COMP.genText);break;
+ case"scenClose":closeSheet();if(COMP){stopTTS();COMP=null;renderComp()}go({name:"scen",id:d.id});break;
+ case"careDone":{const c=S.cares.find(x=>String(x.id)===d.id);if(!c)break;c.done=dstr();S.thanks.push({date:dstr(),text:"交托的事已有答复："+c.text});save();const row=el.closest(".li");if(row){el.classList.add("on");el.innerHTML=IC.tick;setTimeout(()=>row.remove(),700)}toast("已记入感恩记录");if(VIEW.name==="pray"&&!COMP)render();break}
+ case"compClose":stopTTS();COMP=null;renderComp();break;
+ case"compDone":{compCollect();stopTTS();const k=COMP.kind==="morning"?"m":"e";COMP=null;renderComp();checkin(k);if(["today","pray"].includes(VIEW.name))render();toast("阿们。愿主与你同在");break}
+ case"backup":copyText(JSON.stringify(S));break;
+ case"hl":{const b=+d.b,c=+d.c,v=+d.v,v2=rangeEnd(v);for(let i=v;i<=v2;i++)setMark(b,c,i,{hl:d.hl});closeSheet();rerender();break}
+ case"noteV":noteSheet(+d.b,+d.c,+d.v);break;
+ case"noteSave":setMark(+d.b,+d.c,+d.v,{note:$("#noteTxt").value.trim()});closeSheet();rerender();toast("已保存");break;
+ case"noteDel":setMark(+d.b,+d.c,+d.v,{note:""});closeSheet();rerender();break;
+ case"chNote":chNoteSheet(VIEW.b,VIEW.c);break;
+ case"chNoteSave":{const t=$("#cnTxt").value.trim();const k=d.b+":"+d.c;if(t)S.chnotes[k]=t;else delete S.chnotes[k];save();closeSheet();rerender();toast("已保存");break}
+ case"chNoteDel":delete S.chnotes[d.b+":"+d.c];save();closeSheet();rerender();break;
+ case"markFilter":VIEW.mf=d.v;rerender();break;
+ case"bg":S.bg=d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===el));break;
+ case"ink":S.ink=d.v;save();applyPrefs();el.parentNode.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===el));break;
+ case"exportFile":await exportFile();break;
+ case"importPick":$("#impFile")&&$("#impFile").click();break;
+ case"offlineNow":ensureOffline(true);break;
+ case"restore":{try{const o=JSON.parse($("#restore").value);if(!o||typeof o!=="object"||!o.days)throw 0;S=Object.assign({},DEF,o);save();applyPrefs();closeSheet();render();toast("已恢复")}catch(x){toast("备份文字不完整，请重新粘贴")}break}
+ }
+});
+window.addEventListener("hashchange",fromHash);
+function fromHash(){const h=(location.hash||"").slice(1);if(h==="morning"||h==="evening"){startComp(h);return true}if(["today","seek","pray","bible","search"].includes(h)){go({name:h},false);return true}return false}
+try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+/* 引导语按「今日诗歌：」拆开：前半固定、可用录音，后半每天不同、用系统声音 */
+function sayItems(t){return String(t||"").split(/(?=今日诗歌：)/).filter(x=>x.trim()).map(x=>({lang:"zh",text:x}))}
+/* 语音包要覆盖的全部句子（tools/voice_lines.js 调用）*/
+window.__voiceLines=async function(){const out=new Set();const add=t=>{if(!t||typeof t!=="string")return;const k=clipKey(t);if(k)out.add(k)};
+ for(const kind of ["morning","evening"]){await startComp(kind);COMP.steps.forEach(st=>{if(typeof st.say==="string")sayItems(st.say).forEach(it=>{if(!/^今日诗歌：/.test(it.text))add(it.text)})});COMP=null;renderComp()}
+ for(const k of C.kv){(await verses(k[0],k[1],k[2],k[3])).forEach(x=>{if(!isMerged(x.zh))add(x.zh)})}
+ for(const sc of C.scen){add(sc.pr.replace(/______/g,"……"));for(const [b,c,vs,ve] of sc.p){(await verses(b,c,vs,ve)).forEach(x=>{if(!isMerged(x.zh))add(x.zh)})}}
+ (await verses(40,6,9,13)).forEach(x=>add(x.zh));return [...out]};
+/* ---------- 备份文件 ---------- */
+async function exportFile(){const name="lingliang-backup-"+dstr()+".json";const txt=JSON.stringify(S);const file=new File([txt],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return}catch(e){if(e&&e.name==="AbortError")return}}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("已导出："+name)}
+async function importFile(e){const f=e.target.files[0];if(!f)return;e.target.value="";try{const o=JSON.parse(await f.text());if(!o||typeof o!=="object"||!o.days)throw 0;openSheet(`<h3>导入备份</h3><p class="small muted">备份含 ${Object.keys(o.read||{}).length} 章打卡、${(o.fav||[]).length} 条收藏、${Object.keys(o.marks||{}).length} 处高亮或注释、${(o.prayers||[]).length} 条代祷。导入会用备份覆盖本机现有记录。</p><div class="row"><button class="btn sm" data-act="closeSheet">取消</button><button class="btn sm primary" id="impGo">确定导入</button></div>`);$("#impGo").addEventListener("click",()=>{S=Object.assign({},DEF,o);save();applyPrefs();closeSheet();render();toast("已导入")})}catch(x){toast("这不是灵粮读经的备份文件")}}
+/* ---------- 离线：首次联网后自动把全本经文存入手机 ---------- */
+const OFF={busy:false,n:0,done:false};
+function offStatus(){const el=$("#offStatus");if(!el)return;el.textContent=OFF.done?"全本经文已存在手机里，没有网络也能读经。":OFF.busy?`正在为离线准备经文 ${OFF.n}/66…`:`离线经文 ${OFF.n}/66，${navigator.onLine===false?"连上网络后会自动继续":"稍后自动继续"}`}
+async function ensureOffline(force){if(OFF.busy||!("caches"in window)||navigator.onLine===false)return;try{const c=await caches.open("lingliang-data");const have=new Set((await c.keys()).map(r=>r.url));const todo=[];for(let i=1;i<=66;i++){const u=new URL("../data/"+pad2(i)+".json",location.href).href;if(force||!have.has(u))todo.push(u)}OFF.n=66-todo.length;OFF.done=!todo.length;offStatus();if(OFF.done)return;OFF.busy=true;offStatus();for(const u of todo){const r=await fetch(u,{cache:force?"reload":"default"});if(!r.ok)throw 0;await c.put(u,r.clone());OFF.n++;offStatus()}OFF.done=true}catch(e){}OFF.busy=false;offStatus()}
+if("serviceWorker"in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});setTimeout(()=>ensureOffline(false),2500);window.addEventListener("online",()=>ensureOffline(false))}
+(async()=>{try{await loadContent()}catch(e){$("#app").innerHTML=`<div class="wrap"><div class="card">内容载入失败，请检查网络后刷新页面。</div></div>`;return}
+ VIEW={name:S.tab||"today"};if(["chapter","book","scen"].includes(VIEW.name))VIEW={name:"today"};await render();fromHash()})();
+</script>
+
+</body>
+</html>

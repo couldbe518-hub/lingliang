@@ -1,0 +1,1 @@
+{"name": "灵粮读经", "short_name": "灵粮读经", "start_url": "./", "scope": "./", "display": "standalone", "background_color": "#F4F6F2", "theme_color": "#2C3D7C", "lang": "zh-CN", "icons": [{"src": "../icon.png", "sizes": "180x180", "type": "image/png"}, {"src": "../icon-512.png", "sizes": "512x512", "type": "image/png"}]}
